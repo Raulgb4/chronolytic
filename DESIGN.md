@@ -1,17 +1,20 @@
 # Chronolytic Design Guidelines
 
 ## Purpose
+
 - Keep Chronolytic visually consistent, calm, and data-focused.
 - Guide both humans and AI agents toward the same UI and UX decisions.
 - Optimize for desktop productivity workflows on Windows first.
 
 ## Visual Philosophy
+
 - Clean, modern, and minimal interface inspired by Apple desktop products.
 - Calm and elegant over playful or gamified.
 - Data is the hero: visual style supports interpretation, not decoration.
 - Prefer clarity, whitespace, and hierarchy over dense screens.
 
 ## Core UX Principles
+
 - Desktop-first: prioritize keyboard + mouse efficiency and wide layouts.
 - Show clear session states at all times: running, paused, inactive review, finished.
 - Use progressive disclosure: show key metrics first, advanced details on demand.
@@ -19,6 +22,7 @@
 - Reduce cognitive load: one primary action per area.
 
 ## Layout And Spacing
+
 - Use modular dashboard blocks (cards/panels) with consistent internal structure.
 - Maintain generous whitespace between sections to separate concerns.
 - Use a consistent spacing scale (e.g., 4/8/12/16/24/32).
@@ -28,12 +32,14 @@
   - Tertiary: metadata, tips, and non-critical controls.
 
 ## Typography
+
 - Use a clean sans-serif stack suitable for desktop readability.
 - Rely on size/weight/line-height for hierarchy, not excessive color changes.
 - Keep text concise, scannable, and plain-language.
 - Avoid decorative typography and avoid all-caps in long labels.
 
 ## Color System
+
 - Neutral-first palette for surfaces, borders, and background.
 - Restrained accent colors for actions and key highlights.
 - Semantic colors only when they communicate meaning:
@@ -43,6 +49,7 @@
 - Do not use many saturated colors in analytics views.
 
 ## Charts And Analytics Clarity
+
 - Choose chart types by question:
   - Trend over time -> line/area.
   - Category comparison -> bar.
@@ -53,6 +60,7 @@
 - Always include empty/loading/error chart states with clear next steps.
 
 ## Interaction And Motion
+
 - Interactions should be subtle, fast, and informative.
 - Use short transitions (generally 120-220ms) with smooth easing.
 - Animate only where it improves comprehension (state change, panel reveal, chart update).
@@ -60,6 +68,7 @@
 - Keep hover/focus/active states clearly distinguishable.
 
 ## Reusable UI Patterns
+
 - Standardize these primitives early:
   - Metric tile
   - Dashboard card
@@ -71,12 +80,14 @@
 - New components should define intended context and states explicitly.
 
 ## Content And Microcopy
+
 - Use direct, neutral language focused on action and outcomes.
 - Keep labels consistent across screens (do not rename the same concept).
 - Explain inactivity discount prompts clearly; never obscure impact on metrics.
 - Prefer helpful guidance over celebratory/gamified messaging.
 
 ## Consistency Rules For Agents
+
 - Match existing spacing, typography, radius, and elevation tokens.
 - Reuse shared components; do not clone patterns with small visual differences.
 - Keep business logic and analytics logic out of presentational components.
@@ -84,6 +95,7 @@
 - When adding a new pattern, document it in this file in one short bullet.
 
 ## Quality Checklist (Before Merging UI Changes)
+
 - Is the screen visually calm and uncluttered?
 - Is there a clear primary action and hierarchy?
 - Are typography, spacing, and color usage consistent with existing patterns?

@@ -47,14 +47,14 @@ Recommended future media order:
 
 ## Tech Stack
 
-| Layer | Technology | Purpose |
-| --- | --- | --- |
-| Desktop shell/native | Tauri + Rust | OS integration, background behavior, system-level events |
-| UI | React + TypeScript | Desktop interface and interaction flows |
-| Styling | Tailwind CSS | Consistent design system and rapid UI composition |
-| Persistence | SQLite | Local-first storage for sessions and analytics data |
-| ORM | Drizzle ORM | Typed database access and schema management |
-| Visualization | Recharts | Productivity charts and dashboard visuals |
+| Layer                | Technology         | Purpose                                                  |
+| -------------------- | ------------------ | -------------------------------------------------------- |
+| Desktop shell/native | Tauri + Rust       | OS integration, background behavior, system-level events |
+| UI                   | React + TypeScript | Desktop interface and interaction flows                  |
+| Styling              | Tailwind CSS       | Consistent design system and rapid UI composition        |
+| Persistence          | SQLite             | Local-first storage for sessions and analytics data      |
+| ORM                  | Drizzle ORM        | Typed database access and schema management              |
+| Visualization        | Recharts           | Productivity charts and dashboard visuals                |
 
 ## Architecture
 
@@ -100,7 +100,7 @@ Chronolytic is currently in early scaffold refinement.
 ### Foundation
 
 - Tauri + React + TypeScript scaffold initialized.
-- Add Tailwind CSS setup.
+- Tailwind CSS integrated for frontend styling foundation.
 - Add SQLite + Drizzle foundation.
 
 ### Session Tracking
@@ -137,6 +137,8 @@ Core development commands:
 
 - `npm run dev` - run Vite dev server.
 - `npm run typecheck` - run TypeScript project checks.
+- `npm run format` - apply Prettier formatting across the repository.
+- `npm run format:check` - validate formatting with Prettier.
 - `npm run build` - run TypeScript build checks and Vite production build.
 - `npm run preview` - preview production frontend build.
 - `npm run tauri:dev` - run desktop app in Tauri development mode.

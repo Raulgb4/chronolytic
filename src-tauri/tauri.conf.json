@@ -11,14 +11,14 @@
   },
   "app": {
     "windows": [
-        {
-          "title": "Chronolytic",
-          "width": 1200,
-          "height": 800,
-          "minWidth": 960,
-          "minHeight": 640
-        }
-      ],
+      {
+        "title": "Chronolytic",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 960,
+        "minHeight": 640
+      }
+    ],
     "security": {
       "csp": null
     }
