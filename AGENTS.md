@@ -1,8 +1,15 @@
 # AGENTS.md
 
 ## Current State
-- This repo is currently pre-scaffold: only `README.md`, `.gitignore`, and `LICENSE` are present.
-- Do not invent developer commands yet; there is no `package.json`, Tauri config, Cargo manifest, CI, or test/lint/typecheck config in the repo.
+- This repo has an initialized Tauri + React + TypeScript scaffold.
+- Use executable config as source of truth (`package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`).
+- Available scripts:
+  - `npm run dev`
+  - `npm run build`
+  - `npm run typecheck`
+  - `npm run preview`
+  - `npm run tauri:dev`
+  - `npm run tauri:build`
 
 ## Product Direction
 - Chronolytic is a local-first desktop productivity analytics app, not a simple timer.
@@ -11,9 +18,9 @@
 
 ## Planned Stack
 - Desktop shell/native layer: Tauri, with OS/system concerns in Rust commands.
-- UI: React, TypeScript, Tailwind CSS.
-- Persistence: SQLite with Drizzle ORM.
-- Analytics/visualization: reusable TypeScript analytics logic plus Recharts for charts.
+- UI: React + TypeScript (Tailwind CSS planned, not yet configured).
+- Persistence: SQLite with Drizzle ORM (planned).
+- Analytics/visualization: reusable TypeScript analytics logic plus Recharts (planned).
 
 ## Architecture Expectations
 - Prefer feature-based modules over large type-based folders.
@@ -31,8 +38,9 @@
 - Use English for code, comments, documentation, branches, and commits.
 - Follow conventional commits.
 - Branch model from project context: `main` is stable, `develop` is integration, and `feature/*` or `chore/*` branches isolate work.
-- Prefer small focused changes; avoid adding dependencies or abstractions before the scaffold requires them.
+- Prefer small focused changes; avoid adding dependencies or abstractions before they are needed.
 
-## When Scaffolding Starts
-- Add exact `dev`, `build`, `lint`, `typecheck`, `test`, migration, and Tauri commands here once they exist in executable config.
-- If docs and executable config disagree, trust the executable config and update this file only with verified commands.
+## Repository Hygiene
+- Do not commit generated outputs (`dist/`, `src-tauri/target/`, `src-tauri/gen/`, `node_modules/`).
+- Remove template/demo artifacts when replacing scaffold code.
+- If docs conflict with executable config, update docs to match verified config.

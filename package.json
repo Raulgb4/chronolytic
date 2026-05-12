@@ -2,12 +2,32 @@
   "name": "chronolytic",
   "private": true,
   "version": "0.1.0",
+  "description": "Local-first desktop productivity analytics app built with Tauri, React, and TypeScript.",
+  "license": "MIT",
+  "author": "Raul Garcia Balongo",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Raulgb4/chronolytic.git"
+  },
+  "keywords": [
+    "productivity",
+    "analytics",
+    "desktop",
+    "tauri",
+    "react",
+    "typescript",
+    "local-first",
+    "time-tracking"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "tsc -b && vite build",
+    "typecheck": "tsc -b",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "tauri:dev": "tauri dev",
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "react": "^19.1.0",

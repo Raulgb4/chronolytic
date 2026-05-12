@@ -89,17 +89,17 @@ Planned analytics include:
 
 ## Project Status
 
-Chronolytic is currently in early initialization (pre-scaffold).
+Chronolytic is currently in early scaffold refinement.
 
-- Product direction, architecture, and design guidelines are defined.
-- Executable app scaffold and development scripts are not yet added.
-- Commands will be documented once `package.json`/Tauri/Cargo config exists.
+- Tauri + React + TypeScript scaffold is in place.
+- Product direction, architecture boundaries, and design guidelines are defined.
+- Current work is focused on foundation cleanup before feature implementation.
 
 ## Roadmap
 
 ### Foundation
 
-- Scaffold Tauri + React + TypeScript desktop project.
+- Tauri + React + TypeScript scaffold initialized.
 - Add Tailwind CSS setup.
 - Add SQLite + Drizzle foundation.
 
@@ -133,13 +133,19 @@ Chronolytic is currently in early initialization (pre-scaffold).
 
 ## Development
 
-This repository is currently pre-scaffold. Development commands will be added once executable project configuration is present.
+Core development commands:
 
-Until then:
+- `npm run dev` - run Vite dev server.
+- `npm run typecheck` - run TypeScript project checks.
+- `npm run build` - run TypeScript build checks and Vite production build.
+- `npm run preview` - preview production frontend build.
+- `npm run tauri:dev` - run desktop app in Tauri development mode.
+- `npm run tauri:build` - build desktop app bundles via Tauri.
 
-- Do not assume `npm`/`pnpm` scripts exist.
-- Do not document unverified commands.
-- Treat config files as the source of truth when they are added.
+Current foundation rules:
+
+- Keep product-facing work minimal while cleanup and naming alignment are completed.
+- Treat executable config files as the source of truth for commands and metadata.
 
 ## Design Principles
 
