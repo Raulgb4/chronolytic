@@ -47,14 +47,14 @@ Recommended future media order:
 
 ## Tech Stack
 
-| Layer | Technology | Purpose |
-| --- | --- | --- |
-| Desktop shell/native | Tauri + Rust | OS integration, background behavior, system-level events |
-| UI | React + TypeScript | Desktop interface and interaction flows |
-| Styling | Tailwind CSS | Consistent design system and rapid UI composition |
-| Persistence | SQLite | Local-first storage for sessions and analytics data |
-| ORM | Drizzle ORM | Typed database access and schema management |
-| Visualization | Recharts | Productivity charts and dashboard visuals |
+| Layer                | Technology         | Purpose                                                  |
+| -------------------- | ------------------ | -------------------------------------------------------- |
+| Desktop shell/native | Tauri + Rust       | OS integration, background behavior, system-level events |
+| UI                   | React + TypeScript | Desktop interface and interaction flows                  |
+| Styling              | Tailwind CSS       | Consistent design system and rapid UI composition        |
+| Persistence          | SQLite             | Local-first storage for sessions and analytics data      |
+| ORM                  | Drizzle ORM        | Typed database access and schema management              |
+| Visualization        | Recharts           | Productivity charts and dashboard visuals                |
 
 ## Architecture
 
@@ -89,18 +89,18 @@ Planned analytics include:
 
 ## Project Status
 
-Chronolytic is currently in early initialization (pre-scaffold).
+Chronolytic is currently in early scaffold refinement.
 
-- Product direction, architecture, and design guidelines are defined.
-- Executable app scaffold and development scripts are not yet added.
-- Commands will be documented once `package.json`/Tauri/Cargo config exists.
+- Tauri + React + TypeScript scaffold is in place.
+- Product direction, architecture boundaries, and design guidelines are defined.
+- Current work is focused on foundation cleanup before feature implementation.
 
 ## Roadmap
 
 ### Foundation
 
-- Scaffold Tauri + React + TypeScript desktop project.
-- Add Tailwind CSS setup.
+- Tauri + React + TypeScript scaffold initialized.
+- Tailwind CSS integrated for frontend styling foundation.
 - Add SQLite + Drizzle foundation.
 
 ### Session Tracking
@@ -133,13 +133,21 @@ Chronolytic is currently in early initialization (pre-scaffold).
 
 ## Development
 
-This repository is currently pre-scaffold. Development commands will be added once executable project configuration is present.
+Core development commands:
 
-Until then:
+- `npm run dev` - run Vite dev server.
+- `npm run typecheck` - run TypeScript project checks.
+- `npm run format` - apply Prettier formatting across the repository.
+- `npm run format:check` - validate formatting with Prettier.
+- `npm run build` - run TypeScript build checks and Vite production build.
+- `npm run preview` - preview production frontend build.
+- `npm run tauri:dev` - run desktop app in Tauri development mode.
+- `npm run tauri:build` - build desktop app bundles via Tauri.
 
-- Do not assume `npm`/`pnpm` scripts exist.
-- Do not document unverified commands.
-- Treat config files as the source of truth when they are added.
+Current foundation rules:
+
+- Keep product-facing work minimal while cleanup and naming alignment are completed.
+- Treat executable config files as the source of truth for commands and metadata.
 
 ## Design Principles
 
