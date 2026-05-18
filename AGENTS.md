@@ -5,14 +5,14 @@
 - This repo has an initialized Tauri + React + TypeScript scaffold.
 - Use executable config as source of truth (`package.json`, `src-tauri/tauri.conf.json`, `src-tauri/Cargo.toml`).
 - Available scripts:
-  - `npm run dev`
-  - `npm run build`
-  - `npm run typecheck`
-  - `npm run format`
-  - `npm run format:check`
-  - `npm run preview`
-  - `npm run tauri:dev`
-  - `npm run tauri:build`
+  - `pnpm run dev`
+  - `pnpm run build`
+  - `pnpm run typecheck`
+  - `pnpm run format`
+  - `pnpm run format:check`
+  - `pnpm run preview`
+  - `pnpm run tauri:dev`
+  - `pnpm run tauri:build`
 
 ## Product Direction
 

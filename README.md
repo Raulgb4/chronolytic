@@ -135,14 +135,14 @@ Chronolytic is currently in early scaffold refinement.
 
 Core development commands:
 
-- `npm run dev` - run Vite dev server.
-- `npm run typecheck` - run TypeScript project checks.
-- `npm run format` - apply Prettier formatting across the repository.
-- `npm run format:check` - validate formatting with Prettier.
-- `npm run build` - run TypeScript build checks and Vite production build.
-- `npm run preview` - preview production frontend build.
-- `npm run tauri:dev` - run desktop app in Tauri development mode.
-- `npm run tauri:build` - build desktop app bundles via Tauri.
+- `pnpm run dev` - run Vite dev server.
+- `pnpm run typecheck` - run TypeScript project checks.
+- `pnpm run format` - apply Prettier formatting across the repository.
+- `pnpm run format:check` - validate formatting with Prettier.
+- `pnpm run build` - run TypeScript build checks and Vite production build.
+- `pnpm run preview` - preview production frontend build.
+- `pnpm run tauri:dev` - run desktop app in Tauri development mode.
+- `pnpm run tauri:build` - build desktop app bundles via Tauri.
 
 Current foundation rules:
 
