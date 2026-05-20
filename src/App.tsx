@@ -81,6 +81,12 @@ function getGreetingKey(date: Date): string {
   return "home.goodEvening";
 }
 
+function getWeekdayFromTimestamp(timestamp: number): string {
+  const dayIndex = new Date(timestamp).getDay();
+  const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  return weekdays[dayIndex] ?? "monday";
+}
+
 function getStoredLanguage(): Language {
   const value = window.localStorage.getItem("chronolytic.language");
   return value === "es" ? "es" : "en";
@@ -137,7 +143,10 @@ function App() {
           setCompletedSessions(sessions);
         }
       } catch (error) {
-        console.error("Failed to load completed sessions from SQLite", error);
+        console.error("Failed to load completed sessions from SQLite", {
+          error,
+          source: "getCompletedSessions",
+        });
       }
     }
 
@@ -267,6 +276,7 @@ function App() {
       endedAt,
       effectiveDurationMs: getEffectiveDuration(sessionToSave, endedAt),
       pauses,
+      weekday: getWeekdayFromTimestamp(sessionToSave.startedAt),
     };
 
     try {
@@ -278,7 +288,14 @@ function App() {
       setTagsInput("");
       setIsCreateSessionOpen(false);
     } catch (error) {
-      console.error("Failed to save completed session to SQLite", error);
+      console.error("Failed to save completed session to SQLite", {
+        error,
+        source: "saveCompletedSession",
+        sessionId: completed.id,
+        startedAt: completed.startedAt,
+        endedAt: completed.endedAt,
+        weekday: completed.weekday,
+      });
     }
   }
 
@@ -642,6 +659,9 @@ function App() {
                         <th className="px-5 py-3.5 font-semibold">
                           {t("analytics.sessionHistory.columns.tags")}
                         </th>
+                        <th className="px-5 py-3.5 font-semibold">
+                          {t("analytics.sessionHistory.columns.weekday")}
+                        </th>
                         <th className="px-5 py-3.5 text-right font-semibold">
                           {t("analytics.sessionHistory.columns.actions")}
                         </th>
@@ -685,6 +705,9 @@ function App() {
                                 {t("analytics.sessionHistory.noTags")}
                               </span>
                             )}
+                          </td>
+                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                            {t(`analytics.weekdays.${session.weekday}`)}
                           </td>
                           <td className="px-5 py-4 text-right">
                             <button

@@ -20,6 +20,7 @@
         "endDate": "End date",
         "duration": "Duration",
         "tags": "Tags",
+        "weekday": "Weekday",
         "actions": "Actions"
       },
       "delete": "Delete",
@@ -27,6 +28,15 @@
       "noTags": "-",
       "emptyTitle": "No completed sessions yet",
       "emptyDescription": "Finish a session to see your history here."
+    },
+    "weekdays": {
+      "sunday": "Sunday",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday"
     },
     "placeholders": {
       "dashboardTitle": "Dashboard",

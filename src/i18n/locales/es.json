@@ -20,6 +20,7 @@
         "endDate": "Fecha de fin",
         "duration": "Duración",
         "tags": "Etiquetas",
+        "weekday": "Día",
         "actions": "Acciones"
       },
       "delete": "Eliminar",
@@ -27,6 +28,15 @@
       "noTags": "-",
       "emptyTitle": "Aún no hay sesiones completadas",
       "emptyDescription": "Finaliza una sesión para ver tu historial aquí."
+    },
+    "weekdays": {
+      "sunday": "Domingo",
+      "monday": "Lunes",
+      "tuesday": "Martes",
+      "wednesday": "Miércoles",
+      "thursday": "Jueves",
+      "friday": "Viernes",
+      "saturday": "Sábado"
     },
     "placeholders": {
       "dashboardTitle": "Panel",
