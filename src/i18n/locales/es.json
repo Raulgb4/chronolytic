@@ -66,6 +66,14 @@
         "sortByPauseCount": "Ordenar por cantidad de pausas",
         "sortByEnergy": "Ordenar por energía"
       },
+      "pagination": {
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "pageStatus": "Página {{page}} de {{total}}"
+      },
+      "indicators": {
+        "highInterruptions": "Muchas pausas"
+      },
       "columns": {
         "name": "Nombre",
         "category": "Categoría",

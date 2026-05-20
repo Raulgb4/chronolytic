@@ -41,6 +41,8 @@ type SessionHistorySortKey =
 type SortDirection = "asc" | "desc";
 type SessionHistoryEditableField = "title" | "category" | "tags" | "energy" | "weekday";
 
+const SESSION_HISTORY_PAGE_SIZE = 8;
+
 function parseTags(value: string): string[] {
   return value
     .split(",")
@@ -145,6 +147,22 @@ function getEnergySortValue(energy: EnergyLevel): number {
   return 2;
 }
 
+function getEnergyBadgeClasses(energy: EnergyLevel): string {
+  if (energy === "bad") {
+    return "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-500/25 dark:bg-rose-500/10 dark:text-rose-300";
+  }
+
+  if (energy === "regular") {
+    return "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300";
+  }
+
+  return "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-300";
+}
+
+function isHighInterruptionSession(session: CompletedSession): boolean {
+  return session.pauseCount >= 4 || session.pausedDurationMs >= 30 * 60 * 1000;
+}
+
 function getStoredLanguage(): Language {
   const value = window.localStorage.getItem("chronolytic.language");
   return value === "es" ? "es" : "en";
@@ -196,6 +214,7 @@ function App() {
   } | null>(null);
   const [isSessionHistorySavingEdit, setIsSessionHistorySavingEdit] = useState(false);
   const [sessionHistoryEditError, setSessionHistoryEditError] = useState<string | null>(null);
+  const [sessionHistoryPage, setSessionHistoryPage] = useState(1);
   const [isBackupFeedbackVisible, setIsBackupFeedbackVisible] = useState(false);
   const backupFadeTimeoutRef = useRef<number | null>(null);
   const backupRemoveTimeoutRef = useRef<number | null>(null);
@@ -512,6 +531,35 @@ function App() {
     sessionHistoryDurationFilter,
     sessionHistoryPauseFilter,
   ]);
+
+  const sessionHistoryTotalPages = useMemo(
+    () => Math.max(1, Math.ceil(visibleSessionHistorySessions.length / SESSION_HISTORY_PAGE_SIZE)),
+    [visibleSessionHistorySessions.length],
+  );
+
+  const paginatedSessionHistorySessions = useMemo(() => {
+    const clampedPage = Math.min(sessionHistoryPage, sessionHistoryTotalPages);
+    const start = (clampedPage - 1) * SESSION_HISTORY_PAGE_SIZE;
+    return visibleSessionHistorySessions.slice(start, start + SESSION_HISTORY_PAGE_SIZE);
+  }, [visibleSessionHistorySessions, sessionHistoryPage, sessionHistoryTotalPages]);
+
+  useEffect(() => {
+    setSessionHistoryPage(1);
+  }, [
+    sessionHistorySearch,
+    sessionHistoryWeekdayFilter,
+    sessionHistoryEnergyFilter,
+    sessionHistoryCategoryFilter,
+    sessionHistoryDurationFilter,
+    sessionHistoryPauseFilter,
+    sessionHistorySort,
+  ]);
+
+  useEffect(() => {
+    if (sessionHistoryPage > sessionHistoryTotalPages) {
+      setSessionHistoryPage(sessionHistoryTotalPages);
+    }
+  }, [sessionHistoryPage, sessionHistoryTotalPages]);
 
   const canStartSession = title.trim().length > 0 && !activeSession;
 
@@ -1825,309 +1873,351 @@ function App() {
                   </p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[980px] text-left">
-                    <thead className="border-b border-[var(--border)] bg-[var(--panel-muted)]/40 text-xs uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                      <tr>
-                        <th className="px-5 py-3.5 font-semibold">
-                          {t("analytics.sessionHistory.columns.name")}
-                        </th>
-                        <th className="px-5 py-3.5 font-semibold">
-                          {t("analytics.sessionHistory.columns.category")}
-                        </th>
-                        <th className="px-5 py-3.5 font-semibold">
-                          <button
-                            type="button"
-                            onClick={() => handleSessionHistorySort("startedAt")}
-                            aria-label={t("analytics.sessionHistory.sorting.sortByStartDate")}
-                            className="inline-flex items-center gap-1 hover:text-[var(--text)]"
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[980px] text-left">
+                      <thead className="border-b border-[var(--border)] bg-[var(--panel-muted)]/40 text-xs uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                        <tr>
+                          <th className="px-5 py-3.5 font-semibold">
+                            {t("analytics.sessionHistory.columns.name")}
+                          </th>
+                          <th className="px-5 py-3.5 font-semibold">
+                            {t("analytics.sessionHistory.columns.category")}
+                          </th>
+                          <th className="px-5 py-3.5 font-semibold">
+                            <button
+                              type="button"
+                              onClick={() => handleSessionHistorySort("startedAt")}
+                              aria-label={t("analytics.sessionHistory.sorting.sortByStartDate")}
+                              className="inline-flex items-center gap-1 hover:text-[var(--text)]"
+                            >
+                              <span>{t("analytics.sessionHistory.columns.startDate")}</span>
+                              <span className="text-[var(--text-muted)]">
+                                {getSortIndicator("startedAt")}
+                              </span>
+                            </button>
+                          </th>
+                          <th className="px-5 py-3.5 font-semibold">
+                            <button
+                              type="button"
+                              onClick={() => handleSessionHistorySort("endedAt")}
+                              aria-label={t("analytics.sessionHistory.sorting.sortByEndDate")}
+                              className="inline-flex items-center gap-1 hover:text-[var(--text)]"
+                            >
+                              <span>{t("analytics.sessionHistory.columns.endDate")}</span>
+                              <span className="text-[var(--text-muted)]">
+                                {getSortIndicator("endedAt")}
+                              </span>
+                            </button>
+                          </th>
+                          <th className="px-5 py-3.5 font-semibold">
+                            <button
+                              type="button"
+                              onClick={() => handleSessionHistorySort("effectiveDurationMs")}
+                              aria-label={t("analytics.sessionHistory.sorting.sortByDuration")}
+                              className="inline-flex items-center gap-1 hover:text-[var(--text)]"
+                            >
+                              <span>{t("analytics.sessionHistory.columns.duration")}</span>
+                              <span className="text-[var(--text-muted)]">
+                                {getSortIndicator("effectiveDurationMs")}
+                              </span>
+                            </button>
+                          </th>
+                          <th className="px-5 py-3.5 font-semibold">
+                            <button
+                              type="button"
+                              onClick={() => handleSessionHistorySort("pauseCount")}
+                              aria-label={t("analytics.sessionHistory.sorting.sortByPauseCount")}
+                              className="inline-flex items-center gap-1 hover:text-[var(--text)]"
+                            >
+                              <span>{t("analytics.sessionHistory.columns.pauseCount")}</span>
+                              <span className="text-[var(--text-muted)]">
+                                {getSortIndicator("pauseCount")}
+                              </span>
+                            </button>
+                          </th>
+                          <th className="px-5 py-3.5 font-semibold">
+                            {t("analytics.sessionHistory.columns.pausedTime")}
+                          </th>
+                          <th className="px-5 py-3.5 font-semibold">
+                            {t("analytics.sessionHistory.columns.tags")}
+                          </th>
+                          <th className="px-5 py-3.5 font-semibold">
+                            {t("analytics.sessionHistory.columns.weekday")}
+                          </th>
+                          <th className="px-5 py-3.5 font-semibold">
+                            <button
+                              type="button"
+                              onClick={() => handleSessionHistorySort("energy")}
+                              aria-label={t("analytics.sessionHistory.sorting.sortByEnergy")}
+                              className="inline-flex items-center gap-1 hover:text-[var(--text)]"
+                            >
+                              <span>{t("analytics.sessionHistory.columns.energy")}</span>
+                              <span className="text-[var(--text-muted)]">
+                                {getSortIndicator("energy")}
+                              </span>
+                            </button>
+                          </th>
+                          <th className="px-5 py-3.5 text-right font-semibold">
+                            {t("analytics.sessionHistory.columns.actions")}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[var(--border)]">
+                        {paginatedSessionHistorySessions.map((session) => (
+                          <tr
+                            key={session.id}
+                            className="transition-colors duration-150 hover:bg-[var(--panel-muted)]/35"
                           >
-                            <span>{t("analytics.sessionHistory.columns.startDate")}</span>
-                            <span className="text-[var(--text-muted)]">
-                              {getSortIndicator("startedAt")}
-                            </span>
-                          </button>
-                        </th>
-                        <th className="px-5 py-3.5 font-semibold">
-                          <button
-                            type="button"
-                            onClick={() => handleSessionHistorySort("endedAt")}
-                            aria-label={t("analytics.sessionHistory.sorting.sortByEndDate")}
-                            className="inline-flex items-center gap-1 hover:text-[var(--text)]"
-                          >
-                            <span>{t("analytics.sessionHistory.columns.endDate")}</span>
-                            <span className="text-[var(--text-muted)]">
-                              {getSortIndicator("endedAt")}
-                            </span>
-                          </button>
-                        </th>
-                        <th className="px-5 py-3.5 font-semibold">
-                          <button
-                            type="button"
-                            onClick={() => handleSessionHistorySort("effectiveDurationMs")}
-                            aria-label={t("analytics.sessionHistory.sorting.sortByDuration")}
-                            className="inline-flex items-center gap-1 hover:text-[var(--text)]"
-                          >
-                            <span>{t("analytics.sessionHistory.columns.duration")}</span>
-                            <span className="text-[var(--text-muted)]">
-                              {getSortIndicator("effectiveDurationMs")}
-                            </span>
-                          </button>
-                        </th>
-                        <th className="px-5 py-3.5 font-semibold">
-                          <button
-                            type="button"
-                            onClick={() => handleSessionHistorySort("pauseCount")}
-                            aria-label={t("analytics.sessionHistory.sorting.sortByPauseCount")}
-                            className="inline-flex items-center gap-1 hover:text-[var(--text)]"
-                          >
-                            <span>{t("analytics.sessionHistory.columns.pauseCount")}</span>
-                            <span className="text-[var(--text-muted)]">
-                              {getSortIndicator("pauseCount")}
-                            </span>
-                          </button>
-                        </th>
-                        <th className="px-5 py-3.5 font-semibold">
-                          {t("analytics.sessionHistory.columns.pausedTime")}
-                        </th>
-                        <th className="px-5 py-3.5 font-semibold">
-                          {t("analytics.sessionHistory.columns.tags")}
-                        </th>
-                        <th className="px-5 py-3.5 font-semibold">
-                          {t("analytics.sessionHistory.columns.weekday")}
-                        </th>
-                        <th className="px-5 py-3.5 font-semibold">
-                          <button
-                            type="button"
-                            onClick={() => handleSessionHistorySort("energy")}
-                            aria-label={t("analytics.sessionHistory.sorting.sortByEnergy")}
-                            className="inline-flex items-center gap-1 hover:text-[var(--text)]"
-                          >
-                            <span>{t("analytics.sessionHistory.columns.energy")}</span>
-                            <span className="text-[var(--text-muted)]">
-                              {getSortIndicator("energy")}
-                            </span>
-                          </button>
-                        </th>
-                        <th className="px-5 py-3.5 text-right font-semibold">
-                          {t("analytics.sessionHistory.columns.actions")}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[var(--border)]">
-                      {visibleSessionHistorySessions.map((session) => (
-                        <tr
-                          key={session.id}
-                          className="transition-colors duration-150 hover:bg-[var(--panel-muted)]/35"
-                        >
-                          <td className="px-5 py-4 text-sm font-semibold text-[var(--text)]">
-                            {sessionHistoryEditing?.sessionId === session.id &&
-                            sessionHistoryEditing.field === "title" ? (
-                              <input
-                                autoFocus
-                                value={sessionHistoryEditing.value}
-                                onChange={(event) =>
-                                  setSessionHistoryEditing((prev) =>
-                                    prev ? { ...prev, value: event.target.value } : prev,
-                                  )
-                                }
-                                onBlur={() => void saveSessionHistoryInlineEdit()}
-                                onKeyDown={handleSessionHistoryInlineEditKeyDown}
-                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
-                              />
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => startSessionHistoryInlineEdit(session, "title")}
-                                className="text-left hover:text-[var(--accent)]"
-                              >
-                                {session.title}
-                              </button>
-                            )}
-                          </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {sessionHistoryEditing?.sessionId === session.id &&
-                            sessionHistoryEditing.field === "category" ? (
-                              <input
-                                autoFocus
-                                value={sessionHistoryEditing.value}
-                                onChange={(event) =>
-                                  setSessionHistoryEditing((prev) =>
-                                    prev ? { ...prev, value: event.target.value } : prev,
-                                  )
-                                }
-                                onBlur={() => void saveSessionHistoryInlineEdit()}
-                                onKeyDown={handleSessionHistoryInlineEditKeyDown}
-                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
-                              />
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => startSessionHistoryInlineEdit(session, "category")}
-                                className="text-left hover:text-[var(--accent)]"
-                              >
-                                {session.category || t("home.uncategorized")}
-                              </button>
-                            )}
-                          </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {formatSessionDate(session.startedAt)}
-                          </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {formatSessionDate(session.endedAt)}
-                          </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text)]">
-                            {formatHumanDuration(session.effectiveDurationMs)}
-                          </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {session.pauseCount}
-                          </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {formatHumanDuration(session.pausedDurationMs)}
-                          </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {sessionHistoryEditing?.sessionId === session.id &&
-                            sessionHistoryEditing.field === "tags" ? (
-                              <input
-                                autoFocus
-                                value={sessionHistoryEditing.value}
-                                onChange={(event) =>
-                                  setSessionHistoryEditing((prev) =>
-                                    prev ? { ...prev, value: event.target.value } : prev,
-                                  )
-                                }
-                                onBlur={() => void saveSessionHistoryInlineEdit()}
-                                onKeyDown={handleSessionHistoryInlineEditKeyDown}
-                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
-                              />
-                            ) : session.tags.length > 0 ? (
-                              <div className="flex flex-wrap gap-1.5">
+                            <td className="px-5 py-4 text-sm font-semibold text-[var(--text)]">
+                              {sessionHistoryEditing?.sessionId === session.id &&
+                              sessionHistoryEditing.field === "title" ? (
+                                <input
+                                  autoFocus
+                                  value={sessionHistoryEditing.value}
+                                  onChange={(event) =>
+                                    setSessionHistoryEditing((prev) =>
+                                      prev ? { ...prev, value: event.target.value } : prev,
+                                    )
+                                  }
+                                  onBlur={() => void saveSessionHistoryInlineEdit()}
+                                  onKeyDown={handleSessionHistoryInlineEditKeyDown}
+                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
+                                />
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => startSessionHistoryInlineEdit(session, "title")}
+                                  className="text-left hover:text-[var(--accent)]"
+                                >
+                                  {session.title}
+                                </button>
+                              )}
+                            </td>
+                            <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                              {sessionHistoryEditing?.sessionId === session.id &&
+                              sessionHistoryEditing.field === "category" ? (
+                                <input
+                                  autoFocus
+                                  value={sessionHistoryEditing.value}
+                                  onChange={(event) =>
+                                    setSessionHistoryEditing((prev) =>
+                                      prev ? { ...prev, value: event.target.value } : prev,
+                                    )
+                                  }
+                                  onBlur={() => void saveSessionHistoryInlineEdit()}
+                                  onKeyDown={handleSessionHistoryInlineEditKeyDown}
+                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
+                                />
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => startSessionHistoryInlineEdit(session, "category")}
+                                  className="text-left hover:text-[var(--accent)]"
+                                >
+                                  {session.category || t("home.uncategorized")}
+                                </button>
+                              )}
+                            </td>
+                            <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                              {formatSessionDate(session.startedAt)}
+                            </td>
+                            <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                              {formatSessionDate(session.endedAt)}
+                            </td>
+                            <td className="px-5 py-4 text-sm text-[var(--text)]">
+                              {formatHumanDuration(session.effectiveDurationMs)}
+                            </td>
+                            <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                              <div className="inline-flex items-center gap-2">
+                                <span>{session.pauseCount}</span>
+                                {isHighInterruptionSession(session) ? (
+                                  <span className="rounded-full border border-amber-500/30 bg-amber-500/12 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-300">
+                                    {t("analytics.sessionHistory.indicators.highInterruptions")}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </td>
+                            <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                              {formatHumanDuration(session.pausedDurationMs)}
+                            </td>
+                            <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                              {sessionHistoryEditing?.sessionId === session.id &&
+                              sessionHistoryEditing.field === "tags" ? (
+                                <input
+                                  autoFocus
+                                  value={sessionHistoryEditing.value}
+                                  onChange={(event) =>
+                                    setSessionHistoryEditing((prev) =>
+                                      prev ? { ...prev, value: event.target.value } : prev,
+                                    )
+                                  }
+                                  onBlur={() => void saveSessionHistoryInlineEdit()}
+                                  onKeyDown={handleSessionHistoryInlineEditKeyDown}
+                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
+                                />
+                              ) : session.tags.length > 0 ? (
+                                <div className="flex flex-wrap gap-1.5">
+                                  <button
+                                    type="button"
+                                    onClick={() => startSessionHistoryInlineEdit(session, "tags")}
+                                    className="contents"
+                                  >
+                                    {session.tags.map((tag) => (
+                                      <span
+                                        key={`${session.id}-table-${tag}`}
+                                        className="rounded-full border border-[var(--border)] bg-[var(--panel-muted)] px-2 py-0.5 text-xs text-[var(--text-muted)]"
+                                      >
+                                        {tag}
+                                      </span>
+                                    ))}
+                                  </button>
+                                </div>
+                              ) : (
                                 <button
                                   type="button"
                                   onClick={() => startSessionHistoryInlineEdit(session, "tags")}
-                                  className="contents"
+                                  className="text-[var(--text-muted)]/80 hover:text-[var(--accent)]"
                                 >
-                                  {session.tags.map((tag) => (
-                                    <span
-                                      key={`${session.id}-table-${tag}`}
-                                      className="rounded-full border border-[var(--border)] bg-[var(--panel-muted)] px-2 py-0.5 text-xs text-[var(--text-muted)]"
-                                    >
-                                      {tag}
-                                    </span>
-                                  ))}
+                                  {t("analytics.sessionHistory.noTags")}
                                 </button>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => startSessionHistoryInlineEdit(session, "tags")}
-                                className="text-[var(--text-muted)]/80 hover:text-[var(--accent)]"
-                              >
-                                {t("analytics.sessionHistory.noTags")}
-                              </button>
-                            )}
-                          </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {sessionHistoryEditing?.sessionId === session.id &&
-                            sessionHistoryEditing.field === "weekday" ? (
-                              <select
-                                autoFocus
-                                value={sessionHistoryEditing.value}
-                                onChange={(event) =>
-                                  setSessionHistoryEditing((prev) =>
-                                    prev ? { ...prev, value: event.target.value } : prev,
-                                  )
-                                }
-                                onBlur={() => void saveSessionHistoryInlineEdit()}
-                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
-                              >
-                                {[
-                                  "monday",
-                                  "tuesday",
-                                  "wednesday",
-                                  "thursday",
-                                  "friday",
-                                  "saturday",
-                                  "sunday",
-                                ].map((weekday) => (
-                                  <option key={`${session.id}-${weekday}`} value={weekday}>
-                                    {t(`analytics.weekdays.${weekday}`)}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => startSessionHistoryInlineEdit(session, "weekday")}
-                                className="text-left hover:text-[var(--accent)]"
-                              >
-                                {t(`analytics.weekdays.${session.weekday}`)}
-                              </button>
-                            )}
-                          </td>
-                          <td className="px-5 py-4 text-sm">
-                            {sessionHistoryEditing?.sessionId === session.id &&
-                            sessionHistoryEditing.field === "energy" ? (
-                              <select
-                                autoFocus
-                                value={sessionHistoryEditing.value}
-                                onChange={(event) =>
-                                  setSessionHistoryEditing((prev) =>
-                                    prev ? { ...prev, value: event.target.value } : prev,
-                                  )
-                                }
-                                onBlur={() => void saveSessionHistoryInlineEdit()}
-                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
-                              >
-                                {(["bad", "regular", "good"] as EnergyLevel[]).map(
-                                  (energyValue) => (
-                                    <option
-                                      key={`${session.id}-${energyValue}`}
-                                      value={energyValue}
-                                    >
-                                      {t(`analytics.energy.${energyValue}`)}
+                              )}
+                            </td>
+                            <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                              {sessionHistoryEditing?.sessionId === session.id &&
+                              sessionHistoryEditing.field === "weekday" ? (
+                                <select
+                                  autoFocus
+                                  value={sessionHistoryEditing.value}
+                                  onChange={(event) =>
+                                    setSessionHistoryEditing((prev) =>
+                                      prev ? { ...prev, value: event.target.value } : prev,
+                                    )
+                                  }
+                                  onBlur={() => void saveSessionHistoryInlineEdit()}
+                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
+                                >
+                                  {[
+                                    "monday",
+                                    "tuesday",
+                                    "wednesday",
+                                    "thursday",
+                                    "friday",
+                                    "saturday",
+                                    "sunday",
+                                  ].map((weekday) => (
+                                    <option key={`${session.id}-${weekday}`} value={weekday}>
+                                      {t(`analytics.weekdays.${weekday}`)}
                                     </option>
-                                  ),
-                                )}
-                              </select>
-                            ) : (
+                                  ))}
+                                </select>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => startSessionHistoryInlineEdit(session, "weekday")}
+                                  className="text-left hover:text-[var(--accent)]"
+                                >
+                                  {t(`analytics.weekdays.${session.weekday}`)}
+                                </button>
+                              )}
+                            </td>
+                            <td className="px-5 py-4 text-sm">
+                              {sessionHistoryEditing?.sessionId === session.id &&
+                              sessionHistoryEditing.field === "energy" ? (
+                                <select
+                                  autoFocus
+                                  value={sessionHistoryEditing.value}
+                                  onChange={(event) =>
+                                    setSessionHistoryEditing((prev) =>
+                                      prev ? { ...prev, value: event.target.value } : prev,
+                                    )
+                                  }
+                                  onBlur={() => void saveSessionHistoryInlineEdit()}
+                                  className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
+                                >
+                                  {(["bad", "regular", "good"] as EnergyLevel[]).map(
+                                    (energyValue) => (
+                                      <option
+                                        key={`${session.id}-${energyValue}`}
+                                        value={energyValue}
+                                      >
+                                        {t(`analytics.energy.${energyValue}`)}
+                                      </option>
+                                    ),
+                                  )}
+                                </select>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => startSessionHistoryInlineEdit(session, "energy")}
+                                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 ${getEnergyBadgeClasses(session.energy)} hover:border-[var(--accent)] hover:text-[var(--accent)]`}
+                                >
+                                  {renderMoodFace(session.energy, "h-3.5 w-3.5")}
+                                  <span>{t(`analytics.energy.${session.energy}`)}</span>
+                                </button>
+                              )}
+                            </td>
+                            <td className="px-5 py-4 text-right">
                               <button
                                 type="button"
-                                onClick={() => startSessionHistoryInlineEdit(session, "energy")}
-                                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--panel-muted)] px-2.5 py-1 text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                                onClick={() => deleteCompletedSession(session.id)}
+                                aria-label={t("analytics.sessionHistory.deleteSession")}
+                                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-rose-400 transition duration-200 ease-out hover:bg-rose-500/10 hover:text-rose-500"
                               >
-                                {renderMoodFace(session.energy, "h-3.5 w-3.5")}
-                                <span>{t(`analytics.energy.${session.energy}`)}</span>
+                                <svg
+                                  viewBox="0 0 24 24"
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                >
+                                  <path d="M4 7h16" />
+                                  <path d="M9 7V5h6v2" />
+                                  <path d="M8 7l1 12h6l1-12" />
+                                  <path d="M10 11v5M14 11v5" />
+                                </svg>
+                                <span>{t("analytics.sessionHistory.delete")}</span>
                               </button>
-                            )}
-                          </td>
-                          <td className="px-5 py-4 text-right">
-                            <button
-                              type="button"
-                              onClick={() => deleteCompletedSession(session.id)}
-                              aria-label={t("analytics.sessionHistory.deleteSession")}
-                              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-rose-400 transition duration-200 ease-out hover:bg-rose-500/10 hover:text-rose-500"
-                            >
-                              <svg
-                                viewBox="0 0 24 24"
-                                className="h-4 w-4"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="1.8"
-                              >
-                                <path d="M4 7h16" />
-                                <path d="M9 7V5h6v2" />
-                                <path d="M8 7l1 12h6l1-12" />
-                                <path d="M10 11v5M14 11v5" />
-                              </svg>
-                              <span>{t("analytics.sessionHistory.delete")}</span>
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {visibleSessionHistorySessions.length > SESSION_HISTORY_PAGE_SIZE ? (
+                    <div className="flex items-center justify-center gap-3 border-t border-[var(--border)] px-5 py-4">
+                      <button
+                        type="button"
+                        onClick={() => setSessionHistoryPage((prev) => Math.max(1, prev - 1))}
+                        disabled={sessionHistoryPage <= 1}
+                        className="rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-3 py-1.5 text-sm text-[var(--text)] transition duration-200 ease-out hover:bg-[var(--panel-muted)] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {t("analytics.sessionHistory.pagination.previous")}
+                      </button>
+
+                      <span className="text-sm text-[var(--text-muted)]">
+                        {t("analytics.sessionHistory.pagination.pageStatus", {
+                          page: sessionHistoryPage,
+                          total: sessionHistoryTotalPages,
+                        })}
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSessionHistoryPage((prev) =>
+                            Math.min(sessionHistoryTotalPages, prev + 1),
+                          )
+                        }
+                        disabled={sessionHistoryPage >= sessionHistoryTotalPages}
+                        className="rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-3 py-1.5 text-sm text-[var(--text)] transition duration-200 ease-out hover:bg-[var(--panel-muted)] disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {t("analytics.sessionHistory.pagination.next")}
+                      </button>
+                    </div>
+                  ) : null}
+                </>
               )}
             </div>
           </div>
