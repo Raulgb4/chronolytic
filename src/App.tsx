@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import logoHeader from "./assets/logo/logoHeader.png";
 
 type Page = "home" | "goals" | "analytics" | "settings";
 
@@ -41,6 +42,23 @@ function formatDuration(ms: number): string {
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function formatHumanDuration(ms: number): string {
+  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+  if (totalSeconds < 60) {
+    return `${totalSeconds} ${totalSeconds === 1 ? "second" : "seconds"}`;
+  }
+
+  const totalMinutes = totalSeconds / 60;
+  if (totalMinutes < 60) {
+    const roundedMinutes = Math.round(totalMinutes);
+    return `${roundedMinutes} ${roundedMinutes === 1 ? "minute" : "minutes"}`;
+  }
+
+  const totalHours = totalMinutes / 60;
+  const roundedHours = totalHours < 10 ? Math.round(totalHours * 10) / 10 : Math.round(totalHours);
+  return `${roundedHours} ${roundedHours === 1 ? "hour" : "hours"}`;
 }
 
 function getPausedDuration(pauses: PausePeriod[], now: number): number {
@@ -179,27 +197,19 @@ function App() {
 
   function renderHeader() {
     return (
-      <header className="flex items-center justify-between border-b border-slate-200 px-8 py-5">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-900 text-sm font-semibold text-white">
-            C
-          </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-              Chronolytic
-            </p>
-            <p className="text-sm text-slate-800">Local-first productivity analytics</p>
-          </div>
+      <header className="flex h-20 items-center justify-between border-b border-slate-200 px-7">
+        <div className="flex items-center">
+          <img src={logoHeader} alt="Chronolytic" className="h-11 w-auto object-contain" />
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
             aria-label="Notifications"
           >
             <svg
               viewBox="0 0 24 24"
-              className="h-4 w-4"
+              className="h-[1.05rem] w-[1.05rem]"
               fill="none"
               stroke="currentColor"
               strokeWidth="1.8"
@@ -210,12 +220,12 @@ function App() {
           </button>
           <button
             type="button"
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
             aria-label="Profile"
           >
             <svg
               viewBox="0 0 24 24"
-              className="h-4 w-4"
+              className="h-[1.05rem] w-[1.05rem]"
               fill="none"
               stroke="currentColor"
               strokeWidth="1.8"
@@ -298,8 +308,8 @@ function App() {
     return (
       <section className="relative flex h-full flex-col px-8 py-7">
         <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center text-center">
-          <p className="text-base text-slate-600">{greeting}</p>
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="text-lg text-slate-600">{greeting}</p>
+          <p className="mt-1 text-base text-slate-500">
             {nowDate.toLocaleDateString(undefined, {
               weekday: "long",
               year: "numeric",
@@ -310,7 +320,7 @@ function App() {
           </p>
 
           <div className="mt-10 rounded-3xl border border-slate-200 bg-white px-10 py-8 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
               Active session timer
             </p>
             <p className="mt-3 text-7xl font-semibold tracking-tight text-slate-900">
@@ -318,7 +328,7 @@ function App() {
             </p>
             <div className="mt-4 flex items-center justify-center gap-2">
               <span
-                className={`rounded-full px-3 py-1 text-xs font-medium ${
+                className={`rounded-full px-3 py-1 text-sm font-medium ${
                   activeSession?.status === "running"
                     ? "bg-emerald-100 text-emerald-700"
                     : activeSession?.status === "paused"
@@ -330,7 +340,7 @@ function App() {
               </span>
             </div>
             {activeSession ? (
-              <div className="mt-4 text-sm text-slate-600">
+              <div className="mt-4 text-base text-slate-600">
                 <p className="font-medium text-slate-800">{activeSession.title}</p>
                 <p>{activeSession.category || "Uncategorized"}</p>
                 {activeSession.tags.length > 0 ? (
@@ -338,7 +348,7 @@ function App() {
                     {activeSession.tags.map((tag) => (
                       <span
                         key={`${activeSession.id}-active-${tag}`}
-                        className="rounded-full border border-slate-300 px-2 py-0.5 text-xs text-slate-700"
+                        className="rounded-full border border-slate-300 px-2 py-0.5 text-sm text-slate-700"
                       >
                         {tag}
                       </span>
@@ -354,7 +364,7 @@ function App() {
               type="button"
               onClick={() => setIsCreateSessionOpen(true)}
               disabled={Boolean(activeSession)}
-              className="rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              className="rounded-xl bg-slate-900 px-5 py-2.5 text-base font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
             >
               Create Session
             </button>
@@ -363,7 +373,7 @@ function App() {
               type="button"
               onClick={pauseSession}
               disabled={!activeSession || activeSession.status !== "running"}
-              className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-base font-medium text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Pause
             </button>
@@ -372,7 +382,7 @@ function App() {
               type="button"
               onClick={resumeSession}
               disabled={!activeSession || activeSession.status !== "paused"}
-              className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-medium text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-base font-medium text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Resume
             </button>
@@ -381,7 +391,7 @@ function App() {
               type="button"
               onClick={finishSession}
               disabled={!activeSession}
-              className="rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-2.5 text-sm font-medium text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-2.5 text-base font-medium text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Finish
             </button>
@@ -390,16 +400,16 @@ function App() {
               type="button"
               onClick={discardSession}
               disabled={!activeSession}
-              className="rounded-xl border border-rose-300 bg-rose-50 px-5 py-2.5 text-sm font-medium text-rose-800 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl border border-rose-300 bg-rose-50 px-5 py-2.5 text-base font-medium text-rose-800 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Discard
             </button>
           </div>
 
           <div className="mt-10 w-full rounded-2xl border border-slate-200 bg-white p-5 text-left">
-            <h2 className="text-base font-semibold text-slate-900">Completed sessions</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Completed sessions</h2>
             {completedSessions.length === 0 ? (
-              <p className="mt-3 text-sm text-slate-600">No completed sessions yet.</p>
+              <p className="mt-3 text-base text-slate-600">No completed sessions yet.</p>
             ) : (
               <ul className="mt-3 space-y-3">
                 {completedSessions.map((session) => (
@@ -407,12 +417,12 @@ function App() {
                     key={session.id}
                     className="rounded-xl border border-slate-200 bg-slate-50 p-4"
                   >
-                    <p className="text-sm font-semibold text-slate-900">{session.title}</p>
-                    <p className="mt-1 text-sm text-slate-600">
+                    <p className="text-base font-semibold text-slate-900">{session.title}</p>
+                    <p className="mt-1 text-base text-slate-600">
                       {session.category || "Uncategorized"} -{" "}
-                      {formatDuration(session.effectiveDurationMs)}
+                      {formatHumanDuration(session.effectiveDurationMs)}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-sm text-slate-500">
                       Started {new Date(session.startedAt).toLocaleTimeString()} - Finished{" "}
                       {new Date(session.endedAt).toLocaleTimeString()}
                     </p>
@@ -421,7 +431,7 @@ function App() {
                         {session.tags.map((tag) => (
                           <span
                             key={`${session.id}-${tag}`}
-                            className="rounded-full border border-slate-300 px-2 py-0.5 text-xs text-slate-700"
+                            className="rounded-full border border-slate-300 px-2 py-0.5 text-sm text-slate-700"
                           >
                             {tag}
                           </span>
@@ -450,17 +460,73 @@ function App() {
     return (
       <section className="flex h-full items-center justify-center px-8 py-10">
         <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
-          <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+          <p className="text-base font-semibold uppercase tracking-[0.14em] text-slate-500">
             Chronolytic
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
             {titleMap[page]}
           </h1>
-          <p className="mt-4 text-sm leading-7 text-slate-600">
+          <p className="mt-4 text-base leading-7 text-slate-600">
             This page is intentionally a placeholder for a future iteration.
           </p>
         </div>
       </section>
+    );
+  }
+
+  function renderNavIcon(page: Page) {
+    const baseClass = "h-7 w-7";
+    if (page === "home") {
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          className={baseClass}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+        >
+          <path d="M4 10.5 12 4l8 6.5V20H4z" />
+        </svg>
+      );
+    }
+    if (page === "goals") {
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          className={baseClass}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+        >
+          <circle cx="12" cy="12" r="8" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+      );
+    }
+    if (page === "analytics") {
+      return (
+        <svg
+          viewBox="0 0 24 24"
+          className={baseClass}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+        >
+          <path d="M5 18V8M12 18V5M19 18v-6" />
+        </svg>
+      );
+    }
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        className={baseClass}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      >
+        <circle cx="12" cy="12" r="3" />
+        <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4" />
+      </svg>
     );
   }
 
@@ -473,32 +539,36 @@ function App() {
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-[1400px] px-6 py-8">
-      <div className="flex w-full overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-[0_24px_60px_rgba(15,23,42,0.12)] backdrop-blur">
-        <aside className="w-64 shrink-0 border-r border-slate-200 bg-slate-50/70 p-5">
-          <p className="px-2 pb-4 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Navigation
-          </p>
-          <nav className="flex flex-col gap-1">
-            {navItems.map((item) => (
-              <button
-                key={item.page}
-                type="button"
-                onClick={() => setActivePage(item.page)}
-                className={`rounded-xl px-3 py-2 text-left text-sm transition ${
-                  activePage === item.page
-                    ? "bg-slate-900 text-white"
-                    : "text-slate-700 hover:bg-slate-200/70"
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </nav>
-        </aside>
+      <div className="flex min-h-[760px] w-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-[0_24px_60px_rgba(15,23,42,0.12)] backdrop-blur">
+        {renderHeader()}
 
-        <div className="flex min-h-[760px] flex-1 flex-col bg-white/80">
-          {renderHeader()}
-          <div className="flex-1">
+        <div className="flex flex-1">
+          <aside className="w-36 shrink-0 border-r border-slate-200 bg-slate-50/70 px-3 py-5">
+            <p className="pb-5 text-center text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">
+              Navigation
+            </p>
+            <nav className="flex flex-col gap-3">
+              {navItems.map((item) => (
+                <button
+                  key={item.page}
+                  type="button"
+                  onClick={() => setActivePage(item.page)}
+                  className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl px-2 py-3 text-center transition ${
+                    activePage === item.page
+                      ? "bg-slate-900 text-white shadow-[0_6px_20px_rgba(15,23,42,0.18)]"
+                      : "text-slate-600 hover:bg-slate-200/70"
+                  }`}
+                >
+                  {renderNavIcon(item.page)}
+                  <span className="text-[0.73rem] font-medium leading-none tracking-[0.06em]">
+                    {item.label}
+                  </span>
+                </button>
+              ))}
+            </nav>
+          </aside>
+
+          <div className="flex-1 bg-white/80">
             {activePage === "home" ? renderHome() : renderPlaceholderPage(activePage)}
           </div>
         </div>
