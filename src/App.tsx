@@ -1,36 +1,20 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import logoHeader from "./assets/logo/logoHeader.png";
+import {
+  deleteCompletedSession as deleteCompletedSessionFromRepository,
+  getCompletedSessions,
+  saveCompletedSession,
+} from "./features/sessions/sessionRepository";
+import type {
+  ActiveSession,
+  CompletedSession,
+  PausePeriod,
+} from "./features/sessions/sessionTypes";
 
-type Page = "home" | "goals" | "analytics" | "settings";
+type Page = "home" | "analytics" | "settings";
 type Language = "en" | "es";
 type ThemeMode = "light" | "dark";
-
-type PausePeriod = {
-  startedAt: number;
-  endedAt: number | null;
-};
-
-type ActiveSession = {
-  id: string;
-  title: string;
-  category: string;
-  tags: string[];
-  startedAt: number;
-  pauses: PausePeriod[];
-  status: "running" | "paused";
-};
-
-type CompletedSession = {
-  id: string;
-  title: string;
-  category: string;
-  tags: string[];
-  startedAt: number;
-  endedAt: number;
-  effectiveDurationMs: number;
-  pauses: PausePeriod[];
-};
 
 function parseTags(value: string): string[] {
   return value
@@ -132,6 +116,27 @@ function App() {
     document.documentElement.dataset.theme = themeMode;
   }, [themeMode]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCompletedSessions() {
+      try {
+        const sessions = await getCompletedSessions();
+        if (!cancelled) {
+          setCompletedSessions(sessions);
+        }
+      } catch (error) {
+        console.error("Failed to load completed sessions from SQLite", error);
+      }
+    }
+
+    void loadCompletedSessions();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const nowDate = useMemo(() => new Date(now), [now]);
   const greetingKey = useMemo(() => getGreetingKey(nowDate), [nowDate]);
 
@@ -223,7 +228,7 @@ function App() {
     });
   }
 
-  function finishSession() {
+  async function finishSession() {
     if (!activeSession) return;
     const endedAt = Date.now();
     const pauses = [...activeSession.pauses];
@@ -253,12 +258,17 @@ function App() {
       pauses,
     };
 
-    setCompletedSessions((prev) => [completed, ...prev]);
-    setActiveSession(null);
-    setTitle("");
-    setCategory("");
-    setTagsInput("");
-    setIsCreateSessionOpen(false);
+    try {
+      await saveCompletedSession(completed);
+      setCompletedSessions((prev) => [completed, ...prev]);
+      setActiveSession(null);
+      setTitle("");
+      setCategory("");
+      setTagsInput("");
+      setIsCreateSessionOpen(false);
+    } catch (error) {
+      console.error("Failed to save completed session to SQLite", error);
+    }
   }
 
   function discardSession() {
@@ -266,8 +276,13 @@ function App() {
     setIsCreateSessionOpen(false);
   }
 
-  function deleteCompletedSession(sessionId: string) {
-    setCompletedSessions((prev) => prev.filter((session) => session.id !== sessionId));
+  async function deleteCompletedSession(sessionId: string) {
+    try {
+      await deleteCompletedSessionFromRepository(sessionId);
+      setCompletedSessions((prev) => prev.filter((session) => session.id !== sessionId));
+    } catch (error) {
+      console.error("Failed to delete completed session from SQLite", error);
+    }
   }
 
   function renderHeader() {
@@ -696,12 +711,7 @@ function App() {
     );
   }
 
-  function renderPlaceholderPage(page: Exclude<Page, "home" | "settings">) {
-    const titleMap: Record<Exclude<Page, "home" | "settings">, string> = {
-      goals: t("nav.goals"),
-      analytics: t("nav.analytics"),
-    };
-
+  function renderPlaceholderPage() {
     return (
       <section className="flex h-full items-center justify-center px-8 py-10">
         <div className="w-full max-w-2xl rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-8 text-center shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
@@ -709,7 +719,7 @@ function App() {
             {t("app.name")}
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text)]">
-            {titleMap[page]}
+            {t("nav.analytics")}
           </h1>
           <p className="mt-4 text-base leading-7 text-[var(--text-muted)]">
             {t("placeholder.futurePage")}
@@ -822,20 +832,6 @@ function App() {
         </svg>
       );
     }
-    if (page === "goals") {
-      return (
-        <svg
-          viewBox="0 0 24 24"
-          className={baseClass}
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.8"
-        >
-          <circle cx="12" cy="12" r="8" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
-      );
-    }
     if (page === "analytics") {
       return (
         <svg
@@ -865,7 +861,6 @@ function App() {
 
   const navItems: Array<{ page: Page; label: string }> = [
     { page: "home", label: t("nav.home") },
-    { page: "goals", label: t("nav.goals") },
     { page: "analytics", label: t("nav.analytics") },
     { page: "settings", label: t("nav.settings") },
   ];
@@ -909,7 +904,7 @@ function App() {
               ? renderHome()
               : activePage === "settings"
                 ? renderSettingsPage()
-                : renderPlaceholderPage(activePage)}
+                : renderPlaceholderPage()}
           </div>
         </div>
       </div>
