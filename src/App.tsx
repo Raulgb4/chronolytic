@@ -77,8 +77,8 @@ function getEffectiveDuration(session: ActiveSession, now: number): number {
 
 function getGreetingKey(date: Date): string {
   const hour = date.getHours();
-  if (hour < 12) return "home.goodMorning";
-  if (hour < 18) return "home.goodAfternoon";
+  if (hour >= 6 && hour < 13) return "home.goodMorning";
+  if (hour >= 13 && hour < 21) return "home.goodAfternoon";
   return "home.goodEvening";
 }
 
