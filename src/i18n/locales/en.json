@@ -99,6 +99,8 @@
     "noActiveSession": "No active session",
     "statusRunning": "Running",
     "statusPaused": "Paused",
+    "recoveredPausedSession": "Recovered your previous session and paused it safely.",
+    "dismissRecoveryNotice": "Dismiss",
     "uncategorized": "Uncategorized",
     "createSession": "Create Session",
     "pause": "Pause",

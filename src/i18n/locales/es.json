@@ -99,6 +99,8 @@
     "noActiveSession": "Sin sesión activa",
     "statusRunning": "En progreso",
     "statusPaused": "Pausado",
+    "recoveredPausedSession": "Recuperamos tu sesion anterior y la dejamos en pausa.",
+    "dismissRecoveryNotice": "Cerrar",
     "uncategorized": "Sin categoría",
     "createSession": "Crear sesión",
     "pause": "Pausar",

@@ -3,9 +3,13 @@ import { useTranslation } from "react-i18next";
 import logoHeader from "./assets/logo/logoHeader.png";
 import { buildAnalyticsSummary } from "./features/analytics/analyticsSummary";
 import {
+  deleteActiveSession,
   deleteCompletedSession as deleteCompletedSessionFromRepository,
   getCompletedSessions,
+  getRecoverableActiveSession,
+  saveActiveSession,
   saveCompletedSession,
+  touchActiveSession,
 } from "./features/sessions/sessionRepository";
 import type {
   ActiveSession,
@@ -127,6 +131,7 @@ function App() {
   const [categorySuggestionsOpen, setCategorySuggestionsOpen] = useState(false);
   const [tagSuggestionsOpen, setTagSuggestionsOpen] = useState(false);
   const [analyticsTab, setAnalyticsTab] = useState<AnalyticsTab>("dashboard");
+  const [recoveryNoticeVisible, setRecoveryNoticeVisible] = useState(false);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -151,26 +156,64 @@ function App() {
   useEffect(() => {
     let cancelled = false;
 
-    async function loadCompletedSessions() {
+    async function loadSessionState() {
       try {
-        const sessions = await getCompletedSessions();
+        const [sessions, recoverableSession] = await Promise.all([
+          getCompletedSessions(),
+          getRecoverableActiveSession(),
+        ]);
+
         if (!cancelled) {
           setCompletedSessions(sessions);
+
+          if (recoverableSession) {
+            const wasAlreadyCompleted = sessions.some(
+              (session) => session.id === recoverableSession.id,
+            );
+            if (wasAlreadyCompleted) {
+              await deleteActiveSession(recoverableSession.id);
+              return;
+            }
+
+            setActiveSession(recoverableSession);
+            setRecoveryNoticeVisible(true);
+            await saveActiveSession(recoverableSession, Date.now());
+          }
         }
       } catch (error) {
-        console.error("Failed to load completed sessions from SQLite", {
+        console.error("Failed to load session state from SQLite", {
           error,
-          source: "getCompletedSessions",
+          source: "loadSessionState",
         });
       }
     }
 
-    void loadCompletedSessions();
+    void loadSessionState();
 
     return () => {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!activeSession || activeSession.status !== "running") {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      void touchActiveSession(activeSession.id, Date.now()).catch((error) => {
+        console.error("Failed to touch active session", {
+          error,
+          source: "touchActiveSession",
+          sessionId: activeSession.id,
+        });
+      });
+    }, 7500);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, [activeSession]);
 
   const nowDate = useMemo(() => new Date(now), [now]);
   const greetingKey = useMemo(() => getGreetingKey(nowDate), [nowDate]);
@@ -221,10 +264,10 @@ function App() {
 
   const canStartSession = title.trim().length > 0 && !activeSession;
 
-  function startSession() {
+  async function startSession() {
     if (!canStartSession) return;
     const startedAt = Date.now();
-    setActiveSession({
+    const session: ActiveSession = {
       id: crypto.randomUUID(),
       title: title.trim(),
       category: category.trim(),
@@ -233,21 +276,44 @@ function App() {
       startedAt,
       pauses: [],
       status: "running",
-    });
-    setIsCreateSessionOpen(false);
+    };
+
+    try {
+      await saveActiveSession(session, startedAt);
+      setActiveSession(session);
+      setIsCreateSessionOpen(false);
+      setRecoveryNoticeVisible(false);
+    } catch (error) {
+      console.error("Failed to persist active session on start", {
+        error,
+        source: "saveActiveSession",
+        sessionId: session.id,
+      });
+    }
   }
 
-  function pauseSession() {
+  async function pauseSession() {
     if (!activeSession || activeSession.status !== "running") return;
     const pauseStartedAt = Date.now();
-    setActiveSession({
+    const nextSession: ActiveSession = {
       ...activeSession,
       status: "paused",
       pauses: [...activeSession.pauses, { startedAt: pauseStartedAt, endedAt: null }],
-    });
+    };
+
+    try {
+      await saveActiveSession(nextSession, pauseStartedAt);
+      setActiveSession(nextSession);
+    } catch (error) {
+      console.error("Failed to persist active session on pause", {
+        error,
+        source: "saveActiveSession",
+        sessionId: activeSession.id,
+      });
+    }
   }
 
-  function resumeSession() {
+  async function resumeSession() {
     if (!activeSession || activeSession.status !== "paused") return;
     const resumedAt = Date.now();
     const pauses = [...activeSession.pauses];
@@ -257,11 +323,22 @@ function App() {
         break;
       }
     }
-    setActiveSession({
+    const nextSession: ActiveSession = {
       ...activeSession,
       status: "running",
       pauses,
-    });
+    };
+
+    try {
+      await saveActiveSession(nextSession, resumedAt);
+      setActiveSession(nextSession);
+    } catch (error) {
+      console.error("Failed to persist active session on resume", {
+        error,
+        source: "saveActiveSession",
+        sessionId: activeSession.id,
+      });
+    }
   }
 
   async function finishSession() {
@@ -300,6 +377,7 @@ function App() {
 
     try {
       await saveCompletedSession(completed);
+      await deleteActiveSession(completed.id);
       setCompletedSessions((prev) => [completed, ...prev]);
       setActiveSession(null);
       setTitle("");
@@ -307,6 +385,7 @@ function App() {
       setTagsInput("");
       setEnergy("regular");
       setIsCreateSessionOpen(false);
+      setRecoveryNoticeVisible(false);
     } catch (error) {
       console.error("Failed to save completed session to SQLite", {
         error,
@@ -343,9 +422,26 @@ function App() {
     );
   }
 
-  function discardSession() {
-    setActiveSession(null);
-    setIsCreateSessionOpen(false);
+  async function discardSession() {
+    if (!activeSession) {
+      setActiveSession(null);
+      setIsCreateSessionOpen(false);
+      setRecoveryNoticeVisible(false);
+      return;
+    }
+
+    try {
+      await deleteActiveSession(activeSession.id);
+      setActiveSession(null);
+      setIsCreateSessionOpen(false);
+      setRecoveryNoticeVisible(false);
+    } catch (error) {
+      console.error("Failed to delete active session on discard", {
+        error,
+        source: "deleteActiveSession",
+        sessionId: activeSession.id,
+      });
+    }
   }
 
   async function deleteCompletedSession(sessionId: string) {
@@ -568,6 +664,21 @@ function App() {
     return (
       <section className="relative flex h-full flex-col px-10 py-9 lg:px-12 lg:py-10">
         <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center text-center">
+          {recoveryNoticeVisible ? (
+            <div className="mb-5 w-full max-w-3xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              <div className="flex items-center justify-between gap-3">
+                <p>{t("home.recoveredPausedSession")}</p>
+                <button
+                  type="button"
+                  onClick={() => setRecoveryNoticeVisible(false)}
+                  className="rounded-lg border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-medium text-amber-900 hover:bg-amber-200"
+                >
+                  {t("home.dismissRecoveryNotice")}
+                </button>
+              </div>
+            </div>
+          ) : null}
+
           <p className="text-2xl font-medium text-[var(--text-muted)] lg:text-3xl">
             {t(greetingKey)}
           </p>
