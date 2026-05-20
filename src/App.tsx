@@ -400,7 +400,7 @@ function App() {
               <button
                 type="button"
                 onClick={() => setIsCreateSessionOpen(true)}
-                className="rounded-xl bg-[var(--accent)] px-5 py-2.5 text-base font-medium text-white transition duration-200 ease-out hover:-translate-y-0.5 hover:opacity-95 active:translate-y-0"
+                className="rounded-full bg-gradient-to-r from-[#4E89FF] to-[#5F8FFF] px-8 py-3 text-lg font-semibold text-white shadow-[0_10px_24px_rgba(78,137,255,0.34)] transition duration-200 ease-out hover:scale-[1.02] hover:from-[#5B93FF] hover:to-[#6D9BFF] hover:shadow-[0_14px_30px_rgba(78,137,255,0.42)] active:scale-[0.98]"
               >
                 {t("home.createSession")}
               </button>
