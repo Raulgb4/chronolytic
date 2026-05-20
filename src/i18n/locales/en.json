@@ -30,7 +30,36 @@
       "searchLabel": "Search session history",
       "searchPlaceholder": "Search by title, category, or tag",
       "emptySearchTitle": "No matching sessions",
-      "emptySearchDescription": "Try searching by title, category, or tag.",
+      "emptySearchDescription": "Adjust your search or filters to find sessions.",
+      "filters": {
+        "weekday": "Weekday",
+        "energy": "Energy",
+        "category": "Category",
+        "duration": "Duration",
+        "pauses": "Pauses",
+        "allWeekdays": "All weekdays",
+        "allEnergy": "All energy",
+        "allCategories": "All categories",
+        "allPauses": "All sessions",
+        "withPauses": "With pauses",
+        "withoutPauses": "Without pauses",
+        "clear": "Clear filters",
+        "clearWithCount": "Clear filters ({{count}})"
+      },
+      "durationOptions": {
+        "all": "Any duration",
+        "under30m": "Under 30 min",
+        "30mTo1h": "30 min to 1 h",
+        "1hTo2h": "1 h to 2 h",
+        "over2h": "Over 2 h"
+      },
+      "sorting": {
+        "sortByStartDate": "Sort by start date",
+        "sortByEndDate": "Sort by end date",
+        "sortByDuration": "Sort by duration",
+        "sortByPauseCount": "Sort by pause count",
+        "sortByEnergy": "Sort by energy"
+      },
       "columns": {
         "name": "Name",
         "category": "Category",

@@ -28,6 +28,15 @@ type AnalyticsTab = "dashboard" | "sessionHistory";
 type Language = "en" | "es";
 type ThemeMode = "light" | "dark";
 type BackupFeedbackType = "success" | "error";
+type SessionHistoryDurationFilter = "all" | "under30m" | "30mTo1h" | "1hTo2h" | "over2h";
+type SessionHistoryPauseFilter = "all" | "withPauses" | "withoutPauses";
+type SessionHistorySortKey =
+  | "startedAt"
+  | "endedAt"
+  | "effectiveDurationMs"
+  | "pauseCount"
+  | "energy";
+type SortDirection = "asc" | "desc";
 
 function parseTags(value: string): string[] {
   return value
@@ -127,6 +136,12 @@ function getEnergyFromIndex(index: number): EnergyLevel {
   return "regular";
 }
 
+function getEnergySortValue(energy: EnergyLevel): number {
+  if (energy === "bad") return 0;
+  if (energy === "regular") return 1;
+  return 2;
+}
+
 function getStoredLanguage(): Language {
   const value = window.localStorage.getItem("chronolytic.language");
   return value === "es" ? "es" : "en";
@@ -156,6 +171,17 @@ function App() {
   const [recoveryNoticeVisible, setRecoveryNoticeVisible] = useState(false);
   const [isBackupBusy, setIsBackupBusy] = useState(false);
   const [sessionHistorySearch, setSessionHistorySearch] = useState("");
+  const [sessionHistoryWeekdayFilter, setSessionHistoryWeekdayFilter] = useState("all");
+  const [sessionHistoryEnergyFilter, setSessionHistoryEnergyFilter] = useState("all");
+  const [sessionHistoryCategoryFilter, setSessionHistoryCategoryFilter] = useState("all");
+  const [sessionHistoryDurationFilter, setSessionHistoryDurationFilter] =
+    useState<SessionHistoryDurationFilter>("all");
+  const [sessionHistoryPauseFilter, setSessionHistoryPauseFilter] =
+    useState<SessionHistoryPauseFilter>("all");
+  const [sessionHistorySort, setSessionHistorySort] = useState<{
+    key: SessionHistorySortKey;
+    direction: SortDirection;
+  }>({ key: "endedAt", direction: "desc" });
   const [backupFeedback, setBackupFeedback] = useState<{
     type: BackupFeedbackType;
     message: string;
@@ -342,16 +368,140 @@ function App() {
     [completedSessions],
   );
 
-  const filteredCompletedSessions = useMemo(() => {
+  const visibleSessionHistorySessions = useMemo(() => {
     const normalizedQuery = normalizeSearchValue(sessionHistorySearch);
-    if (!normalizedQuery) {
-      return completedSessions;
-    }
+    const searchMatched = (
+      normalizedQuery
+        ? sessionHistorySearchIndex.filter((entry) =>
+            entry.searchableText.includes(normalizedQuery),
+          )
+        : sessionHistorySearchIndex
+    ).map((entry) => entry.session);
 
-    return sessionHistorySearchIndex
-      .filter((entry) => entry.searchableText.includes(normalizedQuery))
-      .map((entry) => entry.session);
-  }, [completedSessions, sessionHistorySearch, sessionHistorySearchIndex]);
+    const filtered = searchMatched.filter((session) => {
+      if (
+        sessionHistoryWeekdayFilter !== "all" &&
+        session.weekday !== sessionHistoryWeekdayFilter
+      ) {
+        return false;
+      }
+
+      if (sessionHistoryEnergyFilter !== "all" && session.energy !== sessionHistoryEnergyFilter) {
+        return false;
+      }
+
+      if (
+        sessionHistoryCategoryFilter !== "all" &&
+        session.category !== sessionHistoryCategoryFilter
+      ) {
+        return false;
+      }
+
+      if (sessionHistoryPauseFilter === "withPauses" && session.pauseCount === 0) {
+        return false;
+      }
+
+      if (sessionHistoryPauseFilter === "withoutPauses" && session.pauseCount > 0) {
+        return false;
+      }
+
+      const duration = session.effectiveDurationMs;
+      if (sessionHistoryDurationFilter === "under30m" && duration >= 30 * 60 * 1000) {
+        return false;
+      }
+      if (
+        sessionHistoryDurationFilter === "30mTo1h" &&
+        (duration < 30 * 60 * 1000 || duration >= 60 * 60 * 1000)
+      ) {
+        return false;
+      }
+      if (
+        sessionHistoryDurationFilter === "1hTo2h" &&
+        (duration < 60 * 60 * 1000 || duration >= 2 * 60 * 60 * 1000)
+      ) {
+        return false;
+      }
+      if (sessionHistoryDurationFilter === "over2h" && duration < 2 * 60 * 60 * 1000) {
+        return false;
+      }
+
+      return true;
+    });
+
+    return [...filtered].sort((a, b) => {
+      const factor = sessionHistorySort.direction === "asc" ? 1 : -1;
+
+      let comparison = 0;
+      switch (sessionHistorySort.key) {
+        case "startedAt":
+          comparison = a.startedAt - b.startedAt;
+          break;
+        case "endedAt":
+          comparison = a.endedAt - b.endedAt;
+          break;
+        case "effectiveDurationMs":
+          comparison = a.effectiveDurationMs - b.effectiveDurationMs;
+          break;
+        case "pauseCount":
+          comparison = a.pauseCount - b.pauseCount;
+          break;
+        case "energy":
+          comparison = getEnergySortValue(a.energy) - getEnergySortValue(b.energy);
+          break;
+      }
+
+      if (comparison === 0) {
+        return b.endedAt - a.endedAt;
+      }
+
+      return comparison * factor;
+    });
+  }, [
+    sessionHistorySearch,
+    sessionHistorySearchIndex,
+    sessionHistoryWeekdayFilter,
+    sessionHistoryEnergyFilter,
+    sessionHistoryCategoryFilter,
+    sessionHistoryPauseFilter,
+    sessionHistoryDurationFilter,
+    sessionHistorySort,
+  ]);
+
+  const hasSessionHistoryQueryOrFilters = useMemo(
+    () =>
+      normalizeSearchValue(sessionHistorySearch).length > 0 ||
+      sessionHistoryWeekdayFilter !== "all" ||
+      sessionHistoryEnergyFilter !== "all" ||
+      sessionHistoryCategoryFilter !== "all" ||
+      sessionHistoryDurationFilter !== "all" ||
+      sessionHistoryPauseFilter !== "all",
+    [
+      sessionHistorySearch,
+      sessionHistoryWeekdayFilter,
+      sessionHistoryEnergyFilter,
+      sessionHistoryCategoryFilter,
+      sessionHistoryDurationFilter,
+      sessionHistoryPauseFilter,
+    ],
+  );
+
+  const activeSessionHistoryFilterCount = useMemo(() => {
+    let count = 0;
+    if (normalizeSearchValue(sessionHistorySearch).length > 0) count += 1;
+    if (sessionHistoryWeekdayFilter !== "all") count += 1;
+    if (sessionHistoryEnergyFilter !== "all") count += 1;
+    if (sessionHistoryCategoryFilter !== "all") count += 1;
+    if (sessionHistoryDurationFilter !== "all") count += 1;
+    if (sessionHistoryPauseFilter !== "all") count += 1;
+    return count;
+  }, [
+    sessionHistorySearch,
+    sessionHistoryWeekdayFilter,
+    sessionHistoryEnergyFilter,
+    sessionHistoryCategoryFilter,
+    sessionHistoryDurationFilter,
+    sessionHistoryPauseFilter,
+  ]);
 
   const canStartSession = title.trim().length > 0 && !activeSession;
 
@@ -643,6 +793,29 @@ function App() {
     } finally {
       setIsBackupBusy(false);
     }
+  }
+
+  function handleSessionHistorySort(nextKey: SessionHistorySortKey) {
+    setSessionHistorySort((prev) =>
+      prev.key === nextKey
+        ? { ...prev, direction: prev.direction === "asc" ? "desc" : "asc" }
+        : { key: nextKey, direction: "desc" },
+    );
+  }
+
+  function resetSessionHistoryView() {
+    setSessionHistorySearch("");
+    setSessionHistoryWeekdayFilter("all");
+    setSessionHistoryEnergyFilter("all");
+    setSessionHistoryCategoryFilter("all");
+    setSessionHistoryDurationFilter("all");
+    setSessionHistoryPauseFilter("all");
+    setSessionHistorySort({ key: "endedAt", direction: "desc" });
+  }
+
+  function getSortIndicator(sortKey: SessionHistorySortKey): string {
+    if (sessionHistorySort.key !== sortKey) return "";
+    return sessionHistorySort.direction === "asc" ? "↑" : "↓";
   }
 
   function renderHeader() {
@@ -1376,6 +1549,121 @@ function App() {
               </div>
             </div>
 
+            {completedSessions.length > 0 ? (
+              <div className="mb-4 rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] p-3">
+                <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-6">
+                  <select
+                    value={sessionHistoryWeekdayFilter}
+                    onChange={(event) => setSessionHistoryWeekdayFilter(event.target.value)}
+                    className="rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-3 py-2 text-sm text-[var(--text)]"
+                    aria-label={t("analytics.sessionHistory.filters.weekday")}
+                  >
+                    <option value="all">{t("analytics.sessionHistory.filters.allWeekdays")}</option>
+                    {[
+                      "monday",
+                      "tuesday",
+                      "wednesday",
+                      "thursday",
+                      "friday",
+                      "saturday",
+                      "sunday",
+                    ].map((weekday) => (
+                      <option key={weekday} value={weekday}>
+                        {t(`analytics.weekdays.${weekday}`)}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={sessionHistoryEnergyFilter}
+                    onChange={(event) => setSessionHistoryEnergyFilter(event.target.value)}
+                    className="rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-3 py-2 text-sm text-[var(--text)]"
+                    aria-label={t("analytics.sessionHistory.filters.energy")}
+                  >
+                    <option value="all">{t("analytics.sessionHistory.filters.allEnergy")}</option>
+                    {(["bad", "regular", "good"] as EnergyLevel[]).map((energyValue) => (
+                      <option key={energyValue} value={energyValue}>
+                        {t(`analytics.energy.${energyValue}`)}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={sessionHistoryCategoryFilter}
+                    onChange={(event) => setSessionHistoryCategoryFilter(event.target.value)}
+                    className="rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-3 py-2 text-sm text-[var(--text)]"
+                    aria-label={t("analytics.sessionHistory.filters.category")}
+                  >
+                    <option value="all">
+                      {t("analytics.sessionHistory.filters.allCategories")}
+                    </option>
+                    {usedCategories.map((categoryValue) => (
+                      <option key={categoryValue} value={categoryValue}>
+                        {categoryValue}
+                      </option>
+                    ))}
+                  </select>
+
+                  <select
+                    value={sessionHistoryDurationFilter}
+                    onChange={(event) =>
+                      setSessionHistoryDurationFilter(
+                        event.target.value as SessionHistoryDurationFilter,
+                      )
+                    }
+                    className="rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-3 py-2 text-sm text-[var(--text)]"
+                    aria-label={t("analytics.sessionHistory.filters.duration")}
+                  >
+                    <option value="all">{t("analytics.sessionHistory.durationOptions.all")}</option>
+                    <option value="under30m">
+                      {t("analytics.sessionHistory.durationOptions.under30m")}
+                    </option>
+                    <option value="30mTo1h">
+                      {t("analytics.sessionHistory.durationOptions.30mTo1h")}
+                    </option>
+                    <option value="1hTo2h">
+                      {t("analytics.sessionHistory.durationOptions.1hTo2h")}
+                    </option>
+                    <option value="over2h">
+                      {t("analytics.sessionHistory.durationOptions.over2h")}
+                    </option>
+                  </select>
+
+                  <select
+                    value={sessionHistoryPauseFilter}
+                    onChange={(event) =>
+                      setSessionHistoryPauseFilter(event.target.value as SessionHistoryPauseFilter)
+                    }
+                    className="rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-3 py-2 text-sm text-[var(--text)]"
+                    aria-label={t("analytics.sessionHistory.filters.pauses")}
+                  >
+                    <option value="all">{t("analytics.sessionHistory.filters.allPauses")}</option>
+                    <option value="withPauses">
+                      {t("analytics.sessionHistory.filters.withPauses")}
+                    </option>
+                    <option value="withoutPauses">
+                      {t("analytics.sessionHistory.filters.withoutPauses")}
+                    </option>
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={resetSessionHistoryView}
+                    disabled={
+                      !hasSessionHistoryQueryOrFilters && activeSessionHistoryFilterCount === 0
+                    }
+                    className="rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-3 py-2 text-sm font-medium text-[var(--text)] transition duration-200 ease-out hover:bg-[var(--panel-muted)] disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {activeSessionHistoryFilterCount > 0
+                      ? t("analytics.sessionHistory.filters.clearWithCount", {
+                          count: activeSessionHistoryFilterCount,
+                        })
+                      : t("analytics.sessionHistory.filters.clear")}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
             {backupFeedback ? (
               <div
                 className={`mb-4 rounded-xl border px-4 py-3 text-sm ${
@@ -1400,7 +1688,7 @@ function App() {
                     {t("analytics.sessionHistory.emptyDescription")}
                   </p>
                 </div>
-              ) : filteredCompletedSessions.length === 0 ? (
+              ) : visibleSessionHistorySessions.length === 0 ? (
                 <div className="px-6 py-14 text-center">
                   <h2 className="text-xl font-semibold text-[var(--text)]">
                     {t("analytics.sessionHistory.emptySearchTitle")}
@@ -1421,16 +1709,56 @@ function App() {
                           {t("analytics.sessionHistory.columns.category")}
                         </th>
                         <th className="px-5 py-3.5 font-semibold">
-                          {t("analytics.sessionHistory.columns.startDate")}
+                          <button
+                            type="button"
+                            onClick={() => handleSessionHistorySort("startedAt")}
+                            aria-label={t("analytics.sessionHistory.sorting.sortByStartDate")}
+                            className="inline-flex items-center gap-1 hover:text-[var(--text)]"
+                          >
+                            <span>{t("analytics.sessionHistory.columns.startDate")}</span>
+                            <span className="text-[var(--text-muted)]">
+                              {getSortIndicator("startedAt")}
+                            </span>
+                          </button>
                         </th>
                         <th className="px-5 py-3.5 font-semibold">
-                          {t("analytics.sessionHistory.columns.endDate")}
+                          <button
+                            type="button"
+                            onClick={() => handleSessionHistorySort("endedAt")}
+                            aria-label={t("analytics.sessionHistory.sorting.sortByEndDate")}
+                            className="inline-flex items-center gap-1 hover:text-[var(--text)]"
+                          >
+                            <span>{t("analytics.sessionHistory.columns.endDate")}</span>
+                            <span className="text-[var(--text-muted)]">
+                              {getSortIndicator("endedAt")}
+                            </span>
+                          </button>
                         </th>
                         <th className="px-5 py-3.5 font-semibold">
-                          {t("analytics.sessionHistory.columns.duration")}
+                          <button
+                            type="button"
+                            onClick={() => handleSessionHistorySort("effectiveDurationMs")}
+                            aria-label={t("analytics.sessionHistory.sorting.sortByDuration")}
+                            className="inline-flex items-center gap-1 hover:text-[var(--text)]"
+                          >
+                            <span>{t("analytics.sessionHistory.columns.duration")}</span>
+                            <span className="text-[var(--text-muted)]">
+                              {getSortIndicator("effectiveDurationMs")}
+                            </span>
+                          </button>
                         </th>
                         <th className="px-5 py-3.5 font-semibold">
-                          {t("analytics.sessionHistory.columns.pauseCount")}
+                          <button
+                            type="button"
+                            onClick={() => handleSessionHistorySort("pauseCount")}
+                            aria-label={t("analytics.sessionHistory.sorting.sortByPauseCount")}
+                            className="inline-flex items-center gap-1 hover:text-[var(--text)]"
+                          >
+                            <span>{t("analytics.sessionHistory.columns.pauseCount")}</span>
+                            <span className="text-[var(--text-muted)]">
+                              {getSortIndicator("pauseCount")}
+                            </span>
+                          </button>
                         </th>
                         <th className="px-5 py-3.5 font-semibold">
                           {t("analytics.sessionHistory.columns.pausedTime")}
@@ -1442,7 +1770,17 @@ function App() {
                           {t("analytics.sessionHistory.columns.weekday")}
                         </th>
                         <th className="px-5 py-3.5 font-semibold">
-                          {t("analytics.sessionHistory.columns.energy")}
+                          <button
+                            type="button"
+                            onClick={() => handleSessionHistorySort("energy")}
+                            aria-label={t("analytics.sessionHistory.sorting.sortByEnergy")}
+                            className="inline-flex items-center gap-1 hover:text-[var(--text)]"
+                          >
+                            <span>{t("analytics.sessionHistory.columns.energy")}</span>
+                            <span className="text-[var(--text-muted)]">
+                              {getSortIndicator("energy")}
+                            </span>
+                          </button>
                         </th>
                         <th className="px-5 py-3.5 text-right font-semibold">
                           {t("analytics.sessionHistory.columns.actions")}
@@ -1450,7 +1788,7 @@ function App() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--border)]">
-                      {filteredCompletedSessions.map((session) => (
+                      {visibleSessionHistorySessions.map((session) => (
                         <tr
                           key={session.id}
                           className="transition-colors duration-150 hover:bg-[var(--panel-muted)]/35"
