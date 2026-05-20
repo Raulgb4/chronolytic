@@ -292,6 +292,8 @@ function App() {
       endedAt,
       effectiveDurationMs: getEffectiveDuration(sessionToSave, endedAt),
       pauses,
+      pauseCount: pauses.length,
+      pausedDurationMs: getPausedDuration(pauses, endedAt),
       weekday: getWeekdayFromTimestamp(sessionToSave.startedAt),
     };
 
@@ -757,6 +759,12 @@ function App() {
                           {t("analytics.sessionHistory.columns.duration")}
                         </th>
                         <th className="px-5 py-3.5 font-semibold">
+                          {t("analytics.sessionHistory.columns.pauseCount")}
+                        </th>
+                        <th className="px-5 py-3.5 font-semibold">
+                          {t("analytics.sessionHistory.columns.pausedTime")}
+                        </th>
+                        <th className="px-5 py-3.5 font-semibold">
                           {t("analytics.sessionHistory.columns.tags")}
                         </th>
                         <th className="px-5 py-3.5 font-semibold">
@@ -790,6 +798,12 @@ function App() {
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text)]">
                             {formatHumanDuration(session.effectiveDurationMs)}
+                          </td>
+                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                            {session.pauseCount}
+                          </td>
+                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                            {formatHumanDuration(session.pausedDurationMs)}
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
                             {session.tags.length > 0 ? (

@@ -26,5 +26,7 @@ export type CompletedSession = {
   endedAt: number;
   effectiveDurationMs: number;
   pauses: PausePeriod[];
+  pauseCount: number;
+  pausedDurationMs: number;
   weekday: string;
 };

@@ -19,6 +19,8 @@
         "startDate": "Fecha de inicio",
         "endDate": "Fecha de fin",
         "duration": "Duración",
+        "pauseCount": "Cantidad de pausas",
+        "pausedTime": "Tiempo pausado",
         "tags": "Etiquetas",
         "weekday": "Día",
         "energy": "Energía",

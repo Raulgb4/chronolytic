@@ -10,6 +10,8 @@ type SessionRow = {
   started_at: number;
   ended_at: number;
   effective_duration_ms: number;
+  pause_count: number | null;
+  paused_duration_ms: number | null;
   weekday: string | null;
   energy: string | null;
 };
@@ -53,6 +55,14 @@ async function ensureSessionsSchema(db: Database): Promise<void> {
 
   if (!existingColumns.has("weekday")) {
     await db.execute("ALTER TABLE sessions ADD COLUMN weekday TEXT");
+  }
+
+  if (!existingColumns.has("pause_count")) {
+    await db.execute("ALTER TABLE sessions ADD COLUMN pause_count INTEGER");
+  }
+
+  if (!existingColumns.has("paused_duration_ms")) {
+    await db.execute("ALTER TABLE sessions ADD COLUMN paused_duration_ms INTEGER");
   }
 
   if (!existingColumns.has("energy")) {
@@ -103,6 +113,25 @@ function parseEnergy(value: string | null): EnergyLevel {
   return "regular";
 }
 
+function getPausedDurationFromStoredPauses(pauses: PausePeriod[]): number {
+  return pauses.reduce((acc, pause) => {
+    if (
+      typeof pause.startedAt !== "number" ||
+      typeof pause.endedAt !== "number" ||
+      !Number.isFinite(pause.startedAt) ||
+      !Number.isFinite(pause.endedAt)
+    ) {
+      return acc;
+    }
+
+    if (pause.endedAt < pause.startedAt) {
+      return acc;
+    }
+
+    return acc + (pause.endedAt - pause.startedAt);
+  }, 0);
+}
+
 export async function getCompletedSessions(): Promise<CompletedSession[]> {
   const db = await getDb();
   let rows: SessionRow[] = [];
@@ -119,6 +148,8 @@ export async function getCompletedSessions(): Promise<CompletedSession[]> {
           started_at,
           ended_at,
           effective_duration_ms,
+          pause_count,
+          paused_duration_ms,
           weekday,
           energy
         FROM sessions
@@ -149,23 +180,31 @@ export async function getCompletedSessions(): Promise<CompletedSession[]> {
 
     rows = legacyRows.map((row) => ({
       ...row,
+      pause_count: null,
+      paused_duration_ms: null,
       weekday: null,
       energy: null,
     }));
   }
 
-  return rows.map((row) => ({
-    id: row.id,
-    title: row.title,
-    category: row.category ?? "",
-    tags: parseJsonArray<string>(row.tags),
-    pauses: parseJsonArray<PausePeriod>(row.pauses),
-    startedAt: row.started_at,
-    endedAt: row.ended_at,
-    effectiveDurationMs: row.effective_duration_ms,
-    weekday: row.weekday ?? getWeekdayFromTimestamp(row.started_at),
-    energy: parseEnergy(row.energy),
-  }));
+  return rows.map((row) => {
+    const pauses = parseJsonArray<PausePeriod>(row.pauses);
+
+    return {
+      id: row.id,
+      title: row.title,
+      category: row.category ?? "",
+      tags: parseJsonArray<string>(row.tags),
+      pauses,
+      startedAt: row.started_at,
+      endedAt: row.ended_at,
+      effectiveDurationMs: row.effective_duration_ms,
+      pauseCount: row.pause_count ?? pauses.length,
+      pausedDurationMs: row.paused_duration_ms ?? getPausedDurationFromStoredPauses(pauses),
+      weekday: row.weekday ?? getWeekdayFromTimestamp(row.started_at),
+      energy: parseEnergy(row.energy),
+    };
+  });
 }
 
 export async function saveCompletedSession(session: CompletedSession): Promise<void> {
@@ -181,10 +220,12 @@ export async function saveCompletedSession(session: CompletedSession): Promise<v
         started_at,
         ended_at,
         effective_duration_ms,
+        pause_count,
+        paused_duration_ms,
         weekday,
         energy,
         created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
     `,
     [
       session.id,
@@ -195,6 +236,8 @@ export async function saveCompletedSession(session: CompletedSession): Promise<v
       session.startedAt,
       session.endedAt,
       session.effectiveDurationMs,
+      session.pauseCount,
+      session.pausedDurationMs,
       session.weekday,
       session.energy,
       Date.now(),
