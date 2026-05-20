@@ -7,6 +7,32 @@
     "analytics": "Analytics",
     "settings": "Settings"
   },
+  "analytics": {
+    "tabs": {
+      "dashboard": "Dashboard",
+      "sessionHistory": "Session History"
+    },
+    "sessionHistory": {
+      "columns": {
+        "name": "Name",
+        "category": "Category",
+        "startDate": "Start date",
+        "endDate": "End date",
+        "duration": "Duration",
+        "tags": "Tags",
+        "actions": "Actions"
+      },
+      "delete": "Delete",
+      "deleteSession": "Delete completed session",
+      "noTags": "-",
+      "emptyTitle": "No completed sessions yet",
+      "emptyDescription": "Finish a session to see your history here."
+    },
+    "placeholders": {
+      "dashboardTitle": "Dashboard",
+      "sessionHistoryTitle": "Session History"
+    }
+  },
   "home": {
     "goodMorning": "Good morning",
     "goodAfternoon": "Good afternoon",
@@ -20,15 +46,7 @@
     "pause": "Pause",
     "resume": "Resume",
     "finish": "Finish",
-    "discard": "Discard",
-    "completedSessions": "Completed sessions",
-    "noCompletedSessions": "No completed sessions yet.",
-    "started": "Started",
-    "finished": "Finished",
-    "viewMore": "View more",
-    "viewLess": "View less",
-    "delete": "Delete",
-    "deleteSession": "Delete completed session"
+    "discard": "Discard"
   },
   "sessionModal": {
     "title": "Create Session",

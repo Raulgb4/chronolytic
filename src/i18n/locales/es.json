@@ -7,6 +7,32 @@
     "analytics": "Analíticas",
     "settings": "Configuración"
   },
+  "analytics": {
+    "tabs": {
+      "dashboard": "Panel",
+      "sessionHistory": "Historial de sesiones"
+    },
+    "sessionHistory": {
+      "columns": {
+        "name": "Nombre",
+        "category": "Categoría",
+        "startDate": "Fecha de inicio",
+        "endDate": "Fecha de fin",
+        "duration": "Duración",
+        "tags": "Etiquetas",
+        "actions": "Acciones"
+      },
+      "delete": "Eliminar",
+      "deleteSession": "Eliminar sesión completada",
+      "noTags": "-",
+      "emptyTitle": "Aún no hay sesiones completadas",
+      "emptyDescription": "Finaliza una sesión para ver tu historial aquí."
+    },
+    "placeholders": {
+      "dashboardTitle": "Panel",
+      "sessionHistoryTitle": "Historial de sesiones"
+    }
+  },
   "home": {
     "goodMorning": "Buenos días",
     "goodAfternoon": "Buenas tardes",
@@ -20,15 +46,7 @@
     "pause": "Pausar",
     "resume": "Reanudar",
     "finish": "Finalizar",
-    "discard": "Descartar",
-    "completedSessions": "Sesiones completadas",
-    "noCompletedSessions": "Aún no hay sesiones completadas.",
-    "started": "Inicio",
-    "finished": "Fin",
-    "viewMore": "Ver más",
-    "viewLess": "Ver menos",
-    "delete": "Eliminar",
-    "deleteSession": "Eliminar sesión completada"
+    "discard": "Descartar"
   },
   "sessionModal": {
     "title": "Crear sesión",

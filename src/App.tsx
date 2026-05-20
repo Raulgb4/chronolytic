@@ -13,6 +13,7 @@ import type {
 } from "./features/sessions/sessionTypes";
 
 type Page = "home" | "analytics" | "settings";
+type AnalyticsTab = "dashboard" | "sessionHistory";
 type Language = "en" | "es";
 type ThemeMode = "light" | "dark";
 
@@ -46,6 +47,16 @@ function formatHumanDuration(ms: number): string {
   const totalHours = totalMinutes / 60;
   const roundedHours = totalHours < 10 ? Math.round(totalHours * 10) / 10 : Math.round(totalHours);
   return `${roundedHours} ${roundedHours === 1 ? "hour" : "hours"}`;
+}
+
+function formatSessionDate(timestamp: number): string {
+  return new Date(timestamp).toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function getPausedDuration(pauses: PausePeriod[], now: number): number {
@@ -92,9 +103,9 @@ function App() {
   const [tagsInput, setTagsInput] = useState<string>("");
   const [activeSession, setActiveSession] = useState<ActiveSession | null>(null);
   const [completedSessions, setCompletedSessions] = useState<CompletedSession[]>([]);
-  const [showAllCompletedSessions, setShowAllCompletedSessions] = useState<boolean>(false);
   const [categorySuggestionsOpen, setCategorySuggestionsOpen] = useState(false);
   const [tagSuggestionsOpen, setTagSuggestionsOpen] = useState(false);
+  const [analyticsTab, setAnalyticsTab] = useState<AnalyticsTab>("dashboard");
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -543,167 +554,6 @@ function App() {
               </>
             ) : null}
           </div>
-
-          <div className="mt-10 w-full rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 text-left">
-            <h2 className="text-lg font-semibold text-[var(--text)]">
-              {t("home.completedSessions")}
-            </h2>
-            {completedSessions.length === 0 ? (
-              <p className="mt-3 text-base text-[var(--text-muted)]">
-                {t("home.noCompletedSessions")}
-              </p>
-            ) : (
-              <div className="mt-3 space-y-3">
-                <ul className="space-y-3">
-                  {completedSessions.slice(0, 2).map((session) => (
-                    <li
-                      key={session.id}
-                      className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-4"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-base font-semibold text-[var(--text)]">
-                            {session.title}
-                          </p>
-                          <p className="mt-1 text-base text-[var(--text-muted)]">
-                            {session.category || t("home.uncategorized")} -{" "}
-                            {formatHumanDuration(session.effectiveDurationMs)}
-                          </p>
-                          <p className="mt-1 text-sm text-[var(--text-muted)]">
-                            {t("home.started")} {new Date(session.startedAt).toLocaleTimeString()} -{" "}
-                            {t("home.finished")} {new Date(session.endedAt).toLocaleTimeString()}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => deleteCompletedSession(session.id)}
-                          aria-label={t("home.deleteSession")}
-                          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-rose-400 transition duration-200 ease-out hover:bg-rose-500/10 hover:text-rose-500"
-                        >
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="h-5 w-5"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="1.8"
-                          >
-                            <path d="M4 7h16" />
-                            <path d="M9 7V5h6v2" />
-                            <path d="M8 7l1 12h6l1-12" />
-                            <path d="M10 11v5M14 11v5" />
-                          </svg>
-                          <span>{t("home.delete")}</span>
-                        </button>
-                      </div>
-                      {session.tags.length > 0 ? (
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          {session.tags.map((tag) => (
-                            <span
-                              key={`${session.id}-${tag}`}
-                              className="rounded-full border border-[var(--border)] px-2 py-0.5 text-sm text-[var(--text-muted)]"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
-                    </li>
-                  ))}
-                </ul>
-
-                <div
-                  className={`overflow-hidden transition-all duration-300 ease-out ${
-                    showAllCompletedSessions ? "max-h-[1200px] opacity-100" : "max-h-0 opacity-0"
-                  }`}
-                >
-                  <ul
-                    className={`space-y-3 transition-all duration-300 ease-out ${
-                      showAllCompletedSessions ? "translate-y-0 pt-3" : "-translate-y-1 pt-0"
-                    }`}
-                  >
-                    {completedSessions.slice(2).map((session) => (
-                      <li
-                        key={session.id}
-                        className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-4"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="text-base font-semibold text-[var(--text)]">
-                              {session.title}
-                            </p>
-                            <p className="mt-1 text-base text-[var(--text-muted)]">
-                              {session.category || t("home.uncategorized")} -{" "}
-                              {formatHumanDuration(session.effectiveDurationMs)}
-                            </p>
-                            <p className="mt-1 text-sm text-[var(--text-muted)]">
-                              {t("home.started")} {new Date(session.startedAt).toLocaleTimeString()}{" "}
-                              - {t("home.finished")}{" "}
-                              {new Date(session.endedAt).toLocaleTimeString()}
-                            </p>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => deleteCompletedSession(session.id)}
-                            aria-label={t("home.deleteSession")}
-                            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-rose-400 transition duration-200 ease-out hover:bg-rose-500/10 hover:text-rose-500"
-                          >
-                            <svg
-                              viewBox="0 0 24 24"
-                              className="h-5 w-5"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="1.8"
-                            >
-                              <path d="M4 7h16" />
-                              <path d="M9 7V5h6v2" />
-                              <path d="M8 7l1 12h6l1-12" />
-                              <path d="M10 11v5M14 11v5" />
-                            </svg>
-                            <span>{t("home.delete")}</span>
-                          </button>
-                        </div>
-                        {session.tags.length > 0 ? (
-                          <div className="mt-2 flex flex-wrap gap-2">
-                            {session.tags.map((tag) => (
-                              <span
-                                key={`${session.id}-${tag}`}
-                                className="rounded-full border border-[var(--border)] px-2 py-0.5 text-sm text-[var(--text-muted)]"
-                              >
-                                {tag}
-                              </span>
-                            ))}
-                          </div>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {completedSessions.length > 2 ? (
-                  <div className="flex justify-center">
-                    <button
-                      type="button"
-                      onClick={() => setShowAllCompletedSessions((prev) => !prev)}
-                      className="group inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-[#4E89FF] transition duration-200 ease-out hover:-translate-y-0.5 hover:text-[#6A9BFF]"
-                    >
-                      <span>
-                        {showAllCompletedSessions ? t("home.viewLess") : t("home.viewMore")}
-                      </span>
-                      <svg
-                        viewBox="0 0 24 24"
-                        className={`h-4 w-4 transition-transform duration-200 ${showAllCompletedSessions ? "rotate-180" : "rotate-0"}`}
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="1.8"
-                      >
-                        <path d="m6 9 6 6 6-6" />
-                      </svg>
-                    </button>
-                  </div>
-                ) : null}
-              </div>
-            )}
-          </div>
         </div>
 
         {renderCreateSessionModal()}
@@ -711,20 +561,162 @@ function App() {
     );
   }
 
-  function renderPlaceholderPage() {
+  function renderAnalyticsPage() {
+    const analyticsTabs: Array<{ key: AnalyticsTab; label: string }> = [
+      { key: "dashboard", label: t("analytics.tabs.dashboard") },
+      { key: "sessionHistory", label: t("analytics.tabs.sessionHistory") },
+    ];
+
     return (
-      <section className="flex h-full items-center justify-center px-8 py-10">
-        <div className="w-full max-w-2xl rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-8 text-center shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
-          <p className="text-base font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-            {t("app.name")}
-          </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text)]">
-            {t("nav.analytics")}
-          </h1>
-          <p className="mt-4 text-base leading-7 text-[var(--text-muted)]">
-            {t("placeholder.futurePage")}
-          </p>
+      <section className="flex h-full flex-col">
+        <div className="border-b border-[var(--border)] bg-[var(--panel-bg)] px-8">
+          <nav className="mx-auto flex w-full max-w-4xl items-stretch">
+            {analyticsTabs.map((tab) => {
+              const isActive = analyticsTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setAnalyticsTab(tab.key)}
+                  className={`group relative flex-1 border-b-2 px-3 py-3 text-sm font-medium transition-all duration-200 ${
+                    isActive
+                      ? "border-[#4E89FF] text-[var(--text)]"
+                      : "border-transparent text-[var(--text-muted)] hover:border-[#4E89FF]/45 hover:text-[var(--text)]"
+                  }`}
+                >
+                  <span className="inline-block transition-transform duration-200 group-hover:-translate-y-0.5">
+                    {tab.label}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
         </div>
+
+        {analyticsTab === "dashboard" ? (
+          <div className="flex flex-1 items-center justify-center px-8 py-10">
+            <div className="w-full max-w-2xl rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-8 text-center shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
+              <p className="text-base font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+                {t("app.name")}
+              </p>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text)]">
+                {t("analytics.placeholders.dashboardTitle")}
+              </h1>
+              <p className="mt-4 text-base leading-7 text-[var(--text-muted)]">
+                {t("placeholder.futurePage")}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="px-8 py-8">
+            <div className="w-full rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
+              {completedSessions.length === 0 ? (
+                <div className="px-6 py-14 text-center">
+                  <h2 className="text-xl font-semibold text-[var(--text)]">
+                    {t("analytics.sessionHistory.emptyTitle")}
+                  </h2>
+                  <p className="mt-2 text-sm text-[var(--text-muted)]">
+                    {t("analytics.sessionHistory.emptyDescription")}
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[980px] text-left">
+                    <thead className="border-b border-[var(--border)] bg-[var(--panel-muted)]/40 text-xs uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      <tr>
+                        <th className="px-5 py-3.5 font-semibold">
+                          {t("analytics.sessionHistory.columns.name")}
+                        </th>
+                        <th className="px-5 py-3.5 font-semibold">
+                          {t("analytics.sessionHistory.columns.category")}
+                        </th>
+                        <th className="px-5 py-3.5 font-semibold">
+                          {t("analytics.sessionHistory.columns.startDate")}
+                        </th>
+                        <th className="px-5 py-3.5 font-semibold">
+                          {t("analytics.sessionHistory.columns.endDate")}
+                        </th>
+                        <th className="px-5 py-3.5 font-semibold">
+                          {t("analytics.sessionHistory.columns.duration")}
+                        </th>
+                        <th className="px-5 py-3.5 font-semibold">
+                          {t("analytics.sessionHistory.columns.tags")}
+                        </th>
+                        <th className="px-5 py-3.5 text-right font-semibold">
+                          {t("analytics.sessionHistory.columns.actions")}
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[var(--border)]">
+                      {completedSessions.map((session) => (
+                        <tr
+                          key={session.id}
+                          className="transition-colors duration-150 hover:bg-[var(--panel-muted)]/35"
+                        >
+                          <td className="px-5 py-4 text-sm font-semibold text-[var(--text)]">
+                            {session.title}
+                          </td>
+                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                            {session.category || t("home.uncategorized")}
+                          </td>
+                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                            {formatSessionDate(session.startedAt)}
+                          </td>
+                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                            {formatSessionDate(session.endedAt)}
+                          </td>
+                          <td className="px-5 py-4 text-sm text-[var(--text)]">
+                            {formatHumanDuration(session.effectiveDurationMs)}
+                          </td>
+                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                            {session.tags.length > 0 ? (
+                              <div className="flex flex-wrap gap-1.5">
+                                {session.tags.map((tag) => (
+                                  <span
+                                    key={`${session.id}-table-${tag}`}
+                                    className="rounded-full border border-[var(--border)] bg-[var(--panel-muted)] px-2 py-0.5 text-xs text-[var(--text-muted)]"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-[var(--text-muted)]/80">
+                                {t("analytics.sessionHistory.noTags")}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-5 py-4 text-right">
+                            <button
+                              type="button"
+                              onClick={() => deleteCompletedSession(session.id)}
+                              aria-label={t("analytics.sessionHistory.deleteSession")}
+                              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-rose-400 transition duration-200 ease-out hover:bg-rose-500/10 hover:text-rose-500"
+                            >
+                              <svg
+                                viewBox="0 0 24 24"
+                                className="h-4 w-4"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                              >
+                                <path d="M4 7h16" />
+                                <path d="M9 7V5h6v2" />
+                                <path d="M8 7l1 12h6l1-12" />
+                                <path d="M10 11v5M14 11v5" />
+                              </svg>
+                              <span>{t("analytics.sessionHistory.delete")}</span>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </section>
     );
   }
@@ -904,7 +896,7 @@ function App() {
               ? renderHome()
               : activePage === "settings"
                 ? renderSettingsPage()
-                : renderPlaceholderPage()}
+                : renderAnalyticsPage()}
           </div>
         </div>
       </div>
