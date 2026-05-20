@@ -13,6 +13,24 @@
       "sessionHistory": "Session History"
     },
     "sessionHistory": {
+      "backup": {
+        "export": "Export Backup",
+        "import": "Import Backup",
+        "processing": "Processing...",
+        "exportDialogTitle": "Export session history backup",
+        "importDialogTitle": "Import session history backup",
+        "exportSuccess": "Backup exported with {{count}} sessions.",
+        "exportError": "Could not export backup.",
+        "importSuccess": "Imported {{count}} sessions successfully.",
+        "importSuccessWithSkipped": "Imported {{imported}} sessions. Skipped {{skipped}} duplicates.",
+        "importError": "Could not import backup. Check that the file is a valid Chronolytic backup.",
+        "emptyBackupError": "The backup file has no sessions to import.",
+        "duplicateOnlyError": "All sessions in this backup already exist."
+      },
+      "searchLabel": "Search session history",
+      "searchPlaceholder": "Search by title, category, or tag",
+      "emptySearchTitle": "No matching sessions",
+      "emptySearchDescription": "Try searching by title, category, or tag.",
       "columns": {
         "name": "Name",
         "category": "Category",

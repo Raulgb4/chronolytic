@@ -296,6 +296,10 @@ export async function getCompletedSessions(): Promise<CompletedSession[]> {
   });
 }
 
+export async function exportCompletedSessions(): Promise<CompletedSession[]> {
+  return getCompletedSessions();
+}
+
 export async function saveCompletedSession(session: CompletedSession): Promise<void> {
   const db = await getDb();
   await db.execute(
@@ -337,6 +341,76 @@ export async function saveCompletedSession(session: CompletedSession): Promise<v
 export async function deleteCompletedSession(id: string): Promise<void> {
   const db = await getDb();
   await db.execute("DELETE FROM sessions WHERE id = $1", [id]);
+}
+
+export type ImportCompletedSessionsResult = {
+  importedCount: number;
+  skippedDuplicateCount: number;
+};
+
+export async function importCompletedSessions(
+  sessions: CompletedSession[],
+): Promise<ImportCompletedSessionsResult> {
+  if (sessions.length === 0) {
+    return { importedCount: 0, skippedDuplicateCount: 0 };
+  }
+
+  const db = await getDb();
+  const existingRows = await db.select<Array<{ id: string }>>("SELECT id FROM sessions");
+  const existingIds = new Set(existingRows.map((row) => row.id));
+
+  let importedCount = 0;
+  let skippedDuplicateCount = 0;
+
+  for (const session of sessions) {
+    if (existingIds.has(session.id)) {
+      skippedDuplicateCount += 1;
+      continue;
+    }
+
+    await db.execute(
+      `
+        INSERT INTO sessions (
+          id,
+          title,
+          category,
+          tags,
+          pauses,
+          started_at,
+          ended_at,
+          effective_duration_ms,
+          pause_count,
+          paused_duration_ms,
+          weekday,
+          energy,
+          created_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      `,
+      [
+        session.id,
+        session.title,
+        session.category || null,
+        JSON.stringify(session.tags),
+        JSON.stringify(session.pauses),
+        session.startedAt,
+        session.endedAt,
+        session.effectiveDurationMs,
+        session.pauseCount,
+        session.pausedDurationMs,
+        session.weekday,
+        session.energy,
+        Date.now(),
+      ],
+    );
+
+    existingIds.add(session.id);
+    importedCount += 1;
+  }
+
+  return {
+    importedCount,
+    skippedDuplicateCount,
+  };
 }
 
 export async function saveActiveSession(

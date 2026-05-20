@@ -13,6 +13,24 @@
       "sessionHistory": "Historial de sesiones"
     },
     "sessionHistory": {
+      "backup": {
+        "export": "Exportar respaldo",
+        "import": "Importar respaldo",
+        "processing": "Procesando...",
+        "exportDialogTitle": "Exportar respaldo del historial",
+        "importDialogTitle": "Importar respaldo del historial",
+        "exportSuccess": "Respaldo exportado con {{count}} sesiones.",
+        "exportError": "No se pudo exportar el respaldo.",
+        "importSuccess": "Se importaron {{count}} sesiones correctamente.",
+        "importSuccessWithSkipped": "Se importaron {{imported}} sesiones. Se omitieron {{skipped}} duplicadas.",
+        "importError": "No se pudo importar el respaldo. Verifica que el archivo sea un respaldo valido de Chronolytic.",
+        "emptyBackupError": "El respaldo no tiene sesiones para importar.",
+        "duplicateOnlyError": "Todas las sesiones de este respaldo ya existen."
+      },
+      "searchLabel": "Búsqueda en historial de sesiones",
+      "searchPlaceholder": "Buscar por título, categoría o etiqueta",
+      "emptySearchTitle": "No hay sesiones coincidentes",
+      "emptySearchDescription": "Prueba una búsqueda por título, categoría o etiqueta.",
       "columns": {
         "name": "Nombre",
         "category": "Categoría",

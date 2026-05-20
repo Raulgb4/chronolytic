@@ -1,12 +1,17 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { open, save } from "@tauri-apps/plugin-dialog";
+import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { useTranslation } from "react-i18next";
 import logoHeader from "./assets/logo/logoHeader.png";
 import { buildAnalyticsSummary } from "./features/analytics/analyticsSummary";
+import { createSessionBackup, parseSessionBackup } from "./features/sessions/sessionBackup";
 import {
   deleteActiveSession,
   deleteCompletedSession as deleteCompletedSessionFromRepository,
+  exportCompletedSessions,
   getCompletedSessions,
   getRecoverableActiveSession,
+  importCompletedSessions,
   saveActiveSession,
   saveCompletedSession,
   touchActiveSession,
@@ -22,6 +27,7 @@ type Page = "home" | "analytics" | "settings";
 type AnalyticsTab = "dashboard" | "sessionHistory";
 type Language = "en" | "es";
 type ThemeMode = "light" | "dark";
+type BackupFeedbackType = "success" | "error";
 
 function parseTags(value: string): string[] {
   return value
@@ -63,6 +69,22 @@ function formatSessionDate(timestamp: number): string {
     hour: "2-digit",
     minute: "2-digit",
   });
+}
+
+function normalizeSearchValue(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getBackupDefaultFileName(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `chronolytic-session-history-${y}-${m}-${d}.json`;
 }
 
 function getPausedDuration(pauses: PausePeriod[], now: number): number {
@@ -132,6 +154,15 @@ function App() {
   const [tagSuggestionsOpen, setTagSuggestionsOpen] = useState(false);
   const [analyticsTab, setAnalyticsTab] = useState<AnalyticsTab>("dashboard");
   const [recoveryNoticeVisible, setRecoveryNoticeVisible] = useState(false);
+  const [isBackupBusy, setIsBackupBusy] = useState(false);
+  const [sessionHistorySearch, setSessionHistorySearch] = useState("");
+  const [backupFeedback, setBackupFeedback] = useState<{
+    type: BackupFeedbackType;
+    message: string;
+  } | null>(null);
+  const [isBackupFeedbackVisible, setIsBackupFeedbackVisible] = useState(false);
+  const backupFadeTimeoutRef = useRef<number | null>(null);
+  const backupRemoveTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -215,6 +246,44 @@ function App() {
     };
   }, [activeSession]);
 
+  useEffect(() => {
+    if (backupFadeTimeoutRef.current) {
+      window.clearTimeout(backupFadeTimeoutRef.current);
+      backupFadeTimeoutRef.current = null;
+    }
+
+    if (backupRemoveTimeoutRef.current) {
+      window.clearTimeout(backupRemoveTimeoutRef.current);
+      backupRemoveTimeoutRef.current = null;
+    }
+
+    if (!backupFeedback) {
+      setIsBackupFeedbackVisible(false);
+      return;
+    }
+
+    setIsBackupFeedbackVisible(true);
+    backupFadeTimeoutRef.current = window.setTimeout(() => {
+      setIsBackupFeedbackVisible(false);
+    }, 2600);
+
+    backupRemoveTimeoutRef.current = window.setTimeout(() => {
+      setBackupFeedback(null);
+    }, 3000);
+
+    return () => {
+      if (backupFadeTimeoutRef.current) {
+        window.clearTimeout(backupFadeTimeoutRef.current);
+        backupFadeTimeoutRef.current = null;
+      }
+
+      if (backupRemoveTimeoutRef.current) {
+        window.clearTimeout(backupRemoveTimeoutRef.current);
+        backupRemoveTimeoutRef.current = null;
+      }
+    };
+  }, [backupFeedback]);
+
   const nowDate = useMemo(() => new Date(now), [now]);
   const greetingKey = useMemo(() => getGreetingKey(nowDate), [nowDate]);
 
@@ -261,6 +330,28 @@ function App() {
         : [],
     [usedTags, currentTagSegment],
   );
+
+  const sessionHistorySearchIndex = useMemo(
+    () =>
+      completedSessions.map((session) => ({
+        session,
+        searchableText: normalizeSearchValue(
+          `${session.title} ${session.category} ${session.tags.join(" ")}`,
+        ),
+      })),
+    [completedSessions],
+  );
+
+  const filteredCompletedSessions = useMemo(() => {
+    const normalizedQuery = normalizeSearchValue(sessionHistorySearch);
+    if (!normalizedQuery) {
+      return completedSessions;
+    }
+
+    return sessionHistorySearchIndex
+      .filter((entry) => entry.searchableText.includes(normalizedQuery))
+      .map((entry) => entry.session);
+  }, [completedSessions, sessionHistorySearch, sessionHistorySearchIndex]);
 
   const canStartSession = title.trim().length > 0 && !activeSession;
 
@@ -450,6 +541,107 @@ function App() {
       setCompletedSessions((prev) => prev.filter((session) => session.id !== sessionId));
     } catch (error) {
       console.error("Failed to delete completed session from SQLite", error);
+    }
+  }
+
+  async function handleExportBackup() {
+    if (completedSessions.length === 0 || isBackupBusy) return;
+
+    setIsBackupBusy(true);
+    setBackupFeedback(null);
+
+    try {
+      const selectedPath = await save({
+        title: t("analytics.sessionHistory.backup.exportDialogTitle"),
+        defaultPath: getBackupDefaultFileName(),
+        filters: [{ name: "JSON", extensions: ["json"] }],
+      });
+
+      if (!selectedPath) {
+        return;
+      }
+
+      const sessions = await exportCompletedSessions();
+      const backup = createSessionBackup(sessions);
+      await writeTextFile(selectedPath, JSON.stringify(backup, null, 2));
+
+      setBackupFeedback({
+        type: "success",
+        message: t("analytics.sessionHistory.backup.exportSuccess", {
+          count: sessions.length,
+        }),
+      });
+    } catch (error) {
+      console.error("Failed to export session backup", error);
+      setBackupFeedback({
+        type: "error",
+        message: t("analytics.sessionHistory.backup.exportError"),
+      });
+    } finally {
+      setIsBackupBusy(false);
+    }
+  }
+
+  async function handleImportBackup() {
+    if (completedSessions.length > 0 || isBackupBusy) return;
+
+    setIsBackupBusy(true);
+    setBackupFeedback(null);
+
+    try {
+      const selectedPath = await open({
+        title: t("analytics.sessionHistory.backup.importDialogTitle"),
+        multiple: false,
+        filters: [{ name: "JSON", extensions: ["json"] }],
+      });
+
+      if (!selectedPath || Array.isArray(selectedPath)) {
+        return;
+      }
+
+      const backupContent = await readTextFile(selectedPath);
+      const parsedSessions = parseSessionBackup(backupContent);
+
+      if (parsedSessions.length === 0) {
+        setBackupFeedback({
+          type: "error",
+          message: t("analytics.sessionHistory.backup.emptyBackupError"),
+        });
+        return;
+      }
+
+      const result = await importCompletedSessions(parsedSessions);
+      const reloadedSessions = await getCompletedSessions();
+      setCompletedSessions(reloadedSessions);
+
+      if (result.importedCount === 0) {
+        setBackupFeedback({
+          type: "error",
+          message: t("analytics.sessionHistory.backup.duplicateOnlyError"),
+        });
+        return;
+      }
+
+      setBackupFeedback({
+        type: "success",
+        message:
+          result.skippedDuplicateCount > 0
+            ? t("analytics.sessionHistory.backup.importSuccessWithSkipped", {
+                imported: result.importedCount,
+                skipped: result.skippedDuplicateCount,
+              })
+            : t("analytics.sessionHistory.backup.importSuccess", {
+                count: result.importedCount,
+              }),
+      });
+    } catch (error) {
+      console.error("Failed to import session backup", error);
+      setBackupFeedback({
+        type: "error",
+        message: t("analytics.sessionHistory.backup.importError"),
+      });
+    } finally {
+      setIsBackupBusy(false);
     }
   }
 
@@ -1136,6 +1328,68 @@ function App() {
           </div>
         ) : (
           <div className="px-8 py-8">
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-base font-semibold text-[var(--text)]">
+                {t("analytics.tabs.sessionHistory")}
+              </h2>
+
+              <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+                {completedSessions.length > 0 ? (
+                  <div className="w-full sm:w-80">
+                    <label className="sr-only" htmlFor="session-history-search">
+                      {t("analytics.sessionHistory.searchLabel")}
+                    </label>
+                    <input
+                      id="session-history-search"
+                      type="text"
+                      value={sessionHistorySearch}
+                      onChange={(event) => setSessionHistorySearch(event.target.value)}
+                      placeholder={t("analytics.sessionHistory.searchPlaceholder")}
+                      className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
+                    />
+                  </div>
+                ) : null}
+
+                {completedSessions.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={handleExportBackup}
+                    disabled={isBackupBusy}
+                    className="rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-4 py-2 text-sm font-medium text-[var(--text)] transition duration-200 ease-out hover:bg-[var(--panel-muted)] disabled:cursor-not-allowed disabled:opacity-55"
+                  >
+                    {isBackupBusy
+                      ? t("analytics.sessionHistory.backup.processing")
+                      : t("analytics.sessionHistory.backup.export")}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleImportBackup}
+                    disabled={isBackupBusy}
+                    className="rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-4 py-2 text-sm font-medium text-[var(--text)] transition duration-200 ease-out hover:bg-[var(--panel-muted)] disabled:cursor-not-allowed disabled:opacity-55"
+                  >
+                    {isBackupBusy
+                      ? t("analytics.sessionHistory.backup.processing")
+                      : t("analytics.sessionHistory.backup.import")}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {backupFeedback ? (
+              <div
+                className={`mb-4 rounded-xl border px-4 py-3 text-sm ${
+                  backupFeedback.type === "success"
+                    ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                    : "border-rose-300 bg-rose-50 text-rose-800"
+                } transition-opacity duration-300 ease-out ${
+                  isBackupFeedbackVisible ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                {backupFeedback.message}
+              </div>
+            ) : null}
+
             <div className="w-full rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
               {completedSessions.length === 0 ? (
                 <div className="px-6 py-14 text-center">
@@ -1144,6 +1398,15 @@ function App() {
                   </h2>
                   <p className="mt-2 text-sm text-[var(--text-muted)]">
                     {t("analytics.sessionHistory.emptyDescription")}
+                  </p>
+                </div>
+              ) : filteredCompletedSessions.length === 0 ? (
+                <div className="px-6 py-14 text-center">
+                  <h2 className="text-xl font-semibold text-[var(--text)]">
+                    {t("analytics.sessionHistory.emptySearchTitle")}
+                  </h2>
+                  <p className="mt-2 text-sm text-[var(--text-muted)]">
+                    {t("analytics.sessionHistory.emptySearchDescription")}
                   </p>
                 </div>
               ) : (
@@ -1187,7 +1450,7 @@ function App() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[var(--border)]">
-                      {completedSessions.map((session) => (
+                      {filteredCompletedSessions.map((session) => (
                         <tr
                           key={session.id}
                           className="transition-colors duration-150 hover:bg-[var(--panel-muted)]/35"
