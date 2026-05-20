@@ -197,7 +197,7 @@ function App() {
 
   function renderHeader() {
     return (
-      <header className="flex h-20 items-center justify-between border-b border-slate-200 px-7">
+      <header className="flex h-20 shrink-0 items-center justify-between border-b border-slate-200 px-7">
         <div className="flex items-center">
           <img src={logoHeader} alt="Chronolytic" className="h-11 w-auto object-contain" />
         </div>
@@ -359,51 +359,56 @@ function App() {
             ) : null}
           </div>
 
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={() => setIsCreateSessionOpen(true)}
-              disabled={Boolean(activeSession)}
-              className="rounded-xl bg-slate-900 px-5 py-2.5 text-base font-medium text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
-            >
-              Create Session
-            </button>
+          <div className="mt-8 flex min-h-12 flex-wrap items-center justify-center gap-3">
+            {!activeSession ? (
+              <button
+                type="button"
+                onClick={() => setIsCreateSessionOpen(true)}
+                className="rounded-xl bg-slate-900 px-5 py-2.5 text-base font-medium text-white transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-800 hover:opacity-95 active:translate-y-0"
+              >
+                Create Session
+              </button>
+            ) : null}
 
-            <button
-              type="button"
-              onClick={pauseSession}
-              disabled={!activeSession || activeSession.status !== "running"}
-              className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-base font-medium text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Pause
-            </button>
+            {activeSession?.status === "running" ? (
+              <button
+                type="button"
+                onClick={pauseSession}
+                className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-base font-medium text-slate-800 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-50 hover:opacity-95 active:translate-y-0"
+              >
+                Pause
+              </button>
+            ) : null}
 
-            <button
-              type="button"
-              onClick={resumeSession}
-              disabled={!activeSession || activeSession.status !== "paused"}
-              className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-base font-medium text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Resume
-            </button>
+            {activeSession?.status === "paused" ? (
+              <button
+                type="button"
+                onClick={resumeSession}
+                className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-base font-medium text-slate-800 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-50 hover:opacity-95 active:translate-y-0"
+              >
+                Resume
+              </button>
+            ) : null}
 
-            <button
-              type="button"
-              onClick={finishSession}
-              disabled={!activeSession}
-              className="rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-2.5 text-base font-medium text-emerald-800 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Finish
-            </button>
+            {activeSession ? (
+              <>
+                <button
+                  type="button"
+                  onClick={finishSession}
+                  className="rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-2.5 text-base font-medium text-emerald-800 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-emerald-100 hover:opacity-95 active:translate-y-0"
+                >
+                  Finish
+                </button>
 
-            <button
-              type="button"
-              onClick={discardSession}
-              disabled={!activeSession}
-              className="rounded-xl border border-rose-300 bg-rose-50 px-5 py-2.5 text-base font-medium text-rose-800 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              Discard
-            </button>
+                <button
+                  type="button"
+                  onClick={discardSession}
+                  className="rounded-xl border border-rose-300 bg-rose-50 px-5 py-2.5 text-base font-medium text-rose-800 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-rose-100 hover:opacity-95 active:translate-y-0"
+                >
+                  Discard
+                </button>
+              </>
+            ) : null}
           </div>
 
           <div className="mt-10 w-full rounded-2xl border border-slate-200 bg-white p-5 text-left">
@@ -524,8 +529,8 @@ function App() {
         stroke="currentColor"
         strokeWidth="1.8"
       >
-        <circle cx="12" cy="12" r="3" />
-        <path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4" />
+        <path d="M12 8.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4Z" />
+        <path d="M19 12a1 1 0 0 0-.7-1l-1.1-.3a5.6 5.6 0 0 0-.5-1.2l.6-1a1 1 0 0 0-.1-1.2l-.9-.9a1 1 0 0 0-1.2-.1l-1 .6a5.6 5.6 0 0 0-1.2-.5l-.3-1.1a1 1 0 0 0-1-.7h-1.2a1 1 0 0 0-1 .7l-.3 1.1a5.6 5.6 0 0 0-1.2.5l-1-.6a1 1 0 0 0-1.2.1l-.9.9a1 1 0 0 0-.1 1.2l.6 1a5.6 5.6 0 0 0-.5 1.2l-1.1.3a1 1 0 0 0-.7 1v1.2a1 1 0 0 0 .7 1l1.1.3c.1.4.3.8.5 1.2l-.6 1a1 1 0 0 0 .1 1.2l.9.9a1 1 0 0 0 1.2.1l1-.6c.4.2.8.4 1.2.5l.3 1.1a1 1 0 0 0 1 .7h1.2a1 1 0 0 0 1-.7l.3-1.1c.4-.1.8-.3 1.2-.5l1 .6a1 1 0 0 0 1.2-.1l.9-.9a1 1 0 0 0 .1-1.2l-.6-1c.2-.4.4-.8.5-1.2l1.1-.3a1 1 0 0 0 .7-1V12Z" />
       </svg>
     );
   }
@@ -538,29 +543,26 @@ function App() {
   ];
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-[1400px] px-6 py-8">
-      <div className="flex min-h-[760px] w-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white/90 shadow-[0_24px_60px_rgba(15,23,42,0.12)] backdrop-blur">
+    <main className="flex h-screen w-screen overflow-hidden">
+      <div className="flex h-full w-full flex-col overflow-hidden bg-white/90">
         {renderHeader()}
 
-        <div className="flex flex-1">
+        <div className="flex min-h-0 flex-1">
           <aside className="w-36 shrink-0 border-r border-slate-200 bg-slate-50/70 px-3 py-5">
-            <p className="pb-5 text-center text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-slate-500">
-              Navigation
-            </p>
             <nav className="flex flex-col gap-3">
               {navItems.map((item) => (
                 <button
                   key={item.page}
                   type="button"
                   onClick={() => setActivePage(item.page)}
-                  className={`flex flex-col items-center justify-center gap-1.5 rounded-2xl px-2 py-3 text-center transition ${
+                  className={`flex flex-col items-center justify-center gap-2 rounded-2xl px-2 py-3.5 text-center transition ${
                     activePage === item.page
                       ? "bg-slate-900 text-white shadow-[0_6px_20px_rgba(15,23,42,0.18)]"
                       : "text-slate-600 hover:bg-slate-200/70"
                   }`}
                 >
                   {renderNavIcon(item.page)}
-                  <span className="text-[0.73rem] font-medium leading-none tracking-[0.06em]">
+                  <span className="text-sm font-semibold leading-none tracking-[0.05em]">
                     {item.label}
                   </span>
                 </button>
@@ -568,7 +570,7 @@ function App() {
             </nav>
           </aside>
 
-          <div className="flex-1 bg-white/80">
+          <div className="min-w-0 flex-1 overflow-y-auto bg-white/80">
             {activePage === "home" ? renderHome() : renderPlaceholderPage(activePage)}
           </div>
         </div>
