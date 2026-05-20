@@ -794,8 +794,8 @@ function App() {
         {renderHeader()}
 
         <div className="flex min-h-0 flex-1">
-          <aside className="w-36 shrink-0 border-r border-[var(--border)] bg-[var(--sidebar-bg)] px-3 py-5">
-            <nav className="flex flex-col gap-3">
+          <aside className="flex w-36 shrink-0 border-r border-[var(--border)] bg-[var(--sidebar-bg)] px-3 py-5">
+            <nav className="flex h-full w-full flex-col justify-evenly">
               {navItems.map((item) => (
                 <button
                   key={item.page}
