@@ -227,6 +227,10 @@ function App() {
     type: SettingsFeedbackType;
     message: string;
   } | null>(null);
+  const [isStartupSessionLoaded, setIsStartupSessionLoaded] = useState(false);
+  const [isStartupMinElapsed, setIsStartupMinElapsed] = useState(false);
+  const [isStartupLeaving, setIsStartupLeaving] = useState(false);
+  const [isStartupComplete, setIsStartupComplete] = useState(false);
   const backupFadeTimeoutRef = useRef<number | null>(null);
   const backupRemoveTimeoutRef = useRef<number | null>(null);
 
@@ -235,6 +239,11 @@ function App() {
       setNow(Date.now());
     }, 1000);
     return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsStartupMinElapsed(true), 500);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -282,6 +291,10 @@ function App() {
           error,
           source: "loadSessionState",
         });
+      } finally {
+        if (!cancelled) {
+          setIsStartupSessionLoaded(true);
+        }
       }
     }
 
@@ -332,6 +345,18 @@ function App() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (isStartupSessionLoaded && isStartupMinElapsed) {
+      setIsStartupLeaving(true);
+    }
+  }, [isStartupSessionLoaded, isStartupMinElapsed]);
+
+  useEffect(() => {
+    if (!isStartupLeaving) return;
+    const timer = setTimeout(() => setIsStartupComplete(true), 300);
+    return () => clearTimeout(timer);
+  }, [isStartupLeaving]);
 
   useEffect(() => {
     if (backupFadeTimeoutRef.current) {
@@ -2544,49 +2569,69 @@ function App() {
   ];
 
   return (
-    <main className="flex h-screen w-screen overflow-hidden">
-      <div className="flex h-full w-full flex-col overflow-hidden bg-[var(--shell-bg)] text-[var(--text)]">
-        {renderHeader()}
-
-        <div className="flex min-h-0 flex-1">
-          <aside className="flex w-56 shrink-0 border-r border-[var(--border)] bg-[var(--sidebar-bg)] px-4 py-7">
-            <nav className="flex h-full w-full flex-col justify-evenly">
-              {navItems.map((item) => (
-                <button
-                  key={item.page}
-                  type="button"
-                  onClick={() => setActivePage(item.page)}
-                  className={`relative flex flex-col items-center justify-center gap-3 rounded-3xl px-3 py-5 text-center transition ${
-                    activePage === item.page
-                      ? "text-[#4E89FF]"
-                      : "text-[var(--text-muted)] hover:bg-[var(--panel-muted)] hover:text-[#4E89FF]"
-                  }`}
-                >
-                  <span
-                    aria-hidden="true"
-                    className={`absolute bottom-2 left-0 top-2 w-0.5 rounded-r-md bg-[#4E89FF] transition-all duration-200 ease-out ${
-                      activePage === item.page ? "opacity-100" : "opacity-0"
-                    }`}
-                  />
-                  {renderNavIcon(item.page)}
-                  <span className="text-lg font-semibold leading-none tracking-[0.05em]">
-                    {item.label}
-                  </span>
-                </button>
-              ))}
-            </nav>
-          </aside>
-
-          <div className="min-w-0 flex-1 overflow-y-auto bg-[var(--panel-bg)]">
-            {activePage === "home"
-              ? renderHome()
-              : activePage === "settings"
-                ? renderSettingsPage()
-                : renderAnalyticsPage()}
+    <>
+      {!isStartupComplete && (
+        <div
+          className={`fixed inset-0 z-50 flex flex-col items-center justify-center transition-opacity duration-300 ${isStartupLeaving ? "opacity-0" : "opacity-100"}`}
+          style={{ background: "radial-gradient(ellipse at 50% 40%, #131c31 0%, #0a0f1a 100%)" }}
+        >
+          <style>{`@keyframes dot-pulse{0%,20%{opacity:.2;transform:scale(.6)}50%{opacity:1;transform:scale(1)}80%,100%{opacity:.2;transform:scale(.6)}}`}</style>
+          <img src={logoHeader} alt="Chronolytic" className="h-40 w-auto object-contain" />
+          <div className="mt-8 flex items-center gap-2.5">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="h-3 w-3 rounded-full bg-[#4E89FF]"
+                style={{ animation: `dot-pulse 1.4s ease-in-out infinite ${i * 0.2}s` }}
+              />
+            ))}
           </div>
         </div>
-      </div>
-    </main>
+      )}
+      <main className="flex h-screen w-screen overflow-hidden">
+        <div className="flex h-full w-full flex-col overflow-hidden bg-[var(--shell-bg)] text-[var(--text)]">
+          {renderHeader()}
+
+          <div className="flex min-h-0 flex-1">
+            <aside className="flex w-56 shrink-0 border-r border-[var(--border)] bg-[var(--sidebar-bg)] px-4 py-7">
+              <nav className="flex h-full w-full flex-col justify-evenly">
+                {navItems.map((item) => (
+                  <button
+                    key={item.page}
+                    type="button"
+                    onClick={() => setActivePage(item.page)}
+                    className={`relative flex flex-col items-center justify-center gap-3 rounded-3xl px-3 py-5 text-center transition ${
+                      activePage === item.page
+                        ? "text-[#4E89FF]"
+                        : "text-[var(--text-muted)] hover:bg-[var(--panel-muted)] hover:text-[#4E89FF]"
+                    }`}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`absolute bottom-2 left-0 top-2 w-0.5 rounded-r-md bg-[#4E89FF] transition-all duration-200 ease-out ${
+                        activePage === item.page ? "opacity-100" : "opacity-0"
+                      }`}
+                    />
+                    {renderNavIcon(item.page)}
+                    <span className="text-lg font-semibold leading-none tracking-[0.05em]">
+                      {item.label}
+                    </span>
+                  </button>
+                ))}
+              </nav>
+            </aside>
+
+            <div className="min-w-0 flex-1 overflow-y-auto bg-[var(--panel-bg)]">
+              {activePage === "home"
+                ? renderHome()
+                : activePage === "settings"
+                  ? renderSettingsPage()
+                  : renderAnalyticsPage()}
+            </div>
+          </div>
+        </div>
+      </main>
+    </>
   );
 }
 
