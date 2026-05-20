@@ -565,10 +565,12 @@ function App() {
 
   function renderHome() {
     return (
-      <section className="relative flex h-full flex-col px-8 py-7">
-        <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center text-center">
-          <p className="text-lg text-[var(--text-muted)]">{t(greetingKey)}</p>
-          <p className="mt-1 text-base text-[var(--text-muted)]">
+      <section className="relative flex h-full flex-col px-10 py-9 lg:px-12 lg:py-10">
+        <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center text-center">
+          <p className="text-2xl font-medium text-[var(--text-muted)] lg:text-3xl">
+            {t(greetingKey)}
+          </p>
+          <p className="mt-1.5 text-lg text-[var(--text-muted)] lg:text-xl">
             {nowDate.toLocaleDateString(undefined, {
               weekday: "long",
               year: "numeric",
@@ -578,16 +580,16 @@ function App() {
             - {nowDate.toLocaleTimeString()}
           </p>
 
-          <div className="mt-10 rounded-3xl border border-[var(--border)] bg-[var(--panel-bg)] px-10 py-8 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
+          <div className="mt-12 rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel-bg)] px-12 py-10 shadow-[0_10px_30px_rgba(15,23,42,0.06)] lg:mt-14 lg:px-14 lg:py-12">
+            <p className="text-base font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)] lg:text-lg">
               {t("home.activeSessionTimer")}
             </p>
-            <p className="mt-3 text-7xl font-semibold tracking-tight text-[var(--text)]">
+            <p className="mt-4 text-[4.2rem] leading-none font-semibold tracking-tight text-[var(--text)] lg:text-[6rem]">
               {activeSession ? formatDuration(effectiveDurationMs) : "00:00:00"}
             </p>
-            <div className="mt-4 flex items-center justify-center gap-2">
+            <div className="mt-5 flex items-center justify-center gap-2.5">
               <span
-                className={`rounded-full px-3 py-1 text-sm font-medium ${
+                className={`rounded-full px-4 py-1.5 text-base font-medium lg:px-5 lg:py-2 lg:text-lg ${
                   activeSession?.status === "running"
                     ? "bg-emerald-100 text-emerald-700"
                     : activeSession?.status === "paused"
@@ -622,12 +624,12 @@ function App() {
             ) : null}
           </div>
 
-          <div className="mt-8 flex min-h-12 flex-wrap items-center justify-center gap-3">
+          <div className="mt-10 flex min-h-16 flex-wrap items-center justify-center gap-4 lg:mt-12 lg:gap-5">
             {!activeSession ? (
               <button
                 type="button"
                 onClick={() => setIsCreateSessionOpen(true)}
-                className="rounded-full bg-gradient-to-r from-[#4E89FF] to-[#5F8FFF] px-8 py-3 text-lg font-semibold text-white shadow-[0_10px_24px_rgba(78,137,255,0.34)] transition duration-200 ease-out hover:scale-[1.02] hover:from-[#5B93FF] hover:to-[#6D9BFF] hover:shadow-[0_14px_30px_rgba(78,137,255,0.42)] active:scale-[0.98]"
+                className="rounded-full bg-gradient-to-r from-[#4E89FF] to-[#5F8FFF] px-10 py-4 text-xl font-semibold text-white shadow-[0_10px_24px_rgba(78,137,255,0.34)] transition duration-200 ease-out hover:scale-[1.02] hover:from-[#5B93FF] hover:to-[#6D9BFF] hover:shadow-[0_14px_30px_rgba(78,137,255,0.42)] active:scale-[0.98] lg:px-12 lg:py-5 lg:text-2xl"
               >
                 {t("home.createSession")}
               </button>
@@ -956,7 +958,7 @@ function App() {
   }
 
   function renderNavIcon(page: Page) {
-    const baseClass = "h-7 w-7";
+    const baseClass = "h-11 w-11";
     if (page === "home") {
       return (
         <svg
@@ -1009,14 +1011,14 @@ function App() {
         {renderHeader()}
 
         <div className="flex min-h-0 flex-1">
-          <aside className="flex w-36 shrink-0 border-r border-[var(--border)] bg-[var(--sidebar-bg)] px-3 py-5">
+          <aside className="flex w-56 shrink-0 border-r border-[var(--border)] bg-[var(--sidebar-bg)] px-4 py-7">
             <nav className="flex h-full w-full flex-col justify-evenly">
               {navItems.map((item) => (
                 <button
                   key={item.page}
                   type="button"
                   onClick={() => setActivePage(item.page)}
-                  className={`relative flex flex-col items-center justify-center gap-2 rounded-2xl px-2 py-3.5 text-center transition ${
+                  className={`relative flex flex-col items-center justify-center gap-3 rounded-3xl px-3 py-5 text-center transition ${
                     activePage === item.page
                       ? "text-[#4E89FF]"
                       : "text-[var(--text-muted)] hover:bg-[var(--panel-muted)] hover:text-[#4E89FF]"
@@ -1029,7 +1031,7 @@ function App() {
                     }`}
                   />
                   {renderNavIcon(item.page)}
-                  <span className="text-sm font-semibold leading-none tracking-[0.05em]">
+                  <span className="text-lg font-semibold leading-none tracking-[0.05em]">
                     {item.label}
                   </span>
                 </button>
