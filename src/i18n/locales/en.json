@@ -46,6 +46,30 @@
       "regular": "Regular",
       "good": "Good"
     },
+    "dashboard": {
+      "emptyTitle": "No analytics yet",
+      "emptyDescription": "Finish a few sessions to unlock your first insights.",
+      "kpis": {
+        "totalEffectiveTime": "Total effective time",
+        "totalPausedTime": "Total paused time",
+        "completedSessions": "Completed sessions",
+        "totalPauseCount": "Total pause count",
+        "averageSessionDuration": "Average session duration"
+      },
+      "charts": {
+        "effectiveByCategory": "Effective time by category",
+        "effectiveByWeekday": "Effective time by weekday",
+        "effectiveVsPaused": "Effective time vs paused time",
+        "sessionsByEnergy": "Sessions by energy"
+      },
+      "series": {
+        "effective": "Effective",
+        "paused": "Paused"
+      },
+      "latest": {
+        "title": "Latest sessions"
+      }
+    },
     "placeholders": {
       "dashboardTitle": "Dashboard",
       "sessionHistoryTitle": "Session History"

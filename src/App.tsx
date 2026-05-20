@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import logoHeader from "./assets/logo/logoHeader.png";
+import { buildAnalyticsSummary } from "./features/analytics/analyticsSummary";
 import {
   deleteCompletedSession as deleteCompletedSessionFromRepository,
   getCompletedSessions,
@@ -688,6 +689,16 @@ function App() {
       { key: "sessionHistory", label: t("analytics.tabs.sessionHistory") },
     ];
 
+    const summary = buildAnalyticsSummary(completedSessions, t("home.uncategorized"));
+
+    const maxCategoryMs = Math.max(
+      ...summary.effectiveByCategory.map((item) => item.effectiveMs),
+      1,
+    );
+    const maxWeekdayMs = Math.max(...summary.effectiveByWeekday.map((item) => item.effectiveMs), 1);
+    const maxEnergyCount = Math.max(...summary.sessionsByEnergy.map((item) => item.count), 1);
+    const maxCompareMs = Math.max(...summary.effectiveVsPaused.map((item) => item.valueMs), 1);
+
     return (
       <section className="flex h-full flex-col">
         <div className="border-b border-[var(--border)] bg-[var(--panel-bg)] px-8">
@@ -715,18 +726,187 @@ function App() {
         </div>
 
         {analyticsTab === "dashboard" ? (
-          <div className="flex flex-1 items-center justify-center px-8 py-10">
-            <div className="w-full max-w-2xl rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-8 text-center shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
-              <p className="text-base font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-                {t("app.name")}
-              </p>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text)]">
-                {t("analytics.placeholders.dashboardTitle")}
-              </h1>
-              <p className="mt-4 text-base leading-7 text-[var(--text-muted)]">
-                {t("placeholder.futurePage")}
-              </p>
-            </div>
+          <div className="px-8 py-8">
+            {completedSessions.length === 0 ? (
+              <div className="w-full rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] px-6 py-14 text-center shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
+                <h2 className="text-2xl font-semibold text-[var(--text)]">
+                  {t("analytics.dashboard.emptyTitle")}
+                </h2>
+                <p className="mt-3 text-base text-[var(--text-muted)]">
+                  {t("analytics.dashboard.emptyDescription")}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                  {[
+                    {
+                      label: t("analytics.dashboard.kpis.totalEffectiveTime"),
+                      value: formatHumanDuration(summary.totalEffectiveMs),
+                    },
+                    {
+                      label: t("analytics.dashboard.kpis.totalPausedTime"),
+                      value: formatHumanDuration(summary.totalPausedMs),
+                    },
+                    {
+                      label: t("analytics.dashboard.kpis.completedSessions"),
+                      value: String(summary.completedCount),
+                    },
+                    {
+                      label: t("analytics.dashboard.kpis.totalPauseCount"),
+                      value: String(summary.totalPauseCount),
+                    },
+                    {
+                      label: t("analytics.dashboard.kpis.averageSessionDuration"),
+                      value: formatHumanDuration(summary.averageSessionMs),
+                    },
+                  ].map((kpi) => (
+                    <div
+                      key={kpi.label}
+                      className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]"
+                    >
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                        {kpi.label}
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold text-[var(--text)]">{kpi.value}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      {t("analytics.dashboard.charts.effectiveByCategory")}
+                    </h3>
+                    <div className="mt-4 space-y-3">
+                      {summary.effectiveByCategory.map((item) => (
+                        <div key={item.category}>
+                          <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
+                            <span className="truncate text-[var(--text)]">{item.category}</span>
+                            <span className="text-[var(--text-muted)]">
+                              {formatHumanDuration(item.effectiveMs)}
+                            </span>
+                          </div>
+                          <div className="h-2 rounded-full bg-[var(--panel-muted)]">
+                            <div
+                              className="h-2 rounded-full bg-[var(--accent)]"
+                              style={{ width: `${(item.effectiveMs / maxCategoryMs) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      {t("analytics.dashboard.charts.effectiveByWeekday")}
+                    </h3>
+                    <div className="mt-4 grid grid-cols-7 gap-2">
+                      {summary.effectiveByWeekday.map((item) => (
+                        <div key={item.weekday} className="flex flex-col items-center gap-2">
+                          <div className="flex h-28 w-full items-end rounded-md bg-[var(--panel-muted)] px-1.5 py-1">
+                            <div
+                              className="w-full rounded-sm bg-[#4E89FF]"
+                              style={{
+                                height: `${Math.max((item.effectiveMs / maxWeekdayMs) * 100, 6)}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-[10px] font-medium uppercase text-[var(--text-muted)]">
+                            {t(`analytics.weekdays.${item.weekday}`).slice(0, 3)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      {t("analytics.dashboard.charts.effectiveVsPaused")}
+                    </h3>
+                    <div className="mt-4 space-y-4">
+                      {summary.effectiveVsPaused.map((item) => (
+                        <div key={item.key}>
+                          <div className="mb-1.5 flex items-center justify-between text-sm">
+                            <span className="text-[var(--text)]">
+                              {item.key === "effective"
+                                ? t("analytics.dashboard.series.effective")
+                                : t("analytics.dashboard.series.paused")}
+                            </span>
+                            <span className="text-[var(--text-muted)]">
+                              {formatHumanDuration(item.valueMs)}
+                            </span>
+                          </div>
+                          <div className="h-2 rounded-full bg-[var(--panel-muted)]">
+                            <div
+                              className={`h-2 rounded-full ${item.key === "effective" ? "bg-[#4E89FF]" : "bg-amber-500"}`}
+                              style={{ width: `${(item.valueMs / maxCompareMs) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      {t("analytics.dashboard.charts.sessionsByEnergy")}
+                    </h3>
+                    <div className="mt-4 space-y-3">
+                      {summary.sessionsByEnergy.map((item) => (
+                        <div key={item.energy}>
+                          <div className="mb-1.5 flex items-center justify-between text-sm">
+                            <span className="inline-flex items-center gap-1.5 text-[var(--text)]">
+                              {renderMoodFace(item.energy, "h-4 w-4")}
+                              {t(`analytics.energy.${item.energy}`)}
+                            </span>
+                            <span className="text-[var(--text-muted)]">{item.count}</span>
+                          </div>
+                          <div className="h-2 rounded-full bg-[var(--panel-muted)]">
+                            <div
+                              className="h-2 rounded-full bg-[var(--accent)]"
+                              style={{ width: `${(item.count / maxEnergyCount) * 100}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                    {t("analytics.dashboard.latest.title")}
+                  </h3>
+                  <div className="mt-3 space-y-2">
+                    {summary.latestSessions.map((session) => (
+                      <div
+                        key={`${session.id}-latest`}
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--border)] bg-[var(--panel-muted)]/30 px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-[var(--text)]">
+                            {session.title}
+                          </p>
+                          <p className="text-xs text-[var(--text-muted)]">
+                            {session.category || t("home.uncategorized")}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
+                          <span>{formatHumanDuration(session.effectiveDurationMs)}</span>
+                          <span>{t(`analytics.weekdays.${session.weekday}`)}</span>
+                          <span className="inline-flex items-center gap-1">
+                            {renderMoodFace(session.energy, "h-3.5 w-3.5")}
+                            {t(`analytics.energy.${session.energy}`)}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div className="px-8 py-8">

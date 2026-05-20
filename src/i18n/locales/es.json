@@ -46,6 +46,30 @@
       "regular": "Normal",
       "good": "Alta"
     },
+    "dashboard": {
+      "emptyTitle": "Aún no hay analíticas",
+      "emptyDescription": "Finaliza algunas sesiones para desbloquear tus primeros insights.",
+      "kpis": {
+        "totalEffectiveTime": "Tiempo efectivo total",
+        "totalPausedTime": "Tiempo pausado total",
+        "completedSessions": "Sesiones completadas",
+        "totalPauseCount": "Pausas totales",
+        "averageSessionDuration": "Duración promedio"
+      },
+      "charts": {
+        "effectiveByCategory": "Tiempo efectivo por categoría",
+        "effectiveByWeekday": "Tiempo efectivo por día",
+        "effectiveVsPaused": "Tiempo efectivo vs pausado",
+        "sessionsByEnergy": "Sesiones por energía"
+      },
+      "series": {
+        "effective": "Efectivo",
+        "paused": "Pausado"
+      },
+      "latest": {
+        "title": "Sesiones recientes"
+      }
+    },
     "placeholders": {
       "dashboardTitle": "Panel",
       "sessionHistoryTitle": "Historial de sesiones"
