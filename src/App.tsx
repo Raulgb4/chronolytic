@@ -459,40 +459,7 @@ function App() {
         <div className="flex items-center">
           <img src={logoHeader} alt={t("app.name")} className="h-32 w-auto object-contain" />
         </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--panel-bg)] text-[var(--text-muted)] hover:bg-[var(--panel-muted)]"
-            aria-label="Notifications"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-[1.05rem] w-[1.05rem]"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <path d="M12 5a4 4 0 0 0-4 4v2.5c0 .8-.3 1.5-.8 2.1L6 15h12l-1.2-1.4a3 3 0 0 1-.8-2.1V9a4 4 0 0 0-4-4Z" />
-              <path d="M10.5 18a1.5 1.5 0 0 0 3 0" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--panel-bg)] text-[var(--text-muted)] hover:bg-[var(--panel-muted)]"
-            aria-label="Profile"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-[1.05rem] w-[1.05rem]"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <circle cx="12" cy="8" r="3" />
-              <path d="M6.5 18a5.5 5.5 0 0 1 11 0" />
-            </svg>
-          </button>
-        </div>
+        <div className="h-10 w-10" aria-hidden="true" />
       </header>
     );
   }
