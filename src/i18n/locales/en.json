@@ -27,6 +27,12 @@
         "emptyBackupError": "The backup file has no sessions to import.",
         "duplicateOnlyError": "All sessions in this backup already exist."
       },
+      "inlineEdit": {
+        "saveError": "Could not save session changes.",
+        "invalidTitle": "Title cannot be empty.",
+        "invalidEnergy": "Invalid energy value.",
+        "invalidWeekday": "Invalid weekday value."
+      },
       "searchLabel": "Search session history",
       "searchPlaceholder": "Search by title, category, or tag",
       "emptySearchTitle": "No matching sessions",

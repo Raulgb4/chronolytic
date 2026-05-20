@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { useTranslation } from "react-i18next";
@@ -15,6 +16,7 @@ import {
   saveActiveSession,
   saveCompletedSession,
   touchActiveSession,
+  updateCompletedSession,
 } from "./features/sessions/sessionRepository";
 import type {
   ActiveSession,
@@ -37,6 +39,7 @@ type SessionHistorySortKey =
   | "pauseCount"
   | "energy";
 type SortDirection = "asc" | "desc";
+type SessionHistoryEditableField = "title" | "category" | "tags" | "energy" | "weekday";
 
 function parseTags(value: string): string[] {
   return value
@@ -186,6 +189,13 @@ function App() {
     type: BackupFeedbackType;
     message: string;
   } | null>(null);
+  const [sessionHistoryEditing, setSessionHistoryEditing] = useState<{
+    sessionId: string;
+    field: SessionHistoryEditableField;
+    value: string;
+  } | null>(null);
+  const [isSessionHistorySavingEdit, setIsSessionHistorySavingEdit] = useState(false);
+  const [sessionHistoryEditError, setSessionHistoryEditError] = useState<string | null>(null);
   const [isBackupFeedbackVisible, setIsBackupFeedbackVisible] = useState(false);
   const backupFadeTimeoutRef = useRef<number | null>(null);
   const backupRemoveTimeoutRef = useRef<number | null>(null);
@@ -691,6 +701,117 @@ function App() {
       setCompletedSessions((prev) => prev.filter((session) => session.id !== sessionId));
     } catch (error) {
       console.error("Failed to delete completed session from SQLite", error);
+    }
+  }
+
+  function startSessionHistoryInlineEdit(
+    session: CompletedSession,
+    field: SessionHistoryEditableField,
+  ) {
+    if (isSessionHistorySavingEdit) return;
+
+    const initialValue =
+      field === "tags"
+        ? session.tags.join(", ")
+        : field === "energy"
+          ? session.energy
+          : field === "weekday"
+            ? session.weekday
+            : field === "title"
+              ? session.title
+              : session.category;
+
+    setSessionHistoryEditError(null);
+    setSessionHistoryEditing({
+      sessionId: session.id,
+      field,
+      value: initialValue,
+    });
+  }
+
+  function cancelSessionHistoryInlineEdit() {
+    setSessionHistoryEditing(null);
+    setSessionHistoryEditError(null);
+  }
+
+  async function saveSessionHistoryInlineEdit() {
+    if (!sessionHistoryEditing || isSessionHistorySavingEdit) return;
+
+    const target = completedSessions.find(
+      (session) => session.id === sessionHistoryEditing.sessionId,
+    );
+    if (!target) {
+      cancelSessionHistoryInlineEdit();
+      return;
+    }
+
+    const rawValue = sessionHistoryEditing.value;
+    const trimmedValue = rawValue.trim();
+    const field = sessionHistoryEditing.field;
+
+    const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
+    const nextSession: CompletedSession = { ...target };
+
+    if (field === "title") {
+      if (trimmedValue.length === 0) {
+        setSessionHistoryEditError(t("analytics.sessionHistory.inlineEdit.invalidTitle"));
+        return;
+      }
+      nextSession.title = trimmedValue;
+    }
+
+    if (field === "category") {
+      nextSession.category = trimmedValue;
+    }
+
+    if (field === "tags") {
+      nextSession.tags = parseTags(rawValue);
+    }
+
+    if (field === "energy") {
+      if (trimmedValue !== "bad" && trimmedValue !== "regular" && trimmedValue !== "good") {
+        setSessionHistoryEditError(t("analytics.sessionHistory.inlineEdit.invalidEnergy"));
+        return;
+      }
+      nextSession.energy = trimmedValue;
+    }
+
+    if (field === "weekday") {
+      const normalizedWeekday = trimmedValue.toLowerCase();
+      if (!weekdays.includes(normalizedWeekday)) {
+        setSessionHistoryEditError(t("analytics.sessionHistory.inlineEdit.invalidWeekday"));
+        return;
+      }
+      nextSession.weekday = normalizedWeekday;
+    }
+
+    setIsSessionHistorySavingEdit(true);
+    setSessionHistoryEditError(null);
+
+    try {
+      await updateCompletedSession(nextSession);
+      setCompletedSessions((prev) =>
+        prev.map((session) => (session.id === nextSession.id ? nextSession : session)),
+      );
+      setSessionHistoryEditing(null);
+    } catch (error) {
+      console.error("Failed to update completed session", error);
+      setSessionHistoryEditError(t("analytics.sessionHistory.inlineEdit.saveError"));
+    } finally {
+      setIsSessionHistorySavingEdit(false);
+    }
+  }
+
+  function handleSessionHistoryInlineEditKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      void saveSessionHistoryInlineEdit();
+    }
+
+    if (event.key === "Escape") {
+      event.preventDefault();
+      cancelSessionHistoryInlineEdit();
     }
   }
 
@@ -1678,6 +1799,12 @@ function App() {
               </div>
             ) : null}
 
+            {sessionHistoryEditError ? (
+              <div className="mb-4 rounded-xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                {sessionHistoryEditError}
+              </div>
+            ) : null}
+
             <div className="w-full rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
               {completedSessions.length === 0 ? (
                 <div className="px-6 py-14 text-center">
@@ -1794,10 +1921,54 @@ function App() {
                           className="transition-colors duration-150 hover:bg-[var(--panel-muted)]/35"
                         >
                           <td className="px-5 py-4 text-sm font-semibold text-[var(--text)]">
-                            {session.title}
+                            {sessionHistoryEditing?.sessionId === session.id &&
+                            sessionHistoryEditing.field === "title" ? (
+                              <input
+                                autoFocus
+                                value={sessionHistoryEditing.value}
+                                onChange={(event) =>
+                                  setSessionHistoryEditing((prev) =>
+                                    prev ? { ...prev, value: event.target.value } : prev,
+                                  )
+                                }
+                                onBlur={() => void saveSessionHistoryInlineEdit()}
+                                onKeyDown={handleSessionHistoryInlineEditKeyDown}
+                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
+                              />
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => startSessionHistoryInlineEdit(session, "title")}
+                                className="text-left hover:text-[var(--accent)]"
+                              >
+                                {session.title}
+                              </button>
+                            )}
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {session.category || t("home.uncategorized")}
+                            {sessionHistoryEditing?.sessionId === session.id &&
+                            sessionHistoryEditing.field === "category" ? (
+                              <input
+                                autoFocus
+                                value={sessionHistoryEditing.value}
+                                onChange={(event) =>
+                                  setSessionHistoryEditing((prev) =>
+                                    prev ? { ...prev, value: event.target.value } : prev,
+                                  )
+                                }
+                                onBlur={() => void saveSessionHistoryInlineEdit()}
+                                onKeyDown={handleSessionHistoryInlineEditKeyDown}
+                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
+                              />
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => startSessionHistoryInlineEdit(session, "category")}
+                                className="text-left hover:text-[var(--accent)]"
+                              >
+                                {session.category || t("home.uncategorized")}
+                              </button>
+                            )}
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
                             {formatSessionDate(session.startedAt)}
@@ -1815,31 +1986,120 @@ function App() {
                             {formatHumanDuration(session.pausedDurationMs)}
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {session.tags.length > 0 ? (
+                            {sessionHistoryEditing?.sessionId === session.id &&
+                            sessionHistoryEditing.field === "tags" ? (
+                              <input
+                                autoFocus
+                                value={sessionHistoryEditing.value}
+                                onChange={(event) =>
+                                  setSessionHistoryEditing((prev) =>
+                                    prev ? { ...prev, value: event.target.value } : prev,
+                                  )
+                                }
+                                onBlur={() => void saveSessionHistoryInlineEdit()}
+                                onKeyDown={handleSessionHistoryInlineEditKeyDown}
+                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
+                              />
+                            ) : session.tags.length > 0 ? (
                               <div className="flex flex-wrap gap-1.5">
-                                {session.tags.map((tag) => (
-                                  <span
-                                    key={`${session.id}-table-${tag}`}
-                                    className="rounded-full border border-[var(--border)] bg-[var(--panel-muted)] px-2 py-0.5 text-xs text-[var(--text-muted)]"
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
+                                <button
+                                  type="button"
+                                  onClick={() => startSessionHistoryInlineEdit(session, "tags")}
+                                  className="contents"
+                                >
+                                  {session.tags.map((tag) => (
+                                    <span
+                                      key={`${session.id}-table-${tag}`}
+                                      className="rounded-full border border-[var(--border)] bg-[var(--panel-muted)] px-2 py-0.5 text-xs text-[var(--text-muted)]"
+                                    >
+                                      {tag}
+                                    </span>
+                                  ))}
+                                </button>
                               </div>
                             ) : (
-                              <span className="text-[var(--text-muted)]/80">
+                              <button
+                                type="button"
+                                onClick={() => startSessionHistoryInlineEdit(session, "tags")}
+                                className="text-[var(--text-muted)]/80 hover:text-[var(--accent)]"
+                              >
                                 {t("analytics.sessionHistory.noTags")}
-                              </span>
+                              </button>
                             )}
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {t(`analytics.weekdays.${session.weekday}`)}
+                            {sessionHistoryEditing?.sessionId === session.id &&
+                            sessionHistoryEditing.field === "weekday" ? (
+                              <select
+                                autoFocus
+                                value={sessionHistoryEditing.value}
+                                onChange={(event) =>
+                                  setSessionHistoryEditing((prev) =>
+                                    prev ? { ...prev, value: event.target.value } : prev,
+                                  )
+                                }
+                                onBlur={() => void saveSessionHistoryInlineEdit()}
+                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
+                              >
+                                {[
+                                  "monday",
+                                  "tuesday",
+                                  "wednesday",
+                                  "thursday",
+                                  "friday",
+                                  "saturday",
+                                  "sunday",
+                                ].map((weekday) => (
+                                  <option key={`${session.id}-${weekday}`} value={weekday}>
+                                    {t(`analytics.weekdays.${weekday}`)}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => startSessionHistoryInlineEdit(session, "weekday")}
+                                className="text-left hover:text-[var(--accent)]"
+                              >
+                                {t(`analytics.weekdays.${session.weekday}`)}
+                              </button>
+                            )}
                           </td>
                           <td className="px-5 py-4 text-sm">
-                            <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--panel-muted)] px-2.5 py-1 text-[var(--text-muted)]">
-                              {renderMoodFace(session.energy, "h-3.5 w-3.5")}
-                              <span>{t(`analytics.energy.${session.energy}`)}</span>
-                            </span>
+                            {sessionHistoryEditing?.sessionId === session.id &&
+                            sessionHistoryEditing.field === "energy" ? (
+                              <select
+                                autoFocus
+                                value={sessionHistoryEditing.value}
+                                onChange={(event) =>
+                                  setSessionHistoryEditing((prev) =>
+                                    prev ? { ...prev, value: event.target.value } : prev,
+                                  )
+                                }
+                                onBlur={() => void saveSessionHistoryInlineEdit()}
+                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
+                              >
+                                {(["bad", "regular", "good"] as EnergyLevel[]).map(
+                                  (energyValue) => (
+                                    <option
+                                      key={`${session.id}-${energyValue}`}
+                                      value={energyValue}
+                                    >
+                                      {t(`analytics.energy.${energyValue}`)}
+                                    </option>
+                                  ),
+                                )}
+                              </select>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => startSessionHistoryInlineEdit(session, "energy")}
+                                className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--panel-muted)] px-2.5 py-1 text-[var(--text-muted)] hover:border-[var(--accent)] hover:text-[var(--accent)]"
+                              >
+                                {renderMoodFace(session.energy, "h-3.5 w-3.5")}
+                                <span>{t(`analytics.energy.${session.energy}`)}</span>
+                              </button>
+                            )}
                           </td>
                           <td className="px-5 py-4 text-right">
                             <button

@@ -27,6 +27,12 @@
         "emptyBackupError": "El respaldo no tiene sesiones para importar.",
         "duplicateOnlyError": "Todas las sesiones de este respaldo ya existen."
       },
+      "inlineEdit": {
+        "saveError": "No se pudieron guardar los cambios de la sesión.",
+        "invalidTitle": "El título no puede estar vacío.",
+        "invalidEnergy": "El valor de energía no es válido.",
+        "invalidWeekday": "El valor del día no es válido."
+      },
       "searchLabel": "Búsqueda en historial de sesiones",
       "searchPlaceholder": "Buscar por título, categoría o etiqueta",
       "emptySearchTitle": "No hay sesiones coincidentes",

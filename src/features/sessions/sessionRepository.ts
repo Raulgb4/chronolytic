@@ -343,6 +343,42 @@ export async function deleteCompletedSession(id: string): Promise<void> {
   await db.execute("DELETE FROM sessions WHERE id = $1", [id]);
 }
 
+export async function updateCompletedSession(session: CompletedSession): Promise<void> {
+  const db = await getDb();
+  await db.execute(
+    `
+      UPDATE sessions
+      SET
+        title = $1,
+        category = $2,
+        tags = $3,
+        pauses = $4,
+        started_at = $5,
+        ended_at = $6,
+        effective_duration_ms = $7,
+        pause_count = $8,
+        paused_duration_ms = $9,
+        weekday = $10,
+        energy = $11
+      WHERE id = $12
+    `,
+    [
+      session.title,
+      session.category || null,
+      JSON.stringify(session.tags),
+      JSON.stringify(session.pauses),
+      session.startedAt,
+      session.endedAt,
+      session.effectiveDurationMs,
+      session.pauseCount,
+      session.pausedDurationMs,
+      session.weekday,
+      session.energy,
+      session.id,
+    ],
+  );
+}
+
 export type ImportCompletedSessionsResult = {
   importedCount: number;
   skippedDuplicateCount: number;
