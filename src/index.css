@@ -55,6 +55,49 @@ body {
   background: radial-gradient(circle at top, #111f35 0%, var(--app-bg) 68%);
 }
 
+/* Light mode scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c6d2e5 #eef2f7;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #eef2f7;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #c6d2e5;
+  border: 2px solid #eef2f7;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #aebfd9;
+}
+
+/* Dark mode scrollbar */
+:root[data-theme="dark"] * {
+  scrollbar-color: #4e89ff #061021;
+}
+
+:root[data-theme="dark"] *::-webkit-scrollbar-track {
+  background: #061021;
+}
+
+:root[data-theme="dark"] *::-webkit-scrollbar-thumb {
+  background: #4e89ff;
+  border: 2px solid #061021;
+}
+
+:root[data-theme="dark"] *::-webkit-scrollbar-thumb:hover {
+  background: #6b9cff;
+}
+
 button,
 input,
 select,
