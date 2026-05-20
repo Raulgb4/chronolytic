@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { open, save } from "@tauri-apps/plugin-dialog";
+import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { useTranslation } from "react-i18next";
 import logoHeader from "./assets/logo/logoHeader.png";
@@ -8,6 +9,7 @@ import { buildAnalyticsSummary } from "./features/analytics/analyticsSummary";
 import { createSessionBackup, parseSessionBackup } from "./features/sessions/sessionBackup";
 import {
   deleteActiveSession,
+  deleteAllCompletedSessions,
   deleteCompletedSession as deleteCompletedSessionFromRepository,
   exportCompletedSessions,
   getCompletedSessions,
@@ -40,6 +42,7 @@ type SessionHistorySortKey =
   | "energy";
 type SortDirection = "asc" | "desc";
 type SessionHistoryEditableField = "title" | "category" | "tags" | "energy" | "weekday";
+type SettingsFeedbackType = "success" | "error";
 
 const SESSION_HISTORY_PAGE_SIZE = 8;
 
@@ -216,6 +219,14 @@ function App() {
   const [sessionHistoryEditError, setSessionHistoryEditError] = useState<string | null>(null);
   const [sessionHistoryPage, setSessionHistoryPage] = useState(1);
   const [isBackupFeedbackVisible, setIsBackupFeedbackVisible] = useState(false);
+  const [isAutostartEnabled, setIsAutostartEnabled] = useState(false);
+  const [isAutostartLoading, setIsAutostartLoading] = useState(false);
+  const [isDeleteAllConfirmOpen, setIsDeleteAllConfirmOpen] = useState(false);
+  const [isDeletingAllSessions, setIsDeletingAllSessions] = useState(false);
+  const [settingsFeedback, setSettingsFeedback] = useState<{
+    type: SettingsFeedbackType;
+    message: string;
+  } | null>(null);
   const backupFadeTimeoutRef = useRef<number | null>(null);
   const backupRemoveTimeoutRef = useRef<number | null>(null);
 
@@ -300,6 +311,27 @@ function App() {
       window.clearInterval(interval);
     };
   }, [activeSession]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadAutostartState() {
+      try {
+        const enabled = await isEnabled();
+        if (!cancelled) {
+          setIsAutostartEnabled(enabled);
+        }
+      } catch (error) {
+        console.error("Failed to load autostart state", error);
+      }
+    }
+
+    void loadAutostartState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (backupFadeTimeoutRef.current) {
@@ -961,6 +993,65 @@ function App() {
       });
     } finally {
       setIsBackupBusy(false);
+    }
+  }
+
+  async function handleToggleAutostart() {
+    if (isAutostartLoading) return;
+
+    setIsAutostartLoading(true);
+
+    try {
+      const currentlyEnabled = await isEnabled();
+
+      if (currentlyEnabled) {
+        await disable();
+      } else {
+        await enable();
+      }
+
+      const nextEnabled = await isEnabled();
+      setIsAutostartEnabled(nextEnabled);
+    } catch (error) {
+      console.error("Failed to toggle autostart", error);
+      setSettingsFeedback({
+        type: "error",
+        message: t("settings.startupError"),
+      });
+    } finally {
+      setIsAutostartLoading(false);
+    }
+  }
+
+  async function handleConfirmDeleteAllSessions() {
+    if (isDeletingAllSessions) return;
+
+    setIsDeletingAllSessions(true);
+    setSettingsFeedback(null);
+
+    try {
+      await deleteAllCompletedSessions();
+      setCompletedSessions([]);
+      setSessionHistorySearch("");
+      setSessionHistoryWeekdayFilter("all");
+      setSessionHistoryEnergyFilter("all");
+      setSessionHistoryCategoryFilter("all");
+      setSessionHistoryDurationFilter("all");
+      setSessionHistoryPauseFilter("all");
+      setSessionHistorySort({ key: "endedAt", direction: "desc" });
+      setSessionHistoryEditing(null);
+      setSessionHistoryEditError(null);
+      setSessionHistoryPage(1);
+      setBackupFeedback(null);
+      setIsDeleteAllConfirmOpen(false);
+    } catch (error) {
+      console.error("Failed to delete all completed sessions", error);
+      setSettingsFeedback({
+        type: "error",
+        message: t("settings.deleteAllSessionsError"),
+      });
+    } finally {
+      setIsDeletingAllSessions(false);
     }
   }
 
@@ -2230,6 +2321,18 @@ function App() {
     return (
       <section className="flex h-full items-start justify-center px-8 py-10">
         <div className="w-full max-w-3xl space-y-4">
+          {settingsFeedback ? (
+            <div
+              className={`rounded-xl border px-4 py-3 text-sm ${
+                settingsFeedback.type === "success"
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-800"
+                  : "border-rose-300 bg-rose-50 text-rose-800"
+              }`}
+            >
+              {settingsFeedback.message}
+            </div>
+          ) : null}
+
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
             <h2 className="text-lg font-semibold text-[var(--text)]">{t("settings.language")}</h2>
             <p className="mt-1 text-sm text-[var(--text-muted)]">
@@ -2283,6 +2386,51 @@ function App() {
           </div>
 
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
+            <h2 className="text-lg font-semibold text-[var(--text)]">{t("settings.startup")}</h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              {t("settings.startupDescription")}
+            </p>
+            <div className="mt-4 flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-3">
+              <span className="text-sm font-medium text-[var(--text-muted)]">
+                {t("settings.openAtStartup")}
+              </span>
+              <button
+                type="button"
+                onClick={() => void handleToggleAutostart()}
+                disabled={isAutostartLoading}
+                className={`relative h-8 w-14 shrink-0 rounded-full transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${
+                  isAutostartEnabled ? "bg-[var(--accent)]" : "bg-slate-300"
+                }`}
+                aria-label={t("settings.openAtStartup")}
+              >
+                <span
+                  className={`absolute left-1 top-1 h-6 w-6 rounded-full shadow transition-transform duration-200 ${
+                    isAutostartEnabled
+                      ? "translate-x-6 bg-[var(--panel-bg)]"
+                      : "translate-x-0 bg-[var(--panel-bg)]"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-rose-300/70 bg-rose-50/60 p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)] dark:border-rose-500/30 dark:bg-rose-500/10">
+            <h2 className="text-lg font-semibold text-rose-800 dark:text-rose-300">
+              {t("settings.dangerZone")}
+            </h2>
+            <p className="mt-1 text-sm text-rose-700/85 dark:text-rose-300/85">
+              {t("settings.dangerZoneDescription")}
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsDeleteAllConfirmOpen(true)}
+              className="mt-4 rounded-xl border border-rose-700 bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition duration-200 ease-out hover:bg-rose-700"
+            >
+              {t("settings.deleteAllSessions")}
+            </button>
+          </div>
+
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
             <h2 className="text-lg font-semibold text-[var(--text)]">{t("settings.helpAbout")}</h2>
             <p className="mt-3 text-sm text-[var(--text-muted)]">
               {t("settings.aboutDescription")}
@@ -2309,6 +2457,39 @@ function App() {
               {t("settings.checkUpdates")}
             </button>
           </div>
+
+          {isDeleteAllConfirmOpen ? (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-6">
+              <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-2xl">
+                <h3 className="text-lg font-semibold text-[var(--text)]">
+                  {t("settings.deleteAllSessionsConfirmTitle")}
+                </h3>
+                <p className="mt-2 text-sm text-[var(--text-muted)]">
+                  {t("settings.deleteAllSessionsConfirmDescription")}
+                </p>
+                <div className="mt-5 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsDeleteAllConfirmOpen(false)}
+                    disabled={isDeletingAllSessions}
+                    className="rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-4 py-2 text-sm font-medium text-[var(--text)] transition duration-200 ease-out hover:bg-[var(--panel-muted)] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {t("settings.cancel")}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void handleConfirmDeleteAllSessions()}
+                    disabled={isDeletingAllSessions}
+                    className="rounded-xl border border-rose-700 bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition duration-200 ease-out hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {isDeletingAllSessions
+                      ? t("analytics.sessionHistory.backup.processing")
+                      : t("settings.confirmDeleteAllSessions")}
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
         </div>
       </section>
     );

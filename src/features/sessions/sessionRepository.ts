@@ -343,6 +343,11 @@ export async function deleteCompletedSession(id: string): Promise<void> {
   await db.execute("DELETE FROM sessions WHERE id = $1", [id]);
 }
 
+export async function deleteAllCompletedSessions(): Promise<void> {
+  const db = await getDb();
+  await db.execute("DELETE FROM sessions");
+}
+
 export async function updateCompletedSession(session: CompletedSession): Promise<void> {
   const db = await getDb();
   await db.execute(
