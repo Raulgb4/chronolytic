@@ -21,6 +21,7 @@
         "duration": "Duration",
         "tags": "Tags",
         "weekday": "Weekday",
+        "energy": "Energy",
         "actions": "Actions"
       },
       "delete": "Delete",
@@ -37,6 +38,11 @@
       "thursday": "Thursday",
       "friday": "Friday",
       "saturday": "Saturday"
+    },
+    "energy": {
+      "bad": "Bad",
+      "regular": "Regular",
+      "good": "Good"
     },
     "placeholders": {
       "dashboardTitle": "Dashboard",
@@ -67,6 +73,13 @@
     "categoryPlaceholder": "Study",
     "tags": "Tags (comma-separated)",
     "tagsPlaceholder": "math, focus, exam",
+    "energy": "Mood / Energy",
+    "energyDescription": "How are you feeling before this session?",
+    "energyOptions": {
+      "bad": "Bad",
+      "regular": "Regular",
+      "good": "Good"
+    },
     "cancel": "Cancel",
     "start": "Start session"
   },

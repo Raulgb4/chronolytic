@@ -21,6 +21,7 @@
         "duration": "Duración",
         "tags": "Etiquetas",
         "weekday": "Día",
+        "energy": "Energía",
         "actions": "Acciones"
       },
       "delete": "Eliminar",
@@ -37,6 +38,11 @@
       "thursday": "Jueves",
       "friday": "Viernes",
       "saturday": "Sábado"
+    },
+    "energy": {
+      "bad": "Baja",
+      "regular": "Normal",
+      "good": "Alta"
     },
     "placeholders": {
       "dashboardTitle": "Panel",
@@ -67,6 +73,13 @@
     "categoryPlaceholder": "Estudio",
     "tags": "Etiquetas (separadas por comas)",
     "tagsPlaceholder": "matemáticas, enfoque, examen",
+    "energy": "Ánimo / Energía",
+    "energyDescription": "¿Cómo te sientes antes de esta sesión?",
+    "energyOptions": {
+      "bad": "Baja",
+      "regular": "Normal",
+      "good": "Alta"
+    },
     "cancel": "Cancelar",
     "start": "Iniciar sesión"
   },

@@ -1,5 +1,5 @@
 import Database from "@tauri-apps/plugin-sql";
-import type { CompletedSession, PausePeriod } from "./sessionTypes";
+import type { CompletedSession, EnergyLevel, PausePeriod } from "./sessionTypes";
 
 type SessionRow = {
   id: string;
@@ -11,6 +11,7 @@ type SessionRow = {
   ended_at: number;
   effective_duration_ms: number;
   weekday: string | null;
+  energy: string | null;
 };
 
 type LegacySessionRow = {
@@ -53,6 +54,10 @@ async function ensureSessionsSchema(db: Database): Promise<void> {
   if (!existingColumns.has("weekday")) {
     await db.execute("ALTER TABLE sessions ADD COLUMN weekday TEXT");
   }
+
+  if (!existingColumns.has("energy")) {
+    await db.execute("ALTER TABLE sessions ADD COLUMN energy TEXT");
+  }
 }
 
 function getDb(): Promise<Database> {
@@ -86,6 +91,18 @@ function getWeekdayFromTimestamp(timestamp: number): string {
   return weekdays[dayIndex] ?? "monday";
 }
 
+function parseEnergy(value: string | null): EnergyLevel {
+  if (value === "bad" || value === "regular" || value === "good") {
+    return value;
+  }
+
+  if (value === "low") return "bad";
+  if (value === "medium") return "regular";
+  if (value === "high") return "good";
+
+  return "regular";
+}
+
 export async function getCompletedSessions(): Promise<CompletedSession[]> {
   const db = await getDb();
   let rows: SessionRow[] = [];
@@ -102,7 +119,8 @@ export async function getCompletedSessions(): Promise<CompletedSession[]> {
           started_at,
           ended_at,
           effective_duration_ms,
-          weekday
+          weekday,
+          energy
         FROM sessions
         ORDER BY ended_at DESC
       `,
@@ -132,6 +150,7 @@ export async function getCompletedSessions(): Promise<CompletedSession[]> {
     rows = legacyRows.map((row) => ({
       ...row,
       weekday: null,
+      energy: null,
     }));
   }
 
@@ -145,6 +164,7 @@ export async function getCompletedSessions(): Promise<CompletedSession[]> {
     endedAt: row.ended_at,
     effectiveDurationMs: row.effective_duration_ms,
     weekday: row.weekday ?? getWeekdayFromTimestamp(row.started_at),
+    energy: parseEnergy(row.energy),
   }));
 }
 
@@ -162,8 +182,9 @@ export async function saveCompletedSession(session: CompletedSession): Promise<v
         ended_at,
         effective_duration_ms,
         weekday,
+        energy,
         created_at
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
     `,
     [
       session.id,
@@ -175,6 +196,7 @@ export async function saveCompletedSession(session: CompletedSession): Promise<v
       session.endedAt,
       session.effectiveDurationMs,
       session.weekday,
+      session.energy,
       Date.now(),
     ],
   );

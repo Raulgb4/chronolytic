@@ -9,6 +9,7 @@ import {
 import type {
   ActiveSession,
   CompletedSession,
+  EnergyLevel,
   PausePeriod,
 } from "./features/sessions/sessionTypes";
 
@@ -87,6 +88,18 @@ function getWeekdayFromTimestamp(timestamp: number): string {
   return weekdays[dayIndex] ?? "monday";
 }
 
+function getEnergyIndex(energy: EnergyLevel): number {
+  if (energy === "bad") return 0;
+  if (energy === "regular") return 1;
+  return 2;
+}
+
+function getEnergyFromIndex(index: number): EnergyLevel {
+  if (index <= 0) return "bad";
+  if (index >= 2) return "good";
+  return "regular";
+}
+
 function getStoredLanguage(): Language {
   const value = window.localStorage.getItem("chronolytic.language");
   return value === "es" ? "es" : "en";
@@ -107,6 +120,7 @@ function App() {
   const [title, setTitle] = useState<string>("");
   const [category, setCategory] = useState<string>("");
   const [tagsInput, setTagsInput] = useState<string>("");
+  const [energy, setEnergy] = useState<EnergyLevel>("regular");
   const [activeSession, setActiveSession] = useState<ActiveSession | null>(null);
   const [completedSessions, setCompletedSessions] = useState<CompletedSession[]>([]);
   const [categorySuggestionsOpen, setCategorySuggestionsOpen] = useState(false);
@@ -214,6 +228,7 @@ function App() {
       title: title.trim(),
       category: category.trim(),
       tags: parseTags(tagsInput),
+      energy,
       startedAt,
       pauses: [],
       status: "running",
@@ -272,6 +287,7 @@ function App() {
       title: sessionToSave.title,
       category: sessionToSave.category,
       tags: sessionToSave.tags,
+      energy: sessionToSave.energy,
       startedAt: sessionToSave.startedAt,
       endedAt,
       effectiveDurationMs: getEffectiveDuration(sessionToSave, endedAt),
@@ -286,6 +302,7 @@ function App() {
       setTitle("");
       setCategory("");
       setTagsInput("");
+      setEnergy("regular");
       setIsCreateSessionOpen(false);
     } catch (error) {
       console.error("Failed to save completed session to SQLite", {
@@ -295,8 +312,32 @@ function App() {
         startedAt: completed.startedAt,
         endedAt: completed.endedAt,
         weekday: completed.weekday,
+        energy: completed.energy,
       });
     }
+  }
+
+  function renderMoodFace(level: EnergyLevel, className: string) {
+    const mouthPath =
+      level === "bad"
+        ? "M7.5 16c1.4-1.4 2.9-2 4.5-2s3.1.6 4.5 2"
+        : level === "good"
+          ? "M7.5 14c1.4 1.4 2.9 2 4.5 2s3.1-.6 4.5-2"
+          : "M8 15.5h8";
+
+    return (
+      <svg
+        viewBox="0 0 24 24"
+        className={className}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+      >
+        <circle cx="12" cy="12" r="8" />
+        <path d="M9.2 10.2h.01M14.8 10.2h.01" strokeLinecap="round" />
+        <path d={mouthPath} strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
   }
 
   function discardSession() {
@@ -437,6 +478,65 @@ function App() {
                 </ul>
               )}
             </label>
+
+            <div className="flex flex-col gap-2 text-sm text-[var(--text-muted)]">
+              <span>{t("sessionModal.energy")}</span>
+              <span className="text-xs text-[var(--text-muted)]/90">
+                {t("sessionModal.energyDescription")}
+              </span>
+              <div
+                role="radiogroup"
+                aria-label={t("sessionModal.energy")}
+                className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-3"
+              >
+                <div className="relative mx-1 h-12 overflow-hidden">
+                  <div className="absolute left-0 right-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-[var(--panel-bg)]" />
+                  <div className="pointer-events-none absolute inset-0 grid grid-cols-3 items-center">
+                    <div
+                      className="flex justify-center transition-transform duration-300 ease-out"
+                      style={{ transform: `translateX(${getEnergyIndex(energy) * 100}%)` }}
+                    >
+                      <div className="h-8 w-8 rounded-full bg-[var(--accent)] shadow-md" />
+                    </div>
+                  </div>
+                  <div className="absolute inset-0 grid grid-cols-3 items-center">
+                    {(["bad", "regular", "good"] as EnergyLevel[]).map((level) => {
+                      const selected = energy === level;
+                      return (
+                        <button
+                          key={level}
+                          type="button"
+                          role="radio"
+                          aria-checked={selected}
+                          aria-label={t(`sessionModal.energyOptions.${level}`)}
+                          onClick={() => setEnergy(level)}
+                          onKeyDown={(event) => {
+                            if (event.key === "ArrowRight") {
+                              event.preventDefault();
+                              setEnergy((prev) => getEnergyFromIndex(getEnergyIndex(prev) + 1));
+                            }
+                            if (event.key === "ArrowLeft") {
+                              event.preventDefault();
+                              setEnergy((prev) => getEnergyFromIndex(getEnergyIndex(prev) - 1));
+                            }
+                          }}
+                          className={`z-10 mx-auto flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
+                            selected ? "text-white" : "text-[var(--text-muted)]"
+                          }`}
+                        >
+                          {renderMoodFace(level, "h-5 w-5")}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="mt-2 grid grid-cols-3 text-center text-xs">
+                  <span>{t("sessionModal.energyOptions.bad")}</span>
+                  <span>{t("sessionModal.energyOptions.regular")}</span>
+                  <span>{t("sessionModal.energyOptions.good")}</span>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="mt-6 flex justify-end gap-3">
@@ -662,6 +762,9 @@ function App() {
                         <th className="px-5 py-3.5 font-semibold">
                           {t("analytics.sessionHistory.columns.weekday")}
                         </th>
+                        <th className="px-5 py-3.5 font-semibold">
+                          {t("analytics.sessionHistory.columns.energy")}
+                        </th>
                         <th className="px-5 py-3.5 text-right font-semibold">
                           {t("analytics.sessionHistory.columns.actions")}
                         </th>
@@ -708,6 +811,12 @@ function App() {
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
                             {t(`analytics.weekdays.${session.weekday}`)}
+                          </td>
+                          <td className="px-5 py-4 text-sm">
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--panel-muted)] px-2.5 py-1 text-[var(--text-muted)]">
+                              {renderMoodFace(session.energy, "h-3.5 w-3.5")}
+                              <span>{t(`analytics.energy.${session.energy}`)}</span>
+                            </span>
                           </td>
                           <td className="px-5 py-4 text-right">
                             <button
