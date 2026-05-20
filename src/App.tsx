@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import logoHeader from "./assets/logo/logoHeader.png";
 
 type Page = "home" | "goals" | "analytics" | "settings";
+type Language = "en" | "es";
+type ThemeMode = "light" | "dark";
 
 type PausePeriod = {
   startedAt: number;
@@ -83,9 +85,21 @@ function getGreeting(date: Date): string {
   return "Good evening";
 }
 
+function getStoredLanguage(): Language {
+  const value = window.localStorage.getItem("chronolytic.language");
+  return value === "es" ? "es" : "en";
+}
+
+function getStoredThemeMode(): ThemeMode {
+  const value = window.localStorage.getItem("chronolytic.theme");
+  return value === "dark" ? "dark" : "light";
+}
+
 function App() {
   const [activePage, setActivePage] = useState<Page>("home");
   const [isCreateSessionOpen, setIsCreateSessionOpen] = useState<boolean>(false);
+  const [language, setLanguage] = useState<Language>(() => getStoredLanguage());
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredThemeMode());
   const [now, setNow] = useState<number>(Date.now());
   const [title, setTitle] = useState<string>("");
   const [category, setCategory] = useState<string>("");
@@ -99,6 +113,15 @@ function App() {
     }, 1000);
     return () => window.clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem("chronolytic.language", language);
+  }, [language]);
+
+  useEffect(() => {
+    window.localStorage.setItem("chronolytic.theme", themeMode);
+    document.documentElement.dataset.theme = themeMode;
+  }, [themeMode]);
 
   const nowDate = useMemo(() => new Date(now), [now]);
   const greeting = useMemo(() => getGreeting(nowDate), [nowDate]);
@@ -197,14 +220,14 @@ function App() {
 
   function renderHeader() {
     return (
-      <header className="flex h-20 shrink-0 items-center justify-between border-b border-slate-200 px-7">
+      <header className="flex h-20 shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--panel-bg)] px-7">
         <div className="flex items-center">
-          <img src={logoHeader} alt="Chronolytic" className="h-11 w-auto object-contain" />
+          <img src={logoHeader} alt="Chronolytic" className="h-32 w-auto object-contain" />
         </div>
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--panel-bg)] text-[var(--text-muted)] hover:bg-[var(--panel-muted)]"
             aria-label="Notifications"
           >
             <svg
@@ -220,7 +243,7 @@ function App() {
           </button>
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            className="flex h-10 w-10 items-center justify-center rounded-full border border-[var(--border)] bg-[var(--panel-bg)] text-[var(--text-muted)] hover:bg-[var(--panel-muted)]"
             aria-label="Profile"
           >
             <svg
@@ -243,40 +266,40 @@ function App() {
     if (!isCreateSessionOpen) return null;
 
     return (
-      <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-900/35 p-6">
-        <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl">
-          <h2 className="text-lg font-semibold text-slate-900">Create Session</h2>
-          <p className="mt-1 text-sm text-slate-600">
+      <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/45 p-6">
+        <div className="w-full max-w-xl rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-2xl">
+          <h2 className="text-lg font-semibold text-[var(--text)]">Create Session</h2>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">
             Define title, category, and tags before starting.
           </p>
 
           <div className="mt-5 grid gap-4">
-            <label className="flex flex-col gap-2 text-sm text-slate-700">
+            <label className="flex flex-col gap-2 text-sm text-[var(--text-muted)]">
               Title
               <input
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-slate-300 transition focus:ring"
+                className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
                 placeholder="Study: Linear Algebra"
               />
             </label>
 
-            <label className="flex flex-col gap-2 text-sm text-slate-700">
+            <label className="flex flex-col gap-2 text-sm text-[var(--text-muted)]">
               Category
               <input
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-slate-300 transition focus:ring"
+                className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
                 placeholder="Study"
               />
             </label>
 
-            <label className="flex flex-col gap-2 text-sm text-slate-700">
+            <label className="flex flex-col gap-2 text-sm text-[var(--text-muted)]">
               Tags (comma-separated)
               <input
                 value={tagsInput}
                 onChange={(event) => setTagsInput(event.target.value)}
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 outline-none ring-slate-300 transition focus:ring"
+                className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
                 placeholder="math, focus, exam"
               />
             </label>
@@ -286,7 +309,7 @@ function App() {
             <button
               type="button"
               onClick={() => setIsCreateSessionOpen(false)}
-              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-4 py-2 text-sm font-medium text-[var(--text-muted)] hover:opacity-90"
             >
               Cancel
             </button>
@@ -294,7 +317,7 @@ function App() {
               type="button"
               onClick={startSession}
               disabled={!canStartSession}
-              className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:bg-slate-400"
+              className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50"
             >
               Start session
             </button>
@@ -308,8 +331,8 @@ function App() {
     return (
       <section className="relative flex h-full flex-col px-8 py-7">
         <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center text-center">
-          <p className="text-lg text-slate-600">{greeting}</p>
-          <p className="mt-1 text-base text-slate-500">
+          <p className="text-lg text-[var(--text-muted)]">{greeting}</p>
+          <p className="mt-1 text-base text-[var(--text-muted)]">
             {nowDate.toLocaleDateString(undefined, {
               weekday: "long",
               year: "numeric",
@@ -319,11 +342,11 @@ function App() {
             - {nowDate.toLocaleTimeString()}
           </p>
 
-          <div className="mt-10 rounded-3xl border border-slate-200 bg-white px-10 py-8 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
-            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+          <div className="mt-10 rounded-3xl border border-[var(--border)] bg-[var(--panel-bg)] px-10 py-8 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
+            <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
               Active session timer
             </p>
-            <p className="mt-3 text-7xl font-semibold tracking-tight text-slate-900">
+            <p className="mt-3 text-7xl font-semibold tracking-tight text-[var(--text)]">
               {activeSession ? formatDuration(effectiveDurationMs) : "00:00:00"}
             </p>
             <div className="mt-4 flex items-center justify-center gap-2">
@@ -333,22 +356,22 @@ function App() {
                     ? "bg-emerald-100 text-emerald-700"
                     : activeSession?.status === "paused"
                       ? "bg-amber-100 text-amber-700"
-                      : "bg-slate-100 text-slate-600"
+                      : "bg-[var(--panel-muted)] text-[var(--text-muted)]"
                 }`}
               >
                 {activeSession ? `Status: ${activeSession.status}` : "No active session"}
               </span>
             </div>
             {activeSession ? (
-              <div className="mt-4 text-base text-slate-600">
-                <p className="font-medium text-slate-800">{activeSession.title}</p>
+              <div className="mt-4 text-base text-[var(--text-muted)]">
+                <p className="font-medium text-[var(--text)]">{activeSession.title}</p>
                 <p>{activeSession.category || "Uncategorized"}</p>
                 {activeSession.tags.length > 0 ? (
                   <div className="mt-2 flex flex-wrap justify-center gap-2">
                     {activeSession.tags.map((tag) => (
                       <span
                         key={`${activeSession.id}-active-${tag}`}
-                        className="rounded-full border border-slate-300 px-2 py-0.5 text-sm text-slate-700"
+                        className="rounded-full border border-[var(--border)] px-2 py-0.5 text-sm text-[var(--text-muted)]"
                       >
                         {tag}
                       </span>
@@ -364,7 +387,7 @@ function App() {
               <button
                 type="button"
                 onClick={() => setIsCreateSessionOpen(true)}
-                className="rounded-xl bg-slate-900 px-5 py-2.5 text-base font-medium text-white transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-800 hover:opacity-95 active:translate-y-0"
+                className="rounded-xl bg-[var(--accent)] px-5 py-2.5 text-base font-medium text-white transition duration-200 ease-out hover:-translate-y-0.5 hover:opacity-95 active:translate-y-0"
               >
                 Create Session
               </button>
@@ -374,7 +397,7 @@ function App() {
               <button
                 type="button"
                 onClick={pauseSession}
-                className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-base font-medium text-slate-800 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-50 hover:opacity-95 active:translate-y-0"
+                className="rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-5 py-2.5 text-base font-medium text-[var(--text)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[var(--panel-muted)] hover:opacity-95 active:translate-y-0"
               >
                 Pause
               </button>
@@ -384,7 +407,7 @@ function App() {
               <button
                 type="button"
                 onClick={resumeSession}
-                className="rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-base font-medium text-slate-800 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-slate-50 hover:opacity-95 active:translate-y-0"
+                className="rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-5 py-2.5 text-base font-medium text-[var(--text)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[var(--panel-muted)] hover:opacity-95 active:translate-y-0"
               >
                 Resume
               </button>
@@ -411,23 +434,23 @@ function App() {
             ) : null}
           </div>
 
-          <div className="mt-10 w-full rounded-2xl border border-slate-200 bg-white p-5 text-left">
-            <h2 className="text-lg font-semibold text-slate-900">Completed sessions</h2>
+          <div className="mt-10 w-full rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 text-left">
+            <h2 className="text-lg font-semibold text-[var(--text)]">Completed sessions</h2>
             {completedSessions.length === 0 ? (
-              <p className="mt-3 text-base text-slate-600">No completed sessions yet.</p>
+              <p className="mt-3 text-base text-[var(--text-muted)]">No completed sessions yet.</p>
             ) : (
               <ul className="mt-3 space-y-3">
                 {completedSessions.map((session) => (
                   <li
                     key={session.id}
-                    className="rounded-xl border border-slate-200 bg-slate-50 p-4"
+                    className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-4"
                   >
-                    <p className="text-base font-semibold text-slate-900">{session.title}</p>
-                    <p className="mt-1 text-base text-slate-600">
+                    <p className="text-base font-semibold text-[var(--text)]">{session.title}</p>
+                    <p className="mt-1 text-base text-[var(--text-muted)]">
                       {session.category || "Uncategorized"} -{" "}
                       {formatHumanDuration(session.effectiveDurationMs)}
                     </p>
-                    <p className="mt-1 text-sm text-slate-500">
+                    <p className="mt-1 text-sm text-[var(--text-muted)]">
                       Started {new Date(session.startedAt).toLocaleTimeString()} - Finished{" "}
                       {new Date(session.endedAt).toLocaleTimeString()}
                     </p>
@@ -436,7 +459,7 @@ function App() {
                         {session.tags.map((tag) => (
                           <span
                             key={`${session.id}-${tag}`}
-                            className="rounded-full border border-slate-300 px-2 py-0.5 text-sm text-slate-700"
+                            className="rounded-full border border-[var(--border)] px-2 py-0.5 text-sm text-[var(--text-muted)]"
                           >
                             {tag}
                           </span>
@@ -455,25 +478,113 @@ function App() {
     );
   }
 
-  function renderPlaceholderPage(page: Exclude<Page, "home">) {
-    const titleMap: Record<Exclude<Page, "home">, string> = {
+  function renderPlaceholderPage(page: Exclude<Page, "home" | "settings">) {
+    const titleMap: Record<Exclude<Page, "home" | "settings">, string> = {
       goals: "Goals",
       analytics: "Analytics",
-      settings: "Settings",
     };
 
     return (
       <section className="flex h-full items-center justify-center px-8 py-10">
-        <div className="w-full max-w-2xl rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
-          <p className="text-base font-semibold uppercase tracking-[0.14em] text-slate-500">
+        <div className="w-full max-w-2xl rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-8 text-center shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
+          <p className="text-base font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
             Chronolytic
           </p>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-900">
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text)]">
             {titleMap[page]}
           </h1>
-          <p className="mt-4 text-base leading-7 text-slate-600">
+          <p className="mt-4 text-base leading-7 text-[var(--text-muted)]">
             This page is intentionally a placeholder for a future iteration.
           </p>
+        </div>
+      </section>
+    );
+  }
+
+  function renderSettingsPage() {
+    return (
+      <section className="flex h-full items-start justify-center px-8 py-10">
+        <div className="w-full max-w-3xl space-y-4">
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
+            <h2 className="text-lg font-semibold text-[var(--text)]">Language</h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              Select your preferred language. Full app translation will be added in a later phase.
+            </p>
+            <div className="mt-4 max-w-sm">
+              <label
+                className="mb-2 block text-sm font-medium text-[var(--text-muted)]"
+                htmlFor="language-select"
+              >
+                App language
+              </label>
+              <select
+                id="language-select"
+                value={language}
+                onChange={(event) => setLanguage(event.target.value as Language)}
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
+              >
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
+            <h2 className="text-lg font-semibold text-[var(--text)]">Theme</h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              Choose how Chronolytic should appear on this device.
+            </p>
+            <div className="mt-4 flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-3">
+              <span className="text-sm font-medium text-[var(--text-muted)]">
+                {themeMode === "light" ? "Light mode" : "Dark mode"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setThemeMode((prev) => (prev === "light" ? "dark" : "light"))}
+                className={`relative h-8 w-14 shrink-0 rounded-full transition-colors duration-200 ${
+                  themeMode === "dark" ? "bg-[var(--accent)]" : "bg-slate-300"
+                }`}
+                aria-label="Toggle theme"
+              >
+                <span
+                  className={`absolute left-1 top-1 h-6 w-6 rounded-full shadow transition-transform duration-200 ${
+                    themeMode === "dark"
+                      ? "translate-x-6 bg-[var(--panel-bg)]"
+                      : "translate-x-0 bg-[var(--panel-bg)]"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
+            <h2 className="text-lg font-semibold text-[var(--text)]">Help / About</h2>
+            <p className="mt-3 text-sm text-[var(--text-muted)]">
+              <span className="font-medium">Chronolytic</span> is a local-first productivity
+              analytics desktop app focused on effective work sessions and behavioral insights.
+            </p>
+            <dl className="mt-4 grid grid-cols-1 gap-2 text-sm text-[var(--text-muted)] sm:grid-cols-2">
+              <div>
+                <dt className="font-medium text-[var(--text)]">Version</dt>
+                <dd>0.1.0</dd>
+              </div>
+              <div>
+                <dt className="font-medium text-[var(--text)]">License</dt>
+                <dd>MIT</dd>
+              </div>
+              <div className="sm:col-span-2">
+                <dt className="font-medium text-[var(--text)]">Author</dt>
+                <dd>Raúl García Balongo</dd>
+              </div>
+            </dl>
+            <button
+              type="button"
+              disabled
+              className="mt-5 rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-4 py-2 text-sm font-medium text-[var(--text-muted)] opacity-70"
+            >
+              Check for updates (coming soon)
+            </button>
+          </div>
         </div>
       </section>
     );
@@ -544,11 +655,11 @@ function App() {
 
   return (
     <main className="flex h-screen w-screen overflow-hidden">
-      <div className="flex h-full w-full flex-col overflow-hidden bg-white/90">
+      <div className="flex h-full w-full flex-col overflow-hidden bg-[var(--shell-bg)] text-[var(--text)]">
         {renderHeader()}
 
         <div className="flex min-h-0 flex-1">
-          <aside className="w-36 shrink-0 border-r border-slate-200 bg-slate-50/70 px-3 py-5">
+          <aside className="w-36 shrink-0 border-r border-[var(--border)] bg-[var(--sidebar-bg)] px-3 py-5">
             <nav className="flex flex-col gap-3">
               {navItems.map((item) => (
                 <button
@@ -558,7 +669,7 @@ function App() {
                   className={`flex flex-col items-center justify-center gap-2 rounded-2xl px-2 py-3.5 text-center transition ${
                     activePage === item.page
                       ? "bg-slate-900 text-white shadow-[0_6px_20px_rgba(15,23,42,0.18)]"
-                      : "text-slate-600 hover:bg-slate-200/70"
+                      : "text-[var(--text-muted)] hover:bg-[var(--panel-muted)]"
                   }`}
                 >
                   {renderNavIcon(item.page)}
@@ -570,8 +681,12 @@ function App() {
             </nav>
           </aside>
 
-          <div className="min-w-0 flex-1 overflow-y-auto bg-white/80">
-            {activePage === "home" ? renderHome() : renderPlaceholderPage(activePage)}
+          <div className="min-w-0 flex-1 overflow-y-auto bg-[var(--panel-bg)]">
+            {activePage === "home"
+              ? renderHome()
+              : activePage === "settings"
+                ? renderSettingsPage()
+                : renderPlaceholderPage(activePage)}
           </div>
         </div>
       </div>
