@@ -1,0 +1,66 @@
+{
+  "app": {
+    "name": "Chronolytic"
+  },
+  "nav": {
+    "home": "Home",
+    "goals": "Goals",
+    "analytics": "Analytics",
+    "settings": "Settings"
+  },
+  "home": {
+    "goodMorning": "Good morning",
+    "goodAfternoon": "Good afternoon",
+    "goodEvening": "Good evening",
+    "activeSessionTimer": "Active session timer",
+    "noActiveSession": "No active session",
+    "statusRunning": "Running",
+    "statusPaused": "Paused",
+    "uncategorized": "Uncategorized",
+    "createSession": "Create Session",
+    "pause": "Pause",
+    "resume": "Resume",
+    "finish": "Finish",
+    "discard": "Discard",
+    "completedSessions": "Completed sessions",
+    "noCompletedSessions": "No completed sessions yet.",
+    "started": "Started",
+    "finished": "Finished",
+    "viewMore": "View more",
+    "viewLess": "View less",
+    "delete": "Delete",
+    "deleteSession": "Delete completed session"
+  },
+  "sessionModal": {
+    "title": "Create Session",
+    "description": "Define title, category, and tags before starting.",
+    "sessionTitle": "Title",
+    "titlePlaceholder": "Study: Linear Algebra",
+    "category": "Category",
+    "categoryPlaceholder": "Study",
+    "tags": "Tags (comma-separated)",
+    "tagsPlaceholder": "math, focus, exam",
+    "cancel": "Cancel",
+    "start": "Start session"
+  },
+  "settings": {
+    "language": "Language",
+    "languageDescription": "Select your preferred language. Full app translation will be added in a later phase.",
+    "appLanguage": "App language",
+    "english": "English",
+    "spanish": "Spanish",
+    "theme": "Theme",
+    "themeDescription": "Choose how Chronolytic should appear on this device.",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode",
+    "helpAbout": "Help / About",
+    "aboutDescription": "Chronolytic is a local-first productivity analytics desktop app focused on effective work sessions and behavioral insights.",
+    "version": "Version",
+    "license": "License",
+    "author": "Author",
+    "checkUpdates": "Check for updates (coming soon)"
+  },
+  "placeholder": {
+    "futurePage": "This page is intentionally a placeholder for a future iteration."
+  }
+}

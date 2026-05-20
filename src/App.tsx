@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import logoHeader from "./assets/logo/logoHeader.png";
 
 type Page = "home" | "goals" | "analytics" | "settings";
@@ -78,11 +79,11 @@ function getEffectiveDuration(session: ActiveSession, now: number): number {
   return Math.max(0, total - paused);
 }
 
-function getGreeting(date: Date): string {
+function getGreetingKey(date: Date): string {
   const hour = date.getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
+  if (hour < 12) return "home.goodMorning";
+  if (hour < 18) return "home.goodAfternoon";
+  return "home.goodEvening";
 }
 
 function getStoredLanguage(): Language {
@@ -96,6 +97,7 @@ function getStoredThemeMode(): ThemeMode {
 }
 
 function App() {
+  const { t, i18n } = useTranslation();
   const [activePage, setActivePage] = useState<Page>("home");
   const [isCreateSessionOpen, setIsCreateSessionOpen] = useState<boolean>(false);
   const [language, setLanguage] = useState<Language>(() => getStoredLanguage());
@@ -106,6 +108,7 @@ function App() {
   const [tagsInput, setTagsInput] = useState<string>("");
   const [activeSession, setActiveSession] = useState<ActiveSession | null>(null);
   const [completedSessions, setCompletedSessions] = useState<CompletedSession[]>([]);
+  const [showAllCompletedSessions, setShowAllCompletedSessions] = useState<boolean>(false);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -119,12 +122,16 @@ function App() {
   }, [language]);
 
   useEffect(() => {
+    void i18n.changeLanguage(language);
+  }, [language, i18n]);
+
+  useEffect(() => {
     window.localStorage.setItem("chronolytic.theme", themeMode);
     document.documentElement.dataset.theme = themeMode;
   }, [themeMode]);
 
   const nowDate = useMemo(() => new Date(now), [now]);
-  const greeting = useMemo(() => getGreeting(nowDate), [nowDate]);
+  const greetingKey = useMemo(() => getGreetingKey(nowDate), [nowDate]);
 
   const effectiveDurationMs = useMemo(() => {
     if (!activeSession) return 0;
@@ -218,11 +225,15 @@ function App() {
     setIsCreateSessionOpen(false);
   }
 
+  function deleteCompletedSession(sessionId: string) {
+    setCompletedSessions((prev) => prev.filter((session) => session.id !== sessionId));
+  }
+
   function renderHeader() {
     return (
       <header className="flex h-20 shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--panel-bg)] px-7">
         <div className="flex items-center">
-          <img src={logoHeader} alt="Chronolytic" className="h-32 w-auto object-contain" />
+          <img src={logoHeader} alt={t("app.name")} className="h-32 w-auto object-contain" />
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -268,39 +279,37 @@ function App() {
     return (
       <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/45 p-6">
         <div className="w-full max-w-xl rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-2xl">
-          <h2 className="text-lg font-semibold text-[var(--text)]">Create Session</h2>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">
-            Define title, category, and tags before starting.
-          </p>
+          <h2 className="text-lg font-semibold text-[var(--text)]">{t("sessionModal.title")}</h2>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">{t("sessionModal.description")}</p>
 
           <div className="mt-5 grid gap-4">
             <label className="flex flex-col gap-2 text-sm text-[var(--text-muted)]">
-              Title
+              {t("sessionModal.sessionTitle")}
               <input
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
                 className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
-                placeholder="Study: Linear Algebra"
+                placeholder={t("sessionModal.titlePlaceholder")}
               />
             </label>
 
             <label className="flex flex-col gap-2 text-sm text-[var(--text-muted)]">
-              Category
+              {t("sessionModal.category")}
               <input
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
                 className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
-                placeholder="Study"
+                placeholder={t("sessionModal.categoryPlaceholder")}
               />
             </label>
 
             <label className="flex flex-col gap-2 text-sm text-[var(--text-muted)]">
-              Tags (comma-separated)
+              {t("sessionModal.tags")}
               <input
                 value={tagsInput}
                 onChange={(event) => setTagsInput(event.target.value)}
                 className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
-                placeholder="math, focus, exam"
+                placeholder={t("sessionModal.tagsPlaceholder")}
               />
             </label>
           </div>
@@ -311,7 +320,7 @@ function App() {
               onClick={() => setIsCreateSessionOpen(false)}
               className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-4 py-2 text-sm font-medium text-[var(--text-muted)] hover:opacity-90"
             >
-              Cancel
+              {t("sessionModal.cancel")}
             </button>
             <button
               type="button"
@@ -319,7 +328,7 @@ function App() {
               disabled={!canStartSession}
               className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Start session
+              {t("sessionModal.start")}
             </button>
           </div>
         </div>
@@ -331,7 +340,7 @@ function App() {
     return (
       <section className="relative flex h-full flex-col px-8 py-7">
         <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col items-center text-center">
-          <p className="text-lg text-[var(--text-muted)]">{greeting}</p>
+          <p className="text-lg text-[var(--text-muted)]">{t(greetingKey)}</p>
           <p className="mt-1 text-base text-[var(--text-muted)]">
             {nowDate.toLocaleDateString(undefined, {
               weekday: "long",
@@ -344,7 +353,7 @@ function App() {
 
           <div className="mt-10 rounded-3xl border border-[var(--border)] bg-[var(--panel-bg)] px-10 py-8 shadow-[0_10px_30px_rgba(15,23,42,0.06)]">
             <p className="text-sm font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-              Active session timer
+              {t("home.activeSessionTimer")}
             </p>
             <p className="mt-3 text-7xl font-semibold tracking-tight text-[var(--text)]">
               {activeSession ? formatDuration(effectiveDurationMs) : "00:00:00"}
@@ -359,13 +368,17 @@ function App() {
                       : "bg-[var(--panel-muted)] text-[var(--text-muted)]"
                 }`}
               >
-                {activeSession ? `Status: ${activeSession.status}` : "No active session"}
+                {activeSession
+                  ? activeSession.status === "running"
+                    ? t("home.statusRunning")
+                    : t("home.statusPaused")
+                  : t("home.noActiveSession")}
               </span>
             </div>
             {activeSession ? (
               <div className="mt-4 text-base text-[var(--text-muted)]">
                 <p className="font-medium text-[var(--text)]">{activeSession.title}</p>
-                <p>{activeSession.category || "Uncategorized"}</p>
+                <p>{activeSession.category || t("home.uncategorized")}</p>
                 {activeSession.tags.length > 0 ? (
                   <div className="mt-2 flex flex-wrap justify-center gap-2">
                     {activeSession.tags.map((tag) => (
@@ -389,7 +402,7 @@ function App() {
                 onClick={() => setIsCreateSessionOpen(true)}
                 className="rounded-xl bg-[var(--accent)] px-5 py-2.5 text-base font-medium text-white transition duration-200 ease-out hover:-translate-y-0.5 hover:opacity-95 active:translate-y-0"
               >
-                Create Session
+                {t("home.createSession")}
               </button>
             ) : null}
 
@@ -399,7 +412,7 @@ function App() {
                 onClick={pauseSession}
                 className="rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-5 py-2.5 text-base font-medium text-[var(--text)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[var(--panel-muted)] hover:opacity-95 active:translate-y-0"
               >
-                Pause
+                {t("home.pause")}
               </button>
             ) : null}
 
@@ -409,7 +422,7 @@ function App() {
                 onClick={resumeSession}
                 className="rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-5 py-2.5 text-base font-medium text-[var(--text)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[var(--panel-muted)] hover:opacity-95 active:translate-y-0"
               >
-                Resume
+                {t("home.resume")}
               </button>
             ) : null}
 
@@ -420,7 +433,7 @@ function App() {
                   onClick={finishSession}
                   className="rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-2.5 text-base font-medium text-emerald-800 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-emerald-100 hover:opacity-95 active:translate-y-0"
                 >
-                  Finish
+                  {t("home.finish")}
                 </button>
 
                 <button
@@ -428,47 +441,170 @@ function App() {
                   onClick={discardSession}
                   className="rounded-xl border border-rose-300 bg-rose-50 px-5 py-2.5 text-base font-medium text-rose-800 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-rose-100 hover:opacity-95 active:translate-y-0"
                 >
-                  Discard
+                  {t("home.discard")}
                 </button>
               </>
             ) : null}
           </div>
 
           <div className="mt-10 w-full rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 text-left">
-            <h2 className="text-lg font-semibold text-[var(--text)]">Completed sessions</h2>
+            <h2 className="text-lg font-semibold text-[var(--text)]">
+              {t("home.completedSessions")}
+            </h2>
             {completedSessions.length === 0 ? (
-              <p className="mt-3 text-base text-[var(--text-muted)]">No completed sessions yet.</p>
+              <p className="mt-3 text-base text-[var(--text-muted)]">
+                {t("home.noCompletedSessions")}
+              </p>
             ) : (
-              <ul className="mt-3 space-y-3">
-                {completedSessions.map((session) => (
-                  <li
-                    key={session.id}
-                    className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-4"
-                  >
-                    <p className="text-base font-semibold text-[var(--text)]">{session.title}</p>
-                    <p className="mt-1 text-base text-[var(--text-muted)]">
-                      {session.category || "Uncategorized"} -{" "}
-                      {formatHumanDuration(session.effectiveDurationMs)}
-                    </p>
-                    <p className="mt-1 text-sm text-[var(--text-muted)]">
-                      Started {new Date(session.startedAt).toLocaleTimeString()} - Finished{" "}
-                      {new Date(session.endedAt).toLocaleTimeString()}
-                    </p>
-                    {session.tags.length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {session.tags.map((tag) => (
-                          <span
-                            key={`${session.id}-${tag}`}
-                            className="rounded-full border border-[var(--border)] px-2 py-0.5 text-sm text-[var(--text-muted)]"
+              <div className="mt-3 space-y-3">
+                <ul className="space-y-3">
+                  {completedSessions.slice(0, 2).map((session) => (
+                    <li
+                      key={session.id}
+                      className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-4"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-base font-semibold text-[var(--text)]">
+                            {session.title}
+                          </p>
+                          <p className="mt-1 text-base text-[var(--text-muted)]">
+                            {session.category || t("home.uncategorized")} -{" "}
+                            {formatHumanDuration(session.effectiveDurationMs)}
+                          </p>
+                          <p className="mt-1 text-sm text-[var(--text-muted)]">
+                            {t("home.started")} {new Date(session.startedAt).toLocaleTimeString()} -{" "}
+                            {t("home.finished")} {new Date(session.endedAt).toLocaleTimeString()}
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => deleteCompletedSession(session.id)}
+                          aria-label={t("home.deleteSession")}
+                          className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-rose-400 transition duration-200 ease-out hover:bg-rose-500/10 hover:text-rose-500"
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            className="h-5 w-5"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="1.8"
                           >
-                            {tag}
-                          </span>
-                        ))}
+                            <path d="M4 7h16" />
+                            <path d="M9 7V5h6v2" />
+                            <path d="M8 7l1 12h6l1-12" />
+                            <path d="M10 11v5M14 11v5" />
+                          </svg>
+                          <span>{t("home.delete")}</span>
+                        </button>
                       </div>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
+                      {session.tags.length > 0 ? (
+                        <div className="mt-2 flex flex-wrap gap-2">
+                          {session.tags.map((tag) => (
+                            <span
+                              key={`${session.id}-${tag}`}
+                              className="rounded-full border border-[var(--border)] px-2 py-0.5 text-sm text-[var(--text-muted)]"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                    </li>
+                  ))}
+                </ul>
+
+                <div
+                  className={`overflow-hidden transition-all duration-300 ease-out ${
+                    showAllCompletedSessions ? "max-h-[1200px] opacity-100" : "max-h-0 opacity-0"
+                  }`}
+                >
+                  <ul
+                    className={`space-y-3 transition-all duration-300 ease-out ${
+                      showAllCompletedSessions ? "translate-y-0 pt-3" : "-translate-y-1 pt-0"
+                    }`}
+                  >
+                    {completedSessions.slice(2).map((session) => (
+                      <li
+                        key={session.id}
+                        className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-4"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-base font-semibold text-[var(--text)]">
+                              {session.title}
+                            </p>
+                            <p className="mt-1 text-base text-[var(--text-muted)]">
+                              {session.category || t("home.uncategorized")} -{" "}
+                              {formatHumanDuration(session.effectiveDurationMs)}
+                            </p>
+                            <p className="mt-1 text-sm text-[var(--text-muted)]">
+                              {t("home.started")} {new Date(session.startedAt).toLocaleTimeString()}{" "}
+                              - {t("home.finished")}{" "}
+                              {new Date(session.endedAt).toLocaleTimeString()}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => deleteCompletedSession(session.id)}
+                            aria-label={t("home.deleteSession")}
+                            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-rose-400 transition duration-200 ease-out hover:bg-rose-500/10 hover:text-rose-500"
+                          >
+                            <svg
+                              viewBox="0 0 24 24"
+                              className="h-5 w-5"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="1.8"
+                            >
+                              <path d="M4 7h16" />
+                              <path d="M9 7V5h6v2" />
+                              <path d="M8 7l1 12h6l1-12" />
+                              <path d="M10 11v5M14 11v5" />
+                            </svg>
+                            <span>{t("home.delete")}</span>
+                          </button>
+                        </div>
+                        {session.tags.length > 0 ? (
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {session.tags.map((tag) => (
+                              <span
+                                key={`${session.id}-${tag}`}
+                                className="rounded-full border border-[var(--border)] px-2 py-0.5 text-sm text-[var(--text-muted)]"
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {completedSessions.length > 2 ? (
+                  <div className="flex justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowAllCompletedSessions((prev) => !prev)}
+                      className="group inline-flex items-center gap-1 rounded-lg px-2 py-1 text-sm font-medium text-[#4E89FF] transition duration-200 ease-out hover:-translate-y-0.5 hover:text-[#6A9BFF]"
+                    >
+                      <span>
+                        {showAllCompletedSessions ? t("home.viewLess") : t("home.viewMore")}
+                      </span>
+                      <svg
+                        viewBox="0 0 24 24"
+                        className={`h-4 w-4 transition-transform duration-200 ${showAllCompletedSessions ? "rotate-180" : "rotate-0"}`}
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                      >
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             )}
           </div>
         </div>
@@ -480,21 +616,21 @@ function App() {
 
   function renderPlaceholderPage(page: Exclude<Page, "home" | "settings">) {
     const titleMap: Record<Exclude<Page, "home" | "settings">, string> = {
-      goals: "Goals",
-      analytics: "Analytics",
+      goals: t("nav.goals"),
+      analytics: t("nav.analytics"),
     };
 
     return (
       <section className="flex h-full items-center justify-center px-8 py-10">
         <div className="w-full max-w-2xl rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-8 text-center shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
           <p className="text-base font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)]">
-            Chronolytic
+            {t("app.name")}
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight text-[var(--text)]">
             {titleMap[page]}
           </h1>
           <p className="mt-4 text-base leading-7 text-[var(--text-muted)]">
-            This page is intentionally a placeholder for a future iteration.
+            {t("placeholder.futurePage")}
           </p>
         </div>
       </section>
@@ -506,16 +642,16 @@ function App() {
       <section className="flex h-full items-start justify-center px-8 py-10">
         <div className="w-full max-w-3xl space-y-4">
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
-            <h2 className="text-lg font-semibold text-[var(--text)]">Language</h2>
+            <h2 className="text-lg font-semibold text-[var(--text)]">{t("settings.language")}</h2>
             <p className="mt-1 text-sm text-[var(--text-muted)]">
-              Select your preferred language. Full app translation will be added in a later phase.
+              {t("settings.languageDescription")}
             </p>
             <div className="mt-4 max-w-sm">
               <label
                 className="mb-2 block text-sm font-medium text-[var(--text-muted)]"
                 htmlFor="language-select"
               >
-                App language
+                {t("settings.appLanguage")}
               </label>
               <select
                 id="language-select"
@@ -523,20 +659,20 @@ function App() {
                 onChange={(event) => setLanguage(event.target.value as Language)}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
               >
-                <option value="en">English</option>
-                <option value="es">Spanish</option>
+                <option value="en">{t("settings.english")}</option>
+                <option value="es">{t("settings.spanish")}</option>
               </select>
             </div>
           </div>
 
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
-            <h2 className="text-lg font-semibold text-[var(--text)]">Theme</h2>
+            <h2 className="text-lg font-semibold text-[var(--text)]">{t("settings.theme")}</h2>
             <p className="mt-1 text-sm text-[var(--text-muted)]">
-              Choose how Chronolytic should appear on this device.
+              {t("settings.themeDescription")}
             </p>
             <div className="mt-4 flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-3">
               <span className="text-sm font-medium text-[var(--text-muted)]">
-                {themeMode === "light" ? "Light mode" : "Dark mode"}
+                {themeMode === "light" ? t("settings.lightMode") : t("settings.darkMode")}
               </span>
               <button
                 type="button"
@@ -558,22 +694,21 @@ function App() {
           </div>
 
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
-            <h2 className="text-lg font-semibold text-[var(--text)]">Help / About</h2>
+            <h2 className="text-lg font-semibold text-[var(--text)]">{t("settings.helpAbout")}</h2>
             <p className="mt-3 text-sm text-[var(--text-muted)]">
-              <span className="font-medium">Chronolytic</span> is a local-first productivity
-              analytics desktop app focused on effective work sessions and behavioral insights.
+              {t("settings.aboutDescription")}
             </p>
             <dl className="mt-4 grid grid-cols-1 gap-2 text-sm text-[var(--text-muted)] sm:grid-cols-2">
               <div>
-                <dt className="font-medium text-[var(--text)]">Version</dt>
+                <dt className="font-medium text-[var(--text)]">{t("settings.version")}</dt>
                 <dd>0.1.0</dd>
               </div>
               <div>
-                <dt className="font-medium text-[var(--text)]">License</dt>
+                <dt className="font-medium text-[var(--text)]">{t("settings.license")}</dt>
                 <dd>MIT</dd>
               </div>
               <div className="sm:col-span-2">
-                <dt className="font-medium text-[var(--text)]">Author</dt>
+                <dt className="font-medium text-[var(--text)]">{t("settings.author")}</dt>
                 <dd>Raúl García Balongo</dd>
               </div>
             </dl>
@@ -582,7 +717,7 @@ function App() {
               disabled
               className="mt-5 rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-4 py-2 text-sm font-medium text-[var(--text-muted)] opacity-70"
             >
-              Check for updates (coming soon)
+              {t("settings.checkUpdates")}
             </button>
           </div>
         </div>
@@ -647,10 +782,10 @@ function App() {
   }
 
   const navItems: Array<{ page: Page; label: string }> = [
-    { page: "home", label: "Home" },
-    { page: "goals", label: "Goals" },
-    { page: "analytics", label: "Analytics" },
-    { page: "settings", label: "Settings" },
+    { page: "home", label: t("nav.home") },
+    { page: "goals", label: t("nav.goals") },
+    { page: "analytics", label: t("nav.analytics") },
+    { page: "settings", label: t("nav.settings") },
   ];
 
   return (
