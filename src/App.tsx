@@ -698,6 +698,16 @@ function App() {
     const maxWeekdayMs = Math.max(...summary.effectiveByWeekday.map((item) => item.effectiveMs), 1);
     const maxEnergyCount = Math.max(...summary.sessionsByEnergy.map((item) => item.count), 1);
     const maxCompareMs = Math.max(...summary.effectiveVsPaused.map((item) => item.valueMs), 1);
+    const maxTimeSlotMs = Math.max(
+      ...summary.effectiveByTimeSlot.map((item) => item.effectiveMs),
+      1,
+    );
+    const maxEnergyInterruptPausedMs = Math.max(
+      ...summary.energyInterruptionStats.map((item) => item.averagePausedMs),
+      1,
+    );
+
+    const formatPercentage = (value: number): string => `${Math.round(value * 100)}%`;
 
     return (
       <section className="flex h-full flex-col">
@@ -771,6 +781,84 @@ function App() {
                       <p className="mt-2 text-2xl font-semibold text-[var(--text)]">{kpi.value}</p>
                     </div>
                   ))}
+                </div>
+
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      {t("analytics.dashboard.kpis.focusRatio")}
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold text-[var(--text)]">
+                      {formatPercentage(summary.focusRatio)}
+                    </p>
+                    <div className="mt-3 h-2 rounded-full bg-[var(--panel-muted)]">
+                      <div
+                        className="h-2 rounded-full bg-[#4E89FF]"
+                        style={{ width: `${Math.max(summary.focusRatio * 100, 2)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      {t("analytics.dashboard.kpis.interruptionRatio")}
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold text-[var(--text)]">
+                      {formatPercentage(summary.interruptionRatio)}
+                    </p>
+                    <div className="mt-3 h-2 rounded-full bg-[var(--panel-muted)]">
+                      <div
+                        className="h-2 rounded-full bg-amber-500"
+                        style={{ width: `${Math.max(summary.interruptionRatio * 100, 2)}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      {t("analytics.dashboard.kpis.mostProductiveCategory")}
+                    </p>
+                    <p className="mt-2 truncate text-lg font-semibold text-[var(--text)]">
+                      {summary.mostProductiveCategory?.category ??
+                        t("analytics.dashboard.emptyMetric")}
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--text-muted)]">
+                      {summary.mostProductiveCategory
+                        ? formatHumanDuration(summary.mostProductiveCategory.effectiveMs)
+                        : "-"}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      {t("analytics.dashboard.kpis.bestTimeSlot")}
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-[var(--text)]">
+                      {summary.bestTimeSlot
+                        ? t(`analytics.dashboard.timeSlots.${summary.bestTimeSlot.slot}`)
+                        : t("analytics.dashboard.emptyMetric")}
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--text-muted)]">
+                      {summary.bestTimeSlot
+                        ? formatHumanDuration(summary.bestTimeSlot.effectiveMs)
+                        : "-"}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+                    <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      {t("analytics.dashboard.kpis.mostInterruptedSession")}
+                    </p>
+                    <p className="mt-2 truncate text-lg font-semibold text-[var(--text)]">
+                      {summary.mostInterruptedSession?.title ??
+                        t("analytics.dashboard.emptyMetric")}
+                    </p>
+                    <p className="mt-1 text-sm text-[var(--text-muted)]">
+                      {summary.mostInterruptedSession
+                        ? `${summary.mostInterruptedSession.pauseCount} · ${formatHumanDuration(summary.mostInterruptedSession.pausedDurationMs)}`
+                        : "-"}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -869,6 +957,66 @@ function App() {
                               style={{ width: `${(item.count / maxEnergyCount) * 100}%` }}
                             />
                           </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      {t("analytics.dashboard.charts.energyInterruptions")}
+                    </h3>
+                    <div className="mt-4 space-y-4">
+                      {summary.energyInterruptionStats.map((item) => (
+                        <div key={`${item.energy}-interruptions`}>
+                          <div className="mb-1.5 flex items-center justify-between text-sm">
+                            <span className="inline-flex items-center gap-1.5 text-[var(--text)]">
+                              {renderMoodFace(item.energy, "h-4 w-4")}
+                              {t(`analytics.energy.${item.energy}`)}
+                            </span>
+                            <span className="text-[var(--text-muted)]">
+                              {t("analytics.dashboard.series.averagePauseCount")}:{" "}
+                              {item.averagePauseCount.toFixed(1)}
+                            </span>
+                          </div>
+                          <div className="mb-1 text-xs text-[var(--text-muted)]">
+                            {t("analytics.dashboard.series.averagePausedTime")}:{" "}
+                            {formatHumanDuration(item.averagePausedMs)}
+                          </div>
+                          <div className="h-2 rounded-full bg-[var(--panel-muted)]">
+                            <div
+                              className="h-2 rounded-full bg-[var(--accent)]"
+                              style={{
+                                width: `${(item.averagePausedMs / maxEnergyInterruptPausedMs) * 100}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      {t("analytics.dashboard.charts.effectiveByTimeSlot")}
+                    </h3>
+                    <div className="mt-4 grid grid-cols-4 gap-3">
+                      {summary.effectiveByTimeSlot.map((item) => (
+                        <div key={item.slot} className="flex flex-col items-center gap-2">
+                          <div className="flex h-28 w-full items-end rounded-md bg-[var(--panel-muted)] px-1.5 py-1">
+                            <div
+                              className={`w-full rounded-sm ${summary.bestTimeSlot?.slot === item.slot ? "bg-[#4E89FF]" : "bg-[#4E89FF]/60"}`}
+                              style={{
+                                height: `${Math.max((item.effectiveMs / maxTimeSlotMs) * 100, 6)}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-[10px] font-medium uppercase text-[var(--text-muted)]">
+                            {t(`analytics.dashboard.timeSlots.${item.slot}`)}
+                          </span>
+                          <span className="text-[10px] text-[var(--text-muted)]">
+                            {formatHumanDuration(item.effectiveMs)}
+                          </span>
                         </div>
                       ))}
                     </div>

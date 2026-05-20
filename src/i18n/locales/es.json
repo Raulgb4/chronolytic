@@ -54,18 +54,34 @@
         "totalPausedTime": "Tiempo pausado total",
         "completedSessions": "Sesiones completadas",
         "totalPauseCount": "Pausas totales",
-        "averageSessionDuration": "Duración promedio"
+        "averageSessionDuration": "Duración promedio",
+        "focusRatio": "Ratio de enfoque",
+        "interruptionRatio": "Ratio de interrupciones",
+        "mostProductiveCategory": "Categoría más productiva",
+        "bestTimeSlot": "Mejor franja horaria",
+        "mostInterruptedSession": "Sesión más interrumpida"
       },
       "charts": {
         "effectiveByCategory": "Tiempo efectivo por categoría",
         "effectiveByWeekday": "Tiempo efectivo por día",
         "effectiveVsPaused": "Tiempo efectivo vs pausado",
-        "sessionsByEnergy": "Sesiones por energía"
+        "sessionsByEnergy": "Sesiones por energía",
+        "energyInterruptions": "Energía vs interrupciones",
+        "effectiveByTimeSlot": "Tiempo efectivo por franja"
       },
       "series": {
         "effective": "Efectivo",
-        "paused": "Pausado"
+        "paused": "Pausado",
+        "averagePauseCount": "Promedio de pausas",
+        "averagePausedTime": "Promedio pausado"
       },
+      "timeSlots": {
+        "morning": "Mañana",
+        "afternoon": "Tarde",
+        "evening": "Noche",
+        "night": "Madrugada"
+      },
+      "emptyMetric": "N/D",
       "latest": {
         "title": "Sesiones recientes"
       }
