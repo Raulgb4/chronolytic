@@ -5,62 +5,62 @@
   "nav": {
     "home": "Inicio",
     "goals": "Objetivos",
-    "analytics": "Analitica",
-    "settings": "Configuracion"
+    "analytics": "Analíticas",
+    "settings": "Configuración"
   },
   "home": {
-    "goodMorning": "Buenos dias",
+    "goodMorning": "Buenos días",
     "goodAfternoon": "Buenas tardes",
     "goodEvening": "Buenas noches",
-    "activeSessionTimer": "Temporizador de sesion activa",
-    "noActiveSession": "Sin sesion activa",
+    "activeSessionTimer": "Temporizador de sesión activa",
+    "noActiveSession": "Sin sesión activa",
     "statusRunning": "En progreso",
     "statusPaused": "Pausado",
-    "uncategorized": "Sin categoria",
-    "createSession": "Crear sesion",
+    "uncategorized": "Sin categoría",
+    "createSession": "Crear sesión",
     "pause": "Pausar",
     "resume": "Reanudar",
     "finish": "Finalizar",
     "discard": "Descartar",
     "completedSessions": "Sesiones completadas",
-    "noCompletedSessions": "Aun no hay sesiones completadas.",
+    "noCompletedSessions": "Aún no hay sesiones completadas.",
     "started": "Inicio",
     "finished": "Fin",
     "viewMore": "Ver más",
     "viewLess": "Ver menos",
     "delete": "Eliminar",
-    "deleteSession": "Eliminar sesion completada"
+    "deleteSession": "Eliminar sesión completada"
   },
   "sessionModal": {
-    "title": "Crear sesion",
-    "description": "Define titulo, categoria y etiquetas antes de comenzar.",
-    "sessionTitle": "Titulo",
-    "titlePlaceholder": "Estudio: Algebra lineal",
-    "category": "Categoria",
+    "title": "Crear sesión",
+    "description": "Define título, categoría y etiquetas antes de comenzar.",
+    "sessionTitle": "Título",
+    "titlePlaceholder": "Estudio: Álgebra lineal",
+    "category": "Categoría",
     "categoryPlaceholder": "Estudio",
     "tags": "Etiquetas (separadas por comas)",
-    "tagsPlaceholder": "matematicas, enfoque, examen",
+    "tagsPlaceholder": "matemáticas, enfoque, examen",
     "cancel": "Cancelar",
-    "start": "Iniciar sesion"
+    "start": "Iniciar sesión"
   },
   "settings": {
     "language": "Idioma",
-    "languageDescription": "Selecciona tu idioma preferido. La traduccion completa se agregara en una fase posterior.",
+    "languageDescription": "Selecciona tu idioma preferido. La traducción completa se agregará en una fase posterior.",
     "appLanguage": "Idioma de la app",
-    "english": "Ingles",
-    "spanish": "Espanol",
+    "english": "Inglés",
+    "spanish": "Español",
     "theme": "Tema",
     "themeDescription": "Elige como debe verse Chronolytic en este dispositivo.",
     "lightMode": "Modo claro",
     "darkMode": "Modo oscuro",
     "helpAbout": "Ayuda / Acerca de",
-    "aboutDescription": "Chronolytic es una app de analitica de productividad local-first para escritorio, enfocada en sesiones efectivas de trabajo y en patrones de comportamiento.",
-    "version": "Version",
+    "aboutDescription": "Chronolytic es una app de analítica de productividad local-first para escritorio, enfocada en sesiones efectivas de trabajo y en patrones de comportamiento.",
+    "version": "Versión",
     "license": "Licencia",
     "author": "Autor",
-    "checkUpdates": "Buscar actualizaciones (proximamente)"
+    "checkUpdates": "Buscar actualizaciones (próximamente)"
   },
   "placeholder": {
-    "futurePage": "Esta pagina es un marcador de posicion para una iteracion futura."
+    "futurePage": "Esta página es un marcador de posición para una iteración futura."
   }
 }
