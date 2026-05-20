@@ -666,12 +666,18 @@ function App() {
                   key={item.page}
                   type="button"
                   onClick={() => setActivePage(item.page)}
-                  className={`flex flex-col items-center justify-center gap-2 rounded-2xl px-2 py-3.5 text-center transition ${
+                  className={`relative flex flex-col items-center justify-center gap-2 rounded-2xl px-2 py-3.5 text-center transition ${
                     activePage === item.page
-                      ? "bg-slate-900 text-white shadow-[0_6px_20px_rgba(15,23,42,0.18)]"
-                      : "text-[var(--text-muted)] hover:bg-[var(--panel-muted)]"
+                      ? "text-[#4E89FF]"
+                      : "text-[var(--text-muted)] hover:bg-[var(--panel-muted)] hover:text-[#4E89FF]"
                   }`}
                 >
+                  <span
+                    aria-hidden="true"
+                    className={`absolute bottom-2 left-0 top-2 w-0.5 rounded-r-md bg-[#4E89FF] transition-all duration-200 ease-out ${
+                      activePage === item.page ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
                   {renderNavIcon(item.page)}
                   <span className="text-sm font-semibold leading-none tracking-[0.05em]">
                     {item.label}
