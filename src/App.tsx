@@ -109,6 +109,8 @@ function App() {
   const [activeSession, setActiveSession] = useState<ActiveSession | null>(null);
   const [completedSessions, setCompletedSessions] = useState<CompletedSession[]>([]);
   const [showAllCompletedSessions, setShowAllCompletedSessions] = useState<boolean>(false);
+  const [categorySuggestionsOpen, setCategorySuggestionsOpen] = useState(false);
+  const [tagSuggestionsOpen, setTagSuggestionsOpen] = useState(false);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -137,6 +139,45 @@ function App() {
     if (!activeSession) return 0;
     return getEffectiveDuration(activeSession, now);
   }, [activeSession, now]);
+
+  const usedCategories = useMemo(
+    () => [...new Set(completedSessions.map((s) => s.category).filter(Boolean))],
+    [completedSessions],
+  );
+
+  const currentTagSegment = useMemo(() => {
+    const parts = tagsInput.split(",");
+    return parts[parts.length - 1]?.trim() || "";
+  }, [tagsInput]);
+
+  const filteredCategorySuggestions = useMemo(
+    () =>
+      category.length > 0
+        ? usedCategories.filter(
+            (c) =>
+              c.toLowerCase() !== category.toLowerCase() &&
+              c.toLowerCase().includes(category.toLowerCase()),
+          )
+        : usedCategories,
+    [usedCategories, category],
+  );
+
+  const usedTags = useMemo(
+    () => [...new Set(completedSessions.flatMap((s) => s.tags))].filter(Boolean),
+    [completedSessions],
+  );
+
+  const filteredTagSuggestions = useMemo(
+    () =>
+      currentTagSegment.length > 0
+        ? usedTags.filter(
+            (t) =>
+              t.toLowerCase() !== currentTagSegment.toLowerCase() &&
+              t.toLowerCase().includes(currentTagSegment.toLowerCase()),
+          )
+        : [],
+    [usedTags, currentTagSegment],
+  );
 
   const canStartSession = title.trim().length > 0 && !activeSession;
 
@@ -284,7 +325,10 @@ function App() {
 
           <div className="mt-5 grid gap-4">
             <label className="flex flex-col gap-2 text-sm text-[var(--text-muted)]">
-              {t("sessionModal.sessionTitle")}
+              <span className="flex items-center gap-1">
+                {t("sessionModal.sessionTitle")}
+                <span className="text-[var(--accent)]">*</span>
+              </span>
               <input
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
@@ -293,24 +337,62 @@ function App() {
               />
             </label>
 
-            <label className="flex flex-col gap-2 text-sm text-[var(--text-muted)]">
+            <label className="relative flex flex-col gap-2 text-sm text-[var(--text-muted)]">
               {t("sessionModal.category")}
               <input
                 value={category}
                 onChange={(event) => setCategory(event.target.value)}
+                onFocus={() => setCategorySuggestionsOpen(true)}
+                onBlur={() => setTimeout(() => setCategorySuggestionsOpen(false), 150)}
                 className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
                 placeholder={t("sessionModal.categoryPlaceholder")}
               />
+              {categorySuggestionsOpen && filteredCategorySuggestions.length > 0 && (
+                <ul className="absolute top-full left-0 right-0 z-10 mt-1 max-h-40 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] shadow-lg">
+                  {filteredCategorySuggestions.map((s) => (
+                    <li
+                      key={s}
+                      className="cursor-pointer px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--panel-muted)]"
+                      onMouseDown={() => {
+                        setCategory(s);
+                        setCategorySuggestionsOpen(false);
+                      }}
+                    >
+                      {s}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </label>
 
-            <label className="flex flex-col gap-2 text-sm text-[var(--text-muted)]">
+            <label className="relative flex flex-col gap-2 text-sm text-[var(--text-muted)]">
               {t("sessionModal.tags")}
               <input
                 value={tagsInput}
                 onChange={(event) => setTagsInput(event.target.value)}
+                onFocus={() => setTagSuggestionsOpen(true)}
+                onBlur={() => setTimeout(() => setTagSuggestionsOpen(false), 150)}
                 className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
                 placeholder={t("sessionModal.tagsPlaceholder")}
               />
+              {tagSuggestionsOpen && filteredTagSuggestions.length > 0 && (
+                <ul className="absolute top-full left-0 right-0 z-10 mt-1 max-h-40 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] shadow-lg">
+                  {filteredTagSuggestions.map((t) => (
+                    <li
+                      key={t}
+                      className="cursor-pointer px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--panel-muted)]"
+                      onMouseDown={() => {
+                        const parts = tagsInput.split(",");
+                        parts[parts.length - 1] = t;
+                        setTagsInput(parts.join(", ").replace(/,\s*$/, "").replace(/,\s*,/g, ","));
+                        setTagSuggestionsOpen(false);
+                      }}
+                    >
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              )}
             </label>
           </div>
 
