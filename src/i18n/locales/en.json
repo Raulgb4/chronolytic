@@ -167,6 +167,7 @@
     "pause": "Pause",
     "resume": "Resume",
     "finish": "Finish",
+    "finishing": "Finishing...",
     "discard": "Discard"
   },
   "sessionModal": {
@@ -186,7 +187,15 @@
       "good": "Good"
     },
     "cancel": "Cancel",
-    "start": "Start session"
+    "start": "Start session",
+    "starting": "Starting...",
+    "duplicateTitle": {
+      "title": "Similar session title detected",
+      "description": "A completed session already uses \"{{title}}\".",
+      "cancel": "Cancel",
+      "createAnyway": "Create anyway",
+      "autoRename": "Auto-rename"
+    }
   },
   "settings": {
     "language": "Language",

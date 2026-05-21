@@ -463,6 +463,8 @@ export async function saveActiveSession(
   const safeLastSeenAt =
     typeof lastSeenAt === "number" && Number.isFinite(lastSeenAt) ? lastSeenAt : now;
 
+  await db.execute("DELETE FROM active_session WHERE id <> $1", [session.id]);
+
   await db.execute(
     `
       INSERT INTO active_session (

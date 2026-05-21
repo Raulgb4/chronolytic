@@ -96,6 +96,14 @@ function normalizeSearchValue(value: string): string {
     .replace(/[\u0300-\u036f]/g, "");
 }
 
+function normalizeDuplicateTitle(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
 function getBackupDefaultFileName(): string {
   const now = new Date();
   const y = now.getFullYear();
@@ -231,6 +239,9 @@ function App() {
   const [isStartupMinElapsed, setIsStartupMinElapsed] = useState(false);
   const [isStartupLeaving, setIsStartupLeaving] = useState(false);
   const [isStartupComplete, setIsStartupComplete] = useState(false);
+  const [isStartingSession, setIsStartingSession] = useState(false);
+  const [isFinishingSession, setIsFinishingSession] = useState(false);
+  const [duplicateTitleCandidate, setDuplicateTitleCandidate] = useState<string | null>(null);
   const backupFadeTimeoutRef = useRef<number | null>(null);
   const backupRemoveTimeoutRef = useRef<number | null>(null);
 
@@ -618,14 +629,40 @@ function App() {
     }
   }, [sessionHistoryPage, sessionHistoryTotalPages]);
 
-  const canStartSession = title.trim().length > 0 && !activeSession;
+  const canStartSession = title.trim().length > 0 && !activeSession && !isStartingSession;
 
-  async function startSession() {
-    if (!canStartSession) return;
+  function hasDuplicateCompletedTitle(candidate: string): boolean {
+    const normalizedCandidate = normalizeDuplicateTitle(candidate);
+    if (!normalizedCandidate) return false;
+
+    return completedSessions.some(
+      (session) => normalizeDuplicateTitle(session.title) === normalizedCandidate,
+    );
+  }
+
+  function getAutoRenamedSessionTitle(originalTitle: string): string {
+    const trimmed = originalTitle.trim();
+    const existingTitles = new Set(
+      completedSessions.map((session) => normalizeDuplicateTitle(session.title)),
+    );
+
+    let suffix = 2;
+    while (true) {
+      const candidate = `${trimmed} (${suffix})`;
+      if (!existingTitles.has(normalizeDuplicateTitle(candidate))) {
+        return candidate;
+      }
+      suffix += 1;
+    }
+  }
+
+  async function commitStartSession(finalTitle: string) {
+    if (isStartingSession || activeSession) return;
+
     const startedAt = Date.now();
     const session: ActiveSession = {
       id: crypto.randomUUID(),
-      title: title.trim(),
+      title: finalTitle.trim(),
       category: category.trim(),
       tags: parseTags(tagsInput),
       energy,
@@ -634,18 +671,38 @@ function App() {
       status: "running",
     };
 
+    setIsStartingSession(true);
     try {
+      if (activeSession) {
+        return;
+      }
+
       await saveActiveSession(session, startedAt);
       setActiveSession(session);
       setIsCreateSessionOpen(false);
       setRecoveryNoticeVisible(false);
+      setDuplicateTitleCandidate(null);
     } catch (error) {
       console.error("Failed to persist active session on start", {
         error,
         source: "saveActiveSession",
         sessionId: session.id,
       });
+    } finally {
+      setIsStartingSession(false);
     }
+  }
+
+  async function requestStartSession() {
+    if (!canStartSession || isStartingSession || activeSession) return;
+
+    const trimmedTitle = title.trim();
+    if (hasDuplicateCompletedTitle(trimmedTitle)) {
+      setDuplicateTitleCandidate(trimmedTitle);
+      return;
+    }
+
+    await commitStartSession(trimmedTitle);
   }
 
   async function pauseSession() {
@@ -698,10 +755,11 @@ function App() {
   }
 
   async function finishSession() {
-    if (!activeSession) return;
+    if (!activeSession || isFinishingSession) return;
+    const sessionBeingFinished = activeSession;
     const endedAt = Date.now();
-    const pauses = [...activeSession.pauses];
-    if (activeSession.status === "paused") {
+    const pauses = [...sessionBeingFinished.pauses];
+    if (sessionBeingFinished.status === "paused") {
       for (let index = pauses.length - 1; index >= 0; index -= 1) {
         if (pauses[index].endedAt === null) {
           pauses[index] = { ...pauses[index], endedAt };
@@ -711,7 +769,7 @@ function App() {
     }
 
     const sessionToSave: ActiveSession = {
-      ...activeSession,
+      ...sessionBeingFinished,
       pauses,
       status: "running",
     };
@@ -731,6 +789,7 @@ function App() {
       weekday: getWeekdayFromTimestamp(sessionToSave.startedAt),
     };
 
+    setIsFinishingSession(true);
     try {
       await saveCompletedSession(completed);
       await deleteActiveSession(completed.id);
@@ -752,6 +811,8 @@ function App() {
         weekday: completed.weekday,
         energy: completed.energy,
       });
+    } finally {
+      setIsFinishingSession(false);
     }
   }
 
@@ -1259,20 +1320,62 @@ function App() {
             <button
               type="button"
               onClick={() => setIsCreateSessionOpen(false)}
+              disabled={isStartingSession}
               className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-4 py-2 text-sm font-medium text-[var(--text-muted)] hover:opacity-90"
             >
               {t("sessionModal.cancel")}
             </button>
             <button
               type="button"
-              onClick={startSession}
+              onClick={() => void requestStartSession()}
               disabled={!canStartSession}
               className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {t("sessionModal.start")}
+              {isStartingSession ? t("sessionModal.starting") : t("sessionModal.start")}
             </button>
           </div>
         </div>
+
+        {duplicateTitleCandidate ? (
+          <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/45 p-6">
+            <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-2xl">
+              <h3 className="text-lg font-semibold text-[var(--text)]">
+                {t("sessionModal.duplicateTitle.title")}
+              </h3>
+              <p className="mt-2 text-sm text-[var(--text-muted)]">
+                {t("sessionModal.duplicateTitle.description", { title: duplicateTitleCandidate })}
+              </p>
+              <div className="mt-6 flex flex-wrap justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setDuplicateTitleCandidate(null)}
+                  disabled={isStartingSession}
+                  className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm font-medium text-[var(--text-muted)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {t("sessionModal.duplicateTitle.cancel")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void commitStartSession(duplicateTitleCandidate)}
+                  disabled={isStartingSession}
+                  className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {t("sessionModal.duplicateTitle.createAnyway")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    void commitStartSession(getAutoRenamedSessionTitle(duplicateTitleCandidate))
+                  }
+                  disabled={isStartingSession}
+                  className="rounded-xl bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {t("sessionModal.duplicateTitle.autoRename")}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     );
   }
@@ -1389,9 +1492,10 @@ function App() {
                 <button
                   type="button"
                   onClick={finishSession}
-                  className="rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-2.5 text-base font-medium text-emerald-800 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-emerald-100 hover:opacity-95 active:translate-y-0"
+                  disabled={isFinishingSession}
+                  className="rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-2.5 text-base font-medium text-emerald-800 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-emerald-100 hover:opacity-95 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {t("home.finish")}
+                  {isFinishingSession ? t("home.finishing") : t("home.finish")}
                 </button>
 
                 <button

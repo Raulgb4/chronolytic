@@ -167,6 +167,7 @@
     "pause": "Pausar",
     "resume": "Reanudar",
     "finish": "Finalizar",
+    "finishing": "Finalizando...",
     "discard": "Descartar"
   },
   "sessionModal": {
@@ -186,7 +187,15 @@
       "good": "Alta"
     },
     "cancel": "Cancelar",
-    "start": "Iniciar sesión"
+    "start": "Iniciar sesión",
+    "starting": "Iniciando...",
+    "duplicateTitle": {
+      "title": "Se detectó un título similar",
+      "description": "Ya existe una sesión completada con \"{{title}}\".",
+      "cancel": "Cancelar",
+      "createAnyway": "Crear de todos modos",
+      "autoRename": "Renombrar automáticamente"
+    }
   },
   "settings": {
     "language": "Idioma",
