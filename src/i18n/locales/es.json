@@ -1,0 +1,250 @@
+{
+  "app": {
+    "name": "Chronolytic"
+  },
+  "nav": {
+    "home": "Inicio",
+    "analytics": "Analíticas",
+    "settings": "Configuración"
+  },
+  "analytics": {
+    "tabs": {
+      "dashboard": "Panel",
+      "sessionHistory": "Historial de sesiones"
+    },
+    "sessionHistory": {
+      "backup": {
+        "export": "Exportar respaldo",
+        "import": "Importar respaldo",
+        "processing": "Procesando...",
+        "exportDialogTitle": "Exportar respaldo del historial",
+        "importDialogTitle": "Importar respaldo del historial",
+        "exportSuccess": "Respaldo exportado con {{count}} sesiones.",
+        "exportError": "No se pudo exportar el respaldo.",
+        "importSuccess": "Se importaron {{count}} sesiones correctamente.",
+        "importSuccessWithSkipped": "Se importaron {{imported}} sesiones. Se omitieron {{skipped}} duplicadas.",
+        "importError": "No se pudo importar el respaldo. Verifica que el archivo sea un respaldo valido de Chronolytic.",
+        "emptyBackupError": "El respaldo no tiene sesiones para importar.",
+        "duplicateOnlyError": "Todas las sesiones de este respaldo ya existen."
+      },
+      "inlineEdit": {
+        "saveError": "No se pudieron guardar los cambios de la sesión.",
+        "invalidTitle": "El título no puede estar vacío.",
+        "invalidEnergy": "El valor de energía no es válido.",
+        "invalidWeekday": "El valor del día no es válido."
+      },
+      "searchLabel": "Búsqueda en historial de sesiones",
+      "searchPlaceholder": "Buscar por título, categoría o etiqueta",
+      "emptySearchTitle": "No hay sesiones coincidentes",
+      "emptySearchDescription": "Ajusta la búsqueda o los filtros para encontrar sesiones.",
+      "filters": {
+        "weekday": "Día",
+        "energy": "Energía",
+        "category": "Categoría",
+        "duration": "Duración",
+        "pauses": "Pausas",
+        "allWeekdays": "Todos los días",
+        "allEnergy": "Toda energía",
+        "allCategories": "Todas las categorías",
+        "allPauses": "Todas las sesiones",
+        "withPauses": "Con pausas",
+        "withoutPauses": "Sin pausas",
+        "clear": "Limpiar filtros",
+        "clearWithCount": "Limpiar filtros ({{count}})"
+      },
+      "durationOptions": {
+        "all": "Cualquier duración",
+        "under30m": "Menos de 30 min",
+        "30mTo1h": "30 min a 1 h",
+        "1hTo2h": "1 h a 2 h",
+        "over2h": "Más de 2 h"
+      },
+      "sorting": {
+        "sortByStartDate": "Ordenar por fecha de inicio",
+        "sortByEndDate": "Ordenar por fecha de fin",
+        "sortByDuration": "Ordenar por duración",
+        "sortByPauseCount": "Ordenar por cantidad de pausas",
+        "sortByEnergy": "Ordenar por energía"
+      },
+      "pagination": {
+        "previous": "Anterior",
+        "next": "Siguiente",
+        "pageStatus": "Página {{page}} de {{total}}"
+      },
+      "indicators": {
+        "highInterruptions": "Muchas pausas"
+      },
+      "columns": {
+        "name": "Nombre",
+        "category": "Categoría",
+        "startDate": "FECHA DE INICIO",
+        "endDate": "FECHA DE FIN",
+        "duration": "DURACIÓN",
+        "pauseCount": "CANTIDAD DE PAUSAS",
+        "pausedTime": "Tiempo pausado",
+        "tags": "Etiquetas",
+        "weekday": "Día",
+        "energy": "ENERGÍA",
+        "actions": "Acciones"
+      },
+      "delete": "Eliminar",
+      "deleteSession": "Eliminar sesión completada",
+      "noTags": "-",
+      "emptyTitle": "Aún no hay sesiones completadas",
+      "emptyDescription": "Finaliza una sesión para ver tu historial aquí."
+    },
+    "weekdays": {
+      "sunday": "Domingo",
+      "monday": "Lunes",
+      "tuesday": "Martes",
+      "wednesday": "Miércoles",
+      "thursday": "Jueves",
+      "friday": "Viernes",
+      "saturday": "Sábado"
+    },
+    "energy": {
+      "bad": "Baja",
+      "regular": "Normal",
+      "good": "Alta"
+    },
+    "dashboard": {
+      "emptyTitle": "Aún no hay analíticas",
+      "emptyDescription": "Finaliza algunas sesiones para desbloquear tus primeros insights.",
+      "kpis": {
+        "totalEffectiveTime": "Tiempo efectivo total",
+        "totalPausedTime": "Tiempo pausado total",
+        "completedSessions": "Sesiones completadas",
+        "totalPauseCount": "Pausas totales",
+        "averageSessionDuration": "Duración promedio",
+        "focusRatio": "Ratio de enfoque",
+        "interruptionRatio": "Ratio de interrupciones",
+        "mostProductiveCategory": "Categoría más productiva",
+        "bestTimeSlot": "Mejor franja horaria",
+        "mostInterruptedSession": "Sesión más interrumpida"
+      },
+      "charts": {
+        "effectiveByCategory": "Tiempo efectivo por categoría",
+        "effectiveByWeekday": "Tiempo efectivo por día",
+        "effectiveVsPaused": "Tiempo efectivo vs pausado",
+        "sessionsByEnergy": "Sesiones por energía",
+        "energyInterruptions": "Energía vs interrupciones",
+        "effectiveByTimeSlot": "Tiempo efectivo por franja"
+      },
+      "series": {
+        "effective": "Efectivo",
+        "paused": "Pausado",
+        "averagePauseCount": "Promedio de pausas",
+        "averagePausedTime": "Promedio pausado"
+      },
+      "timeSlots": {
+        "morning": "Mañana",
+        "afternoon": "Tarde",
+        "evening": "Noche",
+        "night": "Madrugada"
+      },
+      "emptyMetric": "N/D",
+      "latest": {
+        "title": "Sesiones recientes"
+      }
+    },
+    "placeholders": {
+      "dashboardTitle": "Panel",
+      "sessionHistoryTitle": "Historial de sesiones"
+    }
+  },
+  "home": {
+    "goodMorning": "Buenos días",
+    "goodAfternoon": "Buenas tardes",
+    "goodEvening": "Buenas noches",
+    "activeSessionTimer": "Temporizador de sesión activa",
+    "noActiveSession": "Sin sesión activa",
+    "statusRunning": "En progreso",
+    "statusPaused": "Pausado",
+    "recoveredPausedSession": "Recuperamos tu sesion anterior y la dejamos en pausa.",
+    "dismissRecoveryNotice": "Cerrar",
+    "uncategorized": "Sin categoría",
+    "createSession": "Crear sesión",
+    "pause": "Pausar",
+    "resume": "Reanudar",
+    "finish": "Finalizar",
+    "finishing": "Finalizando...",
+    "discard": "Descartar",
+    "sessionSavedSuccess": "Sesión guardada. Puedes encontrarla en Historial de sesiones dentro de Analíticas."
+  },
+  "sessionModal": {
+    "title": "Crear sesión",
+    "description": "Define título, categoría y etiquetas antes de comenzar.",
+    "sessionTitle": "Título",
+    "titlePlaceholder": "Estudio: Álgebra lineal",
+    "category": "Categoría",
+    "categoryPlaceholder": "Estudio",
+    "tags": "Etiquetas (separadas por comas)",
+    "tagsPlaceholder": "matemáticas, enfoque, examen",
+    "energy": "Ánimo / Energía",
+    "energyDescription": "¿Cómo te sientes antes de esta sesión?",
+    "energyOptions": {
+      "bad": "Baja",
+      "regular": "Normal",
+      "good": "Alta"
+    },
+    "cancel": "Cancelar",
+    "start": "Iniciar sesión",
+    "starting": "Iniciando...",
+    "duplicateTitle": {
+      "title": "Se detectó un título similar",
+      "description": "Ya existe una sesión completada con \"{{title}}\".",
+      "cancel": "Cancelar",
+      "createAnyway": "Crear de todos modos",
+      "autoRename": "Renombrar automáticamente"
+    }
+  },
+  "settings": {
+    "language": "Idioma",
+    "languageDescription": "Selecciona tu idioma preferido. La traducción completa se agregará en una fase posterior.",
+    "appLanguage": "Idioma de la app",
+    "english": "Inglés",
+    "spanish": "Español",
+    "theme": "Tema",
+    "themeDescription": "Elige como debe verse Chronolytic en este dispositivo.",
+    "startup": "Inicio",
+    "startupDescription": "Configura si Chronolytic debe abrirse al iniciar Windows.",
+    "openAtStartup": "Abrir Chronolytic al iniciar Windows",
+    "startupEnableSuccess": "Inicio automático activado.",
+    "startupDisableSuccess": "Inicio automático desactivado.",
+    "startupError": "No se pudo actualizar el inicio automático.",
+    "dangerZone": "Zona de peligro",
+    "dangerZoneDescription": "Elimina permanentemente todas las sesiones completadas. La sesión activa no se modificará.",
+    "deleteAllSessions": "Eliminar todas las sesiones",
+    "deleteAllSessionsConfirmTitle": "¿Eliminar todas las sesiones?",
+    "deleteAllSessionsConfirmDescription": "Esta acción elimina de forma permanente todo el historial de sesiones completadas de este dispositivo.",
+    "cancel": "Cancelar",
+    "confirmDeleteAllSessions": "Eliminar todas las sesiones",
+    "deleteAllSessionsSuccess": "Se eliminaron todas las sesiones completadas.",
+    "deleteAllSessionsError": "No se pudieron eliminar las sesiones completadas.",
+    "lightMode": "Modo claro",
+    "darkMode": "Modo oscuro",
+    "helpAbout": "Ayuda / Acerca de",
+    "aboutDescription": "Chronolytic es una app de analítica de productividad local-first para escritorio, enfocada en sesiones efectivas de trabajo y en patrones de comportamiento.",
+    "version": "Versión",
+    "license": "Licencia",
+    "author": "Autor",
+    "checkUpdates": "Buscar actualizaciones (próximamente)",
+    "debug": {
+      "title": "Depuración / Diagnóstico",
+      "description": "Registros locales para diagnosticar errores críticos de la app.",
+      "recentErrors": "Errores críticos recientes: {{count}}",
+      "empty": "No hay errores críticos registrados.",
+      "copy": "Copiar información de depuración",
+      "copySuccess": "Reporte de depuración copiado al portapapeles.",
+      "copyError": "No se pudo copiar el reporte de depuración.",
+      "clear": "Limpiar registros",
+      "clearSuccess": "Registros de depuración eliminados.",
+      "export": "Exportar reporte de depuración",
+      "exportSuccess": "Reporte de depuración exportado correctamente.",
+      "exportError": "No se pudo exportar el reporte de depuración."
+    }
+  },
+  "placeholder": {
+    "futurePage": "Esta página es un marcador de posición para una iteración futura."
+  }
+}

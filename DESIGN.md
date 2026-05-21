@@ -1,104 +1,84 @@
-# Chronolytic Design Guidelines
+# Chronolytic Design
 
-## Purpose
+## Product Vision (Current)
 
-- Keep Chronolytic visually consistent, calm, and data-focused.
-- Guide both humans and AI agents toward the same UI and UX decisions.
-- Optimize for desktop productivity workflows on Windows first.
+- Chronolytic is a local-first desktop productivity analytics app for focused work and study sessions.
+- The product emphasizes effective time, interruption behavior, and historical patterns instead of simple stopwatch tracking.
+- Data stays on-device in SQLite, with user-controlled backup import/export.
 
-## Visual Philosophy
+## Desktop-First UX Principles
 
-- Clean, modern, and minimal interface inspired by Apple desktop products.
-- Calm and elegant over playful or gamified.
-- Data is the hero: visual style supports interpretation, not decoration.
-- Prefer clarity, whitespace, and hierarchy over dense screens.
+- Prioritize fast keyboard/mouse workflows and wide-screen readability.
+- Keep primary actions obvious: create session, pause/resume, finish, and review analytics.
+- Preserve user trust with explicit, reversible flows where possible (filters, sorting, imports, deletes with confirmation).
+- Show meaningful empty states instead of blank panels.
 
-## Core UX Principles
+## Navigation Structure
 
-- Desktop-first: prioritize keyboard + mouse efficiency and wide layouts.
-- Show clear session states at all times: running, paused, inactive review, finished.
-- Use progressive disclosure: show key metrics first, advanced details on demand.
-- Keep flows predictable: same actions, same locations, same labels.
-- Reduce cognitive load: one primary action per area.
+- Home: active session workflow, timer, recovery notice, session creation modal.
+- Analytics:
+  - Dashboard: KPI cards, ratio indicators, category/weekday/energy/time-slot breakdowns, and temporal evolution charts.
+  - Session History: table with search, filters, sorting, pagination, inline editing, and delete actions.
+- Settings: language, theme, autostart toggle, and danger-zone delete-all.
 
-## Layout And Spacing
+## Visual and Theme System
 
-- Use modular dashboard blocks (cards/panels) with consistent internal structure.
-- Maintain generous whitespace between sections to separate concerns.
-- Use a consistent spacing scale (e.g., 4/8/12/16/24/32).
-- Keep visual hierarchy explicit:
-  - Primary: current session + top productivity KPIs.
-  - Secondary: trends, comparisons, category breakdowns.
-  - Tertiary: metadata, tips, and non-critical controls.
+- UI is built with Tailwind CSS utilities and app-level CSS variables.
+- Theme tokens are defined in `src/index.css` (`--app-bg`, `--panel-bg`, `--text`, `--accent`, etc.) with light/dark variants.
+- Default visual style is clean and data-first: card surfaces, subtle borders, restrained accent color, and readable contrast.
+- Motion is lightweight (hover/focus transitions, startup overlay fade) and should support clarity, not decoration.
 
-## Typography
+## Session Lifecycle
 
-- Use a clean sans-serif stack suitable for desktop readability.
-- Rely on size/weight/line-height for hierarchy, not excessive color changes.
-- Keep text concise, scannable, and plain-language.
-- Avoid decorative typography and avoid all-caps in long labels.
+- A session starts with title, optional category, optional tags, and energy state (`bad`, `regular`, `good`).
+- Runtime states are `running` and `paused`; pauses are tracked as explicit periods.
+- Finishing a session writes a completed record with effective duration, paused duration, pause count, weekday, and energy.
+- Discarding clears the active session without adding history.
 
-## Color System
+## Persistence and Recovery Model
 
-- Neutral-first palette for surfaces, borders, and background.
-- Restrained accent colors for actions and key highlights.
-- Semantic colors only when they communicate meaning:
-  - Success: valid/complete states.
-  - Warning: inactivity discount decisions or risky actions.
-  - Error: failed operations or invalid inputs.
-- Do not use many saturated colors in analytics views.
+- Persistence uses SQLite via Tauri SQL plugin in `src/features/sessions/sessionRepository.ts`.
+- `sessions` stores completed sessions; `active_session` stores resumable in-progress state.
+- On startup, app restores completed sessions and attempts to recover active session safely as paused.
+- Schema evolution is additive (column checks + `ALTER TABLE`) to protect existing local databases.
 
-## Charts And Analytics Clarity
+## Analytics Dashboard (Current Capabilities)
 
-- Choose chart types by question:
-  - Trend over time -> line/area.
-  - Category comparison -> bar.
-  - Distribution/pattern -> heatmap/histogram where useful.
-- Keep chart chrome minimal: light gridlines, concise labels, clear units.
-- Preserve color meaning across charts (same metric/category = same color).
-- Surface insights near charts (delta, average, streak) without crowding.
-- Always include empty/loading/error chart states with clear next steps.
+- Dashboard computes all metrics from completed sessions using reusable TypeScript helpers.
+- Time range selector supports `7d`, `30d`, `90d`, and `all`; selected range drives dashboard KPIs and charts.
+- Current KPI/insight coverage includes:
+  - Total effective/paused time, completed sessions, pause count, average duration.
+  - Focus/interruption ratios.
+  - Most productive category, best time slot, most interrupted session.
+- Current chart coverage includes:
+  - Effective by category, weekday, and time slot.
+  - Effective vs paused comparison.
+  - Sessions by energy and energy vs interruptions.
+  - Temporal evolution: effective time, paused time, completed sessions, and focus/interruption trend over time.
 
-## Interaction And Motion
+## Session History (Current Capabilities)
 
-- Interactions should be subtle, fast, and informative.
-- Use short transitions (generally 120-220ms) with smooth easing.
-- Animate only where it improves comprehension (state change, panel reveal, chart update).
-- Avoid decorative motion loops and attention-grabbing effects.
-- Keep hover/focus/active states clearly distinguishable.
+- Search by title/category/tags with normalized matching.
+- Filters for weekday, energy, category, duration range, and pause presence.
+- Sorting by start/end date, duration, pause count, and energy.
+- Pagination for table usability.
+- Inline editing for title, category, tags, weekday, and energy with validation.
 
-## Reusable UI Patterns
+## Backup Import/Export
 
-- Standardize these primitives early:
-  - Metric tile
-  - Dashboard card
-  - Section header with actions
-  - Filter bar (date range, category, tags)
-  - Session control group (start/pause/resume/finish)
-  - Empty/loading/error states
-- Reuse existing patterns before introducing new variants.
-- New components should define intended context and states explicitly.
+- Export writes a JSON backup envelope with metadata and completed sessions.
+- Import validates file origin, version, and payload shape before inserting.
+- Duplicate session IDs are skipped and reported to users.
 
-## Content And Microcopy
+## Startup Loader
 
-- Use direct, neutral language focused on action and outcomes.
-- Keep labels consistent across screens (do not rename the same concept).
-- Explain inactivity discount prompts clearly; never obscure impact on metrics.
-- Prefer helpful guidance over celebratory/gamified messaging.
+- Startup uses a branded overlay with a minimum visible duration and fade-out.
+- Initial paint background is controlled in `index.html` to avoid white flash.
+- Overlay completion is tied to session-state readiness, not optional settings loading.
 
-## Consistency Rules For Agents
+## Roadmap (Realistic, Not Yet Implemented)
 
-- Match existing spacing, typography, radius, and elevation tokens.
-- Reuse shared components; do not clone patterns with small visual differences.
-- Keep business logic and analytics logic out of presentational components.
-- If a UI decision is unclear, choose the more minimal and readable option.
-- When adding a new pattern, document it in this file in one short bullet.
-
-## Quality Checklist (Before Merging UI Changes)
-
-- Is the screen visually calm and uncluttered?
-- Is there a clear primary action and hierarchy?
-- Are typography, spacing, and color usage consistent with existing patterns?
-- Are charts readable with clear units, labels, and stable color semantics?
-- Are interactions subtle and useful rather than decorative?
-- Does the layout work well on common desktop resolutions?
+- Decompose `App.tsx` into focused UI components as complexity grows.
+- Add richer trend analytics and comparison insights while preserving local-first performance.
+- Improve desktop integration features (tray/background behavior, installer polish) as dedicated milestones.
+- Strengthen long-term schema migration strategy for future data model evolution.

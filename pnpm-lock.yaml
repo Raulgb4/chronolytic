@@ -10,15 +10,33 @@ importers:
       "@tauri-apps/api":
         specifier: ^2
         version: 2.11.0
+      "@tauri-apps/plugin-autostart":
+        specifier: ^2
+        version: 2.5.1
+      "@tauri-apps/plugin-dialog":
+        specifier: ^2
+        version: 2.7.1
+      "@tauri-apps/plugin-fs":
+        specifier: ^2
+        version: 2.5.1
       "@tauri-apps/plugin-opener":
         specifier: ^2
         version: 2.5.4
+      "@tauri-apps/plugin-sql":
+        specifier: ^2.4.0
+        version: 2.4.0
+      i18next:
+        specifier: ^26.2.0
+        version: 26.2.0(typescript@5.8.3)
       react:
         specifier: ^19.1.0
         version: 19.2.6
       react-dom:
         specifier: ^19.1.0
         version: 19.2.6(react@19.2.6)
+      react-i18next:
+        specifier: ^17.0.8
+        version: 17.0.8(i18next@26.2.0(typescript@5.8.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.8.3)
     devDependencies:
       "@tailwindcss/vite":
         specifier: ^4.3.0
@@ -167,6 +185,13 @@ packages:
     engines: { node: ">=6.9.0" }
     peerDependencies:
       "@babel/core": ^7.0.0-0
+
+  "@babel/runtime@7.29.2":
+    resolution:
+      {
+        integrity: sha512-JiDShH45zKHWyGe4ZNVRrCjBz8Nh9TMmZG1kh4QTK8hCBTWBi8Da+i7s1fJw7/lYpM4ccepSNfqzZ/QvABBi5g==,
+      }
+    engines: { node: ">=6.9.0" }
 
   "@babel/template@7.28.6":
     resolution:
@@ -930,10 +955,34 @@ packages:
     engines: { node: ">= 10" }
     hasBin: true
 
+  "@tauri-apps/plugin-autostart@2.5.1":
+    resolution:
+      {
+        integrity: sha512-zS/xx7yzveCcotkA+8TqkI2lysmG2wvQXv2HGAVExITmnFfHAdj1arGsbbfs3o6EktRHf6l34pJxc3YGG2mg7w==,
+      }
+
+  "@tauri-apps/plugin-dialog@2.7.1":
+    resolution:
+      {
+        integrity: sha512-OK1UBXYt+ojcmxMktzzuyonYIFta8CmAASpX+CA+DTGK24KlHjhYI6x2iOJ/TjZF4N7/ACK1oFmEOjIY9IhzOQ==,
+      }
+
+  "@tauri-apps/plugin-fs@2.5.1":
+    resolution:
+      {
+        integrity: sha512-9Lz+Jopp6QyeEWhlpkMx4R/+P9HgR+AVAI4vOZhlT8Xaymtz8iVI/Ov984/XTqgJz/5gz5NretqPB/XEMS3NhQ==,
+      }
+
   "@tauri-apps/plugin-opener@2.5.4":
     resolution:
       {
         integrity: sha512-1HnPkb+AmgO29HBazm4uPLKB+r7zzcTBW1d0fyYp1uP+jwtpoiNDGKMMzz58SFp49nOIrxdE3aUJtT57lfO9CQ==,
+      }
+
+  "@tauri-apps/plugin-sql@2.4.0":
+    resolution:
+      {
+        integrity: sha512-SIICc5JlnK6OrBZzOw7MmhXHPlmASpt5zLWIu10WW4kLr5cDYOXHdV2MoCgYQkgZLQfyBYgF3SQa5XCisUiQkw==,
       }
 
   "@types/babel__core@7.20.5":
@@ -1102,6 +1151,23 @@ packages:
       {
         integrity: sha512-RbJ5/jmFcNNCcDV5o9eTnBLJ/HszWV0P73bc+Ff4nS/rJj+YaS6IGyiOL0VoBYX+l1Wrl3k63h/KrH+nhJ0XvQ==,
       }
+
+  html-parse-stringify@3.0.1:
+    resolution:
+      {
+        integrity: sha512-KknJ50kTInJ7qIScF3jeaFRpMpE8/lfiTdzf/twXyPBLAGrLRTmkz3AdTnKeh40X8k9L2fdYwEp/42WGXIRGcg==,
+      }
+
+  i18next@26.2.0:
+    resolution:
+      {
+        integrity: sha512-zwBHldHdTmwN7r6UNc7lC6GWNN+YYg3DrRSeHR5PRRBf5QnJZcYHrQc0uaU26qZeYxR7iFZD+Y315dPnKP47wA==,
+      }
+    peerDependencies:
+      typescript: ^5 || ^6
+    peerDependenciesMeta:
+      typescript:
+        optional: true
 
   jiti@2.7.0:
     resolution:
@@ -1310,6 +1376,25 @@ packages:
     peerDependencies:
       react: ^19.2.6
 
+  react-i18next@17.0.8:
+    resolution:
+      {
+        integrity: sha512-0ooKbGLU8JXhe1zwpQUWIeXSgLPOfwJmgheWRIUpcoA0CpyabpGhayjdG+/eA5esC1AQ8h2jWpXjJfzQzeDOCw==,
+      }
+    peerDependencies:
+      i18next: ">= 26.2.0"
+      react: ">= 16.8.0"
+      react-dom: "*"
+      react-native: "*"
+      typescript: ^5 || ^6
+    peerDependenciesMeta:
+      react-dom:
+        optional: true
+      react-native:
+        optional: true
+      typescript:
+        optional: true
+
   react-refresh@0.17.0:
     resolution:
       {
@@ -1389,6 +1474,14 @@ packages:
     peerDependencies:
       browserslist: ">= 4.21.0"
 
+  use-sync-external-store@1.6.0:
+    resolution:
+      {
+        integrity: sha512-Pp6GSwGP/NrPIrxVFAIkOQeyw8lFenOHijQWkUTrDvrF4ALqylP2C/KCkeS9dpUM3KvYRQhna5vt7IL95+ZQ9w==,
+      }
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
+
   vite@7.3.3:
     resolution:
       {
@@ -1431,6 +1524,13 @@ packages:
         optional: true
       yaml:
         optional: true
+
+  void-elements@3.1.0:
+    resolution:
+      {
+        integrity: sha512-Dhxzh5HZuiHQhbvTW9AMetFfBHDMYpo23Uo9btPXgdYP+3T5S+p+jgNy7spra+veYhBP2dCSgxR/i2Y02h5/6w==,
+      }
+    engines: { node: ">=0.10.0" }
 
   yallist@3.1.1:
     resolution:
@@ -1527,6 +1627,8 @@ snapshots:
     dependencies:
       "@babel/core": 7.29.0
       "@babel/helper-plugin-utils": 7.28.6
+
+  "@babel/runtime@7.29.2": {}
 
   "@babel/template@7.28.6":
     dependencies:
@@ -1842,7 +1944,23 @@ snapshots:
       "@tauri-apps/cli-win32-ia32-msvc": 2.11.2
       "@tauri-apps/cli-win32-x64-msvc": 2.11.2
 
+  "@tauri-apps/plugin-autostart@2.5.1":
+    dependencies:
+      "@tauri-apps/api": 2.11.0
+
+  "@tauri-apps/plugin-dialog@2.7.1":
+    dependencies:
+      "@tauri-apps/api": 2.11.0
+
+  "@tauri-apps/plugin-fs@2.5.1":
+    dependencies:
+      "@tauri-apps/api": 2.11.0
+
   "@tauri-apps/plugin-opener@2.5.4":
+    dependencies:
+      "@tauri-apps/api": 2.11.0
+
+  "@tauri-apps/plugin-sql@2.4.0":
     dependencies:
       "@tauri-apps/api": 2.11.0
 
@@ -1960,6 +2078,14 @@ snapshots:
 
   graceful-fs@4.2.11: {}
 
+  html-parse-stringify@3.0.1:
+    dependencies:
+      void-elements: 3.1.0
+
+  i18next@26.2.0(typescript@5.8.3):
+    optionalDependencies:
+      typescript: 5.8.3
+
   jiti@2.7.0: {}
 
   js-tokens@4.0.0: {}
@@ -2048,6 +2174,17 @@ snapshots:
       react: 19.2.6
       scheduler: 0.27.0
 
+  react-i18next@17.0.8(i18next@26.2.0(typescript@5.8.3))(react-dom@19.2.6(react@19.2.6))(react@19.2.6)(typescript@5.8.3):
+    dependencies:
+      "@babel/runtime": 7.29.2
+      html-parse-stringify: 3.0.1
+      i18next: 26.2.0(typescript@5.8.3)
+      react: 19.2.6
+      use-sync-external-store: 1.6.0(react@19.2.6)
+    optionalDependencies:
+      react-dom: 19.2.6(react@19.2.6)
+      typescript: 5.8.3
+
   react-refresh@0.17.0: {}
 
   react@19.2.6: {}
@@ -2106,6 +2243,10 @@ snapshots:
       escalade: 3.2.0
       picocolors: 1.1.1
 
+  use-sync-external-store@1.6.0(react@19.2.6):
+    dependencies:
+      react: 19.2.6
+
   vite@7.3.3(jiti@2.7.0)(lightningcss@1.32.0):
     dependencies:
       esbuild: 0.27.7
@@ -2118,5 +2259,7 @@ snapshots:
       fsevents: 2.3.3
       jiti: 2.7.0
       lightningcss: 1.32.0
+
+  void-elements@3.1.0: {}
 
   yallist@3.1.1: {}

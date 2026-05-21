@@ -1,139 +1,110 @@
 # Chronolytic
 
-Chronolytic is a local-first desktop productivity analytics platform for tracking effective work/study sessions, detecting inactivity, and turning personal time data into actionable insights.
+Chronolytic is a local-first Tauri desktop app for tracking focused work/study sessions and turning personal time data into actionable analytics.
 
-It is designed as a serious analytics product, not a simple timer app.
+It prioritizes effective time, interruption patterns, and historical evolution, not just stopwatch totals.
 
-## Overview
+## Current Features
 
-Chronolytic helps users understand how focused time is actually spent across days, weeks, and months. Instead of only counting elapsed time, it emphasizes effective duration, session quality, and behavioral patterns.
+- Tauri desktop app with React + TypeScript + Tailwind CSS UI.
+- SQLite persistence via Tauri SQL plugin.
+- Session lifecycle: create, pause, resume, finish, discard.
+- Session recovery on startup (active session restored safely as paused).
+- Analytics Dashboard with range selector (`7d`, `30d`, `90d`, `all`) and temporal evolution charts.
+- Session History with search, multi-filters, sorting, pagination, and inline editing.
+- Backup import/export for completed sessions (validated JSON envelope).
+- Branded startup loader with first-paint flash prevention.
+- Light/dark themes.
+- i18n support in English and Spanish.
+- Windows autostart toggle.
 
-The product combines session tracking, inactivity-aware time accounting, and analytics dashboards to support better productivity decisions.
+## Navigation
 
-## Product Vision
+- Home: active session workflow and controls.
+- Analytics:
+  - Dashboard
+  - Session History
+- Settings
 
-Raw time tracking is not enough to improve performance. Chronolytic aims to provide a reliable personal productivity data layer that reveals trends, strengths, and friction points over time.
+## Screenshots
 
-## Core Workflow
+Add project screenshots here when available:
 
-1. Start a session with a title/activity.
-2. Optionally assign category and tags.
-3. Pause, resume, or finish manually.
-4. Detect inactivity or screen lock events.
-5. Ask whether inactive time should be discounted.
-6. Store structured session data for analytics.
-7. Visualize metrics, trends, and behavioral patterns.
-
-## Key Features
-
-Planned initial capabilities:
-
-- Session tracking with manual start/pause/resume/finish flow.
-- Effective duration accounting with inactivity review.
-- Local-first persistence for reliable personal data ownership.
-- Dashboard analytics for trends, comparisons, and patterns.
-- Desktop-focused productivity UX for Windows 11.
-
-## Screenshots And Demo
-
-Screenshots and short workflow GIFs will be added as the interface and session flow stabilize.
-
-Recommended future media order:
-
-1. Dashboard overview screenshot.
-2. Session workflow GIF (start -> pause/resume -> finish).
-3. Inactivity discount prompt screenshot.
-4. Analytics trends view screenshot.
+- `docs/screenshots/home.png`
+- `docs/screenshots/analytics-dashboard.png`
+- `docs/screenshots/session-history.png`
+- `docs/screenshots/settings.png`
 
 ## Tech Stack
 
-| Layer                | Technology         | Purpose                                                  |
-| -------------------- | ------------------ | -------------------------------------------------------- |
-| Desktop shell/native | Tauri + Rust       | OS integration, background behavior, system-level events |
-| UI                   | React + TypeScript | Desktop interface and interaction flows                  |
-| Styling              | Tailwind CSS       | Consistent design system and rapid UI composition        |
-| Persistence          | SQLite             | Local-first storage for sessions and analytics data      |
-| ORM                  | Drizzle ORM        | Typed database access and schema management              |
-| Visualization        | Recharts           | Productivity charts and dashboard visuals                |
+| Layer                | Technology                        | Purpose                                             |
+| -------------------- | --------------------------------- | --------------------------------------------------- |
+| Desktop shell/native | Tauri v2 + Rust                   | Desktop runtime and native integration              |
+| UI                   | React 19 + TypeScript             | App interface and interaction flows                 |
+| Styling              | Tailwind CSS v4                   | Utility-first responsive styling                    |
+| Persistence          | SQLite (`@tauri-apps/plugin-sql`) | Local-first storage for sessions and analytics data |
+| i18n                 | i18next + react-i18next           | EN/ES localization                                  |
 
 ## Architecture
 
-Chronolytic follows feature-oriented modular boundaries:
+Feature-oriented modules:
 
-- UI layer: screens, components, interaction states.
-- Application layer: session workflows and business rules.
-- Data layer: SQLite and persistence access.
-- Analytics layer: reusable calculations and metrics logic.
-- Native layer: inactivity/screen-lock/tray/background concerns via Tauri/Rust commands.
+- `src/App.tsx`: app shell and page-level rendering.
+- `src/features/sessions/sessionRepository.ts`: SQLite reads/writes and schema checks.
+- `src/features/sessions/sessionBackup.ts`: backup export/import parsing and validation.
+- `src/features/analytics/analyticsSummary.ts`: reusable analytics calculations.
+- `src/i18n/`: language setup and EN/ES resources.
 
 Design goals:
 
-- Keep UI separate from business logic and persistence.
-- Keep SQLite/Drizzle access out of React components.
-- Keep analytics logic reusable and testable outside the UI.
+- Keep persistence and SQL access out of UI event handlers.
+- Keep analytics calculations reusable and testable outside JSX.
+- Keep schema evolution additive and backward compatible.
 
-## Analytics Scope
+## Setup
 
-Planned analytics include:
+Requirements:
 
-- Hours per day/week/month.
-- Daily and weekly averages.
-- Time by category.
-- Number of sessions.
-- Average session duration.
-- Productivity streaks.
-- Most productive days/hours.
-- Focus duration patterns.
-- Monthly comparisons.
-- Trends and heatmaps.
+- Node.js 20+
+- pnpm
+- Rust toolchain (for Tauri desktop builds)
 
-## Project Status
+Install dependencies:
 
-Chronolytic is currently in early scaffold refinement.
+```bash
+pnpm install
+```
 
-- Tauri + React + TypeScript scaffold is in place.
-- Product direction, architecture boundaries, and design guidelines are defined.
-- Current work is focused on foundation cleanup before feature implementation.
+Run desktop app in development:
+
+```bash
+pnpm tauri dev
+```
+
+Build desktop app:
+
+```bash
+pnpm tauri build
+```
+
+## Validation
+
+```bash
+pnpm run format:check
+pnpm run typecheck
+pnpm run build
+```
 
 ## Roadmap
 
-### Foundation
-
-- Tauri + React + TypeScript scaffold initialized.
-- Tailwind CSS integrated for frontend styling foundation.
-- Add SQLite + Drizzle foundation.
-
-### Session Tracking
-
-- Implement start/pause/resume/finish session lifecycle.
-- Persist session metadata (title, category, tags, timestamps).
-- Calculate effective duration with pause history.
-
-### Desktop Integration
-
-- Inactivity detection and discount flow.
-- Screen lock awareness.
-- Background execution.
-- System tray integration.
-- Windows installer support.
-
-### Analytics
-
-- Core KPI dashboard and trend views.
-- Category and time-distribution analytics.
-- Streaks, comparisons, and pattern visualizations.
-
-### Future Extensions
-
-- Automatic insights.
-- Weekly summaries.
-- Productivity recommendations.
-- Goals, records, and light gamification.
-- AI/LLM-generated insight layer.
+- Extract dashboard/session-history sections from `App.tsx` into focused components.
+- Expand analytics insights (comparisons, trend interpretation, behavior patterns).
+- Add richer desktop integration milestones (tray/background behavior, installer polish).
+- Strengthen long-term schema migration strategy for evolving local data safely.
 
 ## Development
 
-Core development commands:
+Common commands:
 
 - `pnpm run dev` - run Vite dev server.
 - `pnpm run typecheck` - run TypeScript project checks.
@@ -143,11 +114,6 @@ Core development commands:
 - `pnpm run preview` - preview production frontend build.
 - `pnpm run tauri:dev` - run desktop app in Tauri development mode.
 - `pnpm run tauri:build` - build desktop app bundles via Tauri.
-
-Current foundation rules:
-
-- Keep product-facing work minimal while cleanup and naming alignment are completed.
-- Treat executable config files as the source of truth for commands and metadata.
 
 ## Design Principles
 

@@ -1,0 +1,250 @@
+{
+  "app": {
+    "name": "Chronolytic"
+  },
+  "nav": {
+    "home": "Home",
+    "analytics": "Analytics",
+    "settings": "Settings"
+  },
+  "analytics": {
+    "tabs": {
+      "dashboard": "Dashboard",
+      "sessionHistory": "Session History"
+    },
+    "sessionHistory": {
+      "backup": {
+        "export": "Export Backup",
+        "import": "Import Backup",
+        "processing": "Processing...",
+        "exportDialogTitle": "Export session history backup",
+        "importDialogTitle": "Import session history backup",
+        "exportSuccess": "Backup exported with {{count}} sessions.",
+        "exportError": "Could not export backup.",
+        "importSuccess": "Imported {{count}} sessions successfully.",
+        "importSuccessWithSkipped": "Imported {{imported}} sessions. Skipped {{skipped}} duplicates.",
+        "importError": "Could not import backup. Check that the file is a valid Chronolytic backup.",
+        "emptyBackupError": "The backup file has no sessions to import.",
+        "duplicateOnlyError": "All sessions in this backup already exist."
+      },
+      "inlineEdit": {
+        "saveError": "Could not save session changes.",
+        "invalidTitle": "Title cannot be empty.",
+        "invalidEnergy": "Invalid energy value.",
+        "invalidWeekday": "Invalid weekday value."
+      },
+      "searchLabel": "Search session history",
+      "searchPlaceholder": "Search by title, category, or tag",
+      "emptySearchTitle": "No matching sessions",
+      "emptySearchDescription": "Adjust your search or filters to find sessions.",
+      "filters": {
+        "weekday": "Weekday",
+        "energy": "Energy",
+        "category": "Category",
+        "duration": "Duration",
+        "pauses": "Pauses",
+        "allWeekdays": "All weekdays",
+        "allEnergy": "All energy",
+        "allCategories": "All categories",
+        "allPauses": "All sessions",
+        "withPauses": "With pauses",
+        "withoutPauses": "Without pauses",
+        "clear": "Clear filters",
+        "clearWithCount": "Clear filters ({{count}})"
+      },
+      "durationOptions": {
+        "all": "Any duration",
+        "under30m": "Under 30 min",
+        "30mTo1h": "30 min to 1 h",
+        "1hTo2h": "1 h to 2 h",
+        "over2h": "Over 2 h"
+      },
+      "sorting": {
+        "sortByStartDate": "Sort by start date",
+        "sortByEndDate": "Sort by end date",
+        "sortByDuration": "Sort by duration",
+        "sortByPauseCount": "Sort by pause count",
+        "sortByEnergy": "Sort by energy"
+      },
+      "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "pageStatus": "Page {{page}} of {{total}}"
+      },
+      "indicators": {
+        "highInterruptions": "High interruptions"
+      },
+      "columns": {
+        "name": "Name",
+        "category": "Category",
+        "startDate": "Start date",
+        "endDate": "End date",
+        "duration": "Duration",
+        "pauseCount": "Pause count",
+        "pausedTime": "Paused time",
+        "tags": "Tags",
+        "weekday": "Weekday",
+        "energy": "Energy",
+        "actions": "Actions"
+      },
+      "delete": "Delete",
+      "deleteSession": "Delete completed session",
+      "noTags": "-",
+      "emptyTitle": "No completed sessions yet",
+      "emptyDescription": "Finish a session to see your history here."
+    },
+    "weekdays": {
+      "sunday": "Sunday",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday"
+    },
+    "energy": {
+      "bad": "Bad",
+      "regular": "Regular",
+      "good": "Good"
+    },
+    "dashboard": {
+      "emptyTitle": "No analytics yet",
+      "emptyDescription": "Finish a few sessions to unlock your first insights.",
+      "kpis": {
+        "totalEffectiveTime": "Total effective time",
+        "totalPausedTime": "Total paused time",
+        "completedSessions": "Completed sessions",
+        "totalPauseCount": "Total pause count",
+        "averageSessionDuration": "Average session duration",
+        "focusRatio": "Focus ratio",
+        "interruptionRatio": "Interruption ratio",
+        "mostProductiveCategory": "Most productive category",
+        "bestTimeSlot": "Best time slot",
+        "mostInterruptedSession": "Most interrupted session"
+      },
+      "charts": {
+        "effectiveByCategory": "Effective time by category",
+        "effectiveByWeekday": "Effective time by weekday",
+        "effectiveVsPaused": "Effective time vs paused time",
+        "sessionsByEnergy": "Sessions by energy",
+        "energyInterruptions": "Energy vs interruptions",
+        "effectiveByTimeSlot": "Effective time by time slot"
+      },
+      "series": {
+        "effective": "Effective",
+        "paused": "Paused",
+        "averagePauseCount": "Avg pause count",
+        "averagePausedTime": "Avg paused time"
+      },
+      "timeSlots": {
+        "morning": "Morning",
+        "afternoon": "Afternoon",
+        "evening": "Evening",
+        "night": "Night"
+      },
+      "emptyMetric": "N/A",
+      "latest": {
+        "title": "Latest sessions"
+      }
+    },
+    "placeholders": {
+      "dashboardTitle": "Dashboard",
+      "sessionHistoryTitle": "Session History"
+    }
+  },
+  "home": {
+    "goodMorning": "Good morning",
+    "goodAfternoon": "Good afternoon",
+    "goodEvening": "Good evening",
+    "activeSessionTimer": "Active session timer",
+    "noActiveSession": "No active session",
+    "statusRunning": "Running",
+    "statusPaused": "Paused",
+    "recoveredPausedSession": "Recovered your previous session and paused it safely.",
+    "dismissRecoveryNotice": "Dismiss",
+    "uncategorized": "Uncategorized",
+    "createSession": "Create Session",
+    "pause": "Pause",
+    "resume": "Resume",
+    "finish": "Finish",
+    "finishing": "Finishing...",
+    "discard": "Discard",
+    "sessionSavedSuccess": "Session saved. You can find it in Session History inside Analytics."
+  },
+  "sessionModal": {
+    "title": "Create Session",
+    "description": "Define title, category, and tags before starting.",
+    "sessionTitle": "Title",
+    "titlePlaceholder": "Study: Linear Algebra",
+    "category": "Category",
+    "categoryPlaceholder": "Study",
+    "tags": "Tags (comma-separated)",
+    "tagsPlaceholder": "math, focus, exam",
+    "energy": "Mood / Energy",
+    "energyDescription": "How are you feeling before this session?",
+    "energyOptions": {
+      "bad": "Bad",
+      "regular": "Regular",
+      "good": "Good"
+    },
+    "cancel": "Cancel",
+    "start": "Start session",
+    "starting": "Starting...",
+    "duplicateTitle": {
+      "title": "Similar session title detected",
+      "description": "A completed session already uses \"{{title}}\".",
+      "cancel": "Cancel",
+      "createAnyway": "Create anyway",
+      "autoRename": "Auto-rename"
+    }
+  },
+  "settings": {
+    "language": "Language",
+    "languageDescription": "Select your preferred language. Full app translation will be added in a later phase.",
+    "appLanguage": "App language",
+    "english": "English",
+    "spanish": "Spanish",
+    "theme": "Theme",
+    "themeDescription": "Choose how Chronolytic should appear on this device.",
+    "startup": "Startup",
+    "startupDescription": "Configure whether Chronolytic should open when Windows starts.",
+    "openAtStartup": "Open Chronolytic at Windows startup",
+    "startupEnableSuccess": "Startup enabled successfully.",
+    "startupDisableSuccess": "Startup disabled successfully.",
+    "startupError": "Could not update startup setting.",
+    "dangerZone": "Danger Zone",
+    "dangerZoneDescription": "Permanently delete all completed sessions. Your active session will remain untouched.",
+    "deleteAllSessions": "Delete all sessions",
+    "deleteAllSessionsConfirmTitle": "Delete all sessions?",
+    "deleteAllSessionsConfirmDescription": "This action permanently removes all completed session history from this device.",
+    "cancel": "Cancel",
+    "confirmDeleteAllSessions": "Delete all sessions",
+    "deleteAllSessionsSuccess": "All completed sessions were deleted.",
+    "deleteAllSessionsError": "Could not delete completed sessions.",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode",
+    "helpAbout": "Help / About",
+    "aboutDescription": "Chronolytic is a local-first productivity analytics desktop app focused on effective work sessions and behavioral insights.",
+    "version": "Version",
+    "license": "License",
+    "author": "Author",
+    "checkUpdates": "Check for updates (coming soon)",
+    "debug": {
+      "title": "Debug / Diagnostics",
+      "description": "Local-only troubleshooting logs for critical app errors.",
+      "recentErrors": "Recent critical errors: {{count}}",
+      "empty": "No critical errors recorded.",
+      "copy": "Copy debug info",
+      "copySuccess": "Debug report copied to clipboard.",
+      "copyError": "Could not copy debug report.",
+      "clear": "Clear logs",
+      "clearSuccess": "Debug logs cleared.",
+      "export": "Export debug report",
+      "exportSuccess": "Debug report exported successfully.",
+      "exportError": "Could not export debug report."
+    }
+  },
+  "placeholder": {
+    "futurePage": "This page is intentionally a placeholder for a future iteration."
+  }
+}
