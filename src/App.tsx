@@ -135,6 +135,26 @@ function getEffectiveDuration(session: ActiveSession, now: number): number {
   return Math.max(0, total - paused);
 }
 
+function getTimerDisplayNow(session: ActiveSession, now: number): number {
+  const base = Math.max(now, session.startedAt);
+
+  if (session.status === "running") {
+    const latestClosedPauseEndedAt = session.pauses.reduce((latest, pause) => {
+      if (typeof pause.endedAt !== "number") return latest;
+      return Math.max(latest, pause.endedAt);
+    }, session.startedAt);
+
+    return Math.max(base, latestClosedPauseEndedAt);
+  }
+
+  const openPauseStartedAt = session.pauses.reduce((latest, pause) => {
+    if (pause.endedAt !== null) return latest;
+    return Math.max(latest, pause.startedAt);
+  }, session.startedAt);
+
+  return Math.max(base, openPauseStartedAt);
+}
+
 function getGreetingKey(date: Date): string {
   const hour = date.getHours();
   if (hour >= 6 && hour < 13) return "home.goodMorning";
@@ -253,6 +273,8 @@ function App() {
   const [isStartupComplete, setIsStartupComplete] = useState(false);
   const [isStartingSession, setIsStartingSession] = useState(false);
   const [isFinishingSession, setIsFinishingSession] = useState(false);
+  const [isPausingSession, setIsPausingSession] = useState(false);
+  const [isResumingSession, setIsResumingSession] = useState(false);
   const [duplicateTitleCandidate, setDuplicateTitleCandidate] = useState<string | null>(null);
   const backupFadeTimeoutRef = useRef<number | null>(null);
   const backupRemoveTimeoutRef = useRef<number | null>(null);
@@ -457,7 +479,7 @@ function App() {
 
   const effectiveDurationMs = useMemo(() => {
     if (!activeSession) return 0;
-    return getEffectiveDuration(activeSession, now);
+    return getEffectiveDuration(activeSession, getTimerDisplayNow(activeSession, now));
   }, [activeSession, now]);
 
   const usedCategories = useMemo(
@@ -724,6 +746,7 @@ function App() {
 
       await saveActiveSession(session, startedAt);
       setActiveSession(session);
+      setNow(startedAt);
       setIsCreateSessionOpen(false);
       setRecoveryNoticeVisible(false);
       setDuplicateTitleCandidate(null);
@@ -754,7 +777,17 @@ function App() {
   }
 
   async function pauseSession() {
-    if (!activeSession || activeSession.status !== "running") return;
+    if (
+      !activeSession ||
+      activeSession.status !== "running" ||
+      isPausingSession ||
+      isResumingSession ||
+      isStartingSession ||
+      isFinishingSession
+    ) {
+      return;
+    }
+
     const pauseStartedAt = Date.now();
     const nextSession: ActiveSession = {
       ...activeSession,
@@ -762,9 +795,11 @@ function App() {
       pauses: [...activeSession.pauses, { startedAt: pauseStartedAt, endedAt: null }],
     };
 
+    setIsPausingSession(true);
     try {
       await saveActiveSession(nextSession, pauseStartedAt);
       setActiveSession(nextSession);
+      setNow(pauseStartedAt);
     } catch (error) {
       console.error("Failed to persist active session on pause", {
         error,
@@ -774,11 +809,23 @@ function App() {
       logCriticalError("session.pause.saveActiveSession", error, {
         sessionId: activeSession.id,
       });
+    } finally {
+      setIsPausingSession(false);
     }
   }
 
   async function resumeSession() {
-    if (!activeSession || activeSession.status !== "paused") return;
+    if (
+      !activeSession ||
+      activeSession.status !== "paused" ||
+      isResumingSession ||
+      isPausingSession ||
+      isStartingSession ||
+      isFinishingSession
+    ) {
+      return;
+    }
+
     const resumedAt = Date.now();
     const pauses = [...activeSession.pauses];
     for (let index = pauses.length - 1; index >= 0; index -= 1) {
@@ -793,9 +840,11 @@ function App() {
       pauses,
     };
 
+    setIsResumingSession(true);
     try {
       await saveActiveSession(nextSession, resumedAt);
       setActiveSession(nextSession);
+      setNow(resumedAt);
     } catch (error) {
       console.error("Failed to persist active session on resume", {
         error,
@@ -805,6 +854,8 @@ function App() {
       logCriticalError("session.resume.saveActiveSession", error, {
         sessionId: activeSession.id,
       });
+    } finally {
+      setIsResumingSession(false);
     }
   }
 
@@ -1610,7 +1661,10 @@ function App() {
               <button
                 type="button"
                 onClick={pauseSession}
-                className="rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-5 py-2.5 text-base font-medium text-[var(--text)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[var(--panel-muted)] hover:opacity-95 active:translate-y-0"
+                disabled={
+                  isPausingSession || isResumingSession || isStartingSession || isFinishingSession
+                }
+                className="rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-5 py-2.5 text-base font-medium text-[var(--text)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[var(--panel-muted)] hover:opacity-95 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {t("home.pause")}
               </button>
@@ -1620,7 +1674,10 @@ function App() {
               <button
                 type="button"
                 onClick={resumeSession}
-                className="rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-5 py-2.5 text-base font-medium text-[var(--text)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[var(--panel-muted)] hover:opacity-95 active:translate-y-0"
+                disabled={
+                  isResumingSession || isPausingSession || isStartingSession || isFinishingSession
+                }
+                className="rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-5 py-2.5 text-base font-medium text-[var(--text)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[var(--panel-muted)] hover:opacity-95 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {t("home.resume")}
               </button>
