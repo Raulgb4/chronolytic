@@ -162,6 +162,10 @@ function getGreetingKey(date: Date): string {
   return "home.goodEvening";
 }
 
+function getDateLocale(language: Language): string {
+  return language === "es" ? "es-ES" : "en-US";
+}
+
 function getWeekdayFromTimestamp(timestamp: number): string {
   const dayIndex = new Date(timestamp).getDay();
   const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
@@ -276,8 +280,10 @@ function App() {
   const [isPausingSession, setIsPausingSession] = useState(false);
   const [isResumingSession, setIsResumingSession] = useState(false);
   const [duplicateTitleCandidate, setDuplicateTitleCandidate] = useState<string | null>(null);
+  const [sessionSavedFeedbackVisible, setSessionSavedFeedbackVisible] = useState(false);
   const backupFadeTimeoutRef = useRef<number | null>(null);
   const backupRemoveTimeoutRef = useRef<number | null>(null);
+  const sessionSavedFeedbackTimeoutRef = useRef<number | null>(null);
 
   function logCriticalError(source: string, error: unknown, details?: Record<string, unknown>) {
     recordCriticalError(source, error, details);
@@ -433,6 +439,15 @@ function App() {
     return () => {
       window.removeEventListener("error", onWindowError);
       window.removeEventListener("unhandledrejection", onUnhandledRejection);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (sessionSavedFeedbackTimeoutRef.current) {
+        window.clearTimeout(sessionSavedFeedbackTimeoutRef.current);
+        sessionSavedFeedbackTimeoutRef.current = null;
+      }
     };
   }, []);
 
@@ -906,6 +921,14 @@ function App() {
       setEnergy("regular");
       setIsCreateSessionOpen(false);
       setRecoveryNoticeVisible(false);
+      if (sessionSavedFeedbackTimeoutRef.current) {
+        window.clearTimeout(sessionSavedFeedbackTimeoutRef.current);
+      }
+      setSessionSavedFeedbackVisible(true);
+      sessionSavedFeedbackTimeoutRef.current = window.setTimeout(() => {
+        setSessionSavedFeedbackVisible(false);
+        sessionSavedFeedbackTimeoutRef.current = null;
+      }, 3000);
     } catch (error) {
       console.error("Failed to save completed session to SQLite", {
         error,
@@ -1593,13 +1616,13 @@ function App() {
             {t(greetingKey)}
           </p>
           <p className="mt-1.5 text-lg text-[var(--text-muted)] lg:text-xl">
-            {nowDate.toLocaleDateString(undefined, {
+            {nowDate.toLocaleDateString(getDateLocale(language), {
               weekday: "long",
               year: "numeric",
               month: "long",
               day: "numeric",
             })}{" "}
-            - {nowDate.toLocaleTimeString()}
+            - {nowDate.toLocaleTimeString(getDateLocale(language))}
           </p>
 
           <div className="mt-12 rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel-bg)] px-12 py-10 shadow-[0_10px_30px_rgba(15,23,42,0.06)] lg:mt-14 lg:px-14 lg:py-12">
@@ -2952,6 +2975,11 @@ function App() {
           </div>
         </div>
       )}
+      {sessionSavedFeedbackVisible ? (
+        <div className="fixed right-6 top-6 z-40 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 shadow-[0_10px_24px_rgba(16,185,129,0.22)] dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+          {t("home.sessionSavedSuccess")}
+        </div>
+      ) : null}
       <main className="flex h-screen w-screen overflow-hidden">
         <div className="flex h-full w-full flex-col overflow-hidden bg-[var(--shell-bg)] text-[var(--text)]">
           {renderHeader()}

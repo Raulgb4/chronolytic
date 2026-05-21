@@ -168,7 +168,8 @@
     "resume": "Reanudar",
     "finish": "Finalizar",
     "finishing": "Finalizando...",
-    "discard": "Descartar"
+    "discard": "Descartar",
+    "sessionSavedSuccess": "Sesión guardada. Puedes encontrarla en Historial de sesiones dentro de Analíticas."
   },
   "sessionModal": {
     "title": "Crear sesión",

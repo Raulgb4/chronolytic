@@ -168,7 +168,8 @@
     "resume": "Resume",
     "finish": "Finish",
     "finishing": "Finishing...",
-    "discard": "Discard"
+    "discard": "Discard",
+    "sessionSavedSuccess": "Session saved. You can find it in Session History inside Analytics."
   },
   "sessionModal": {
     "title": "Create Session",
