@@ -28,7 +28,9 @@ import {
   recordCriticalError,
   type DebugLogEntry,
 } from "./features/diagnostics/debugLog";
+import { HomePage } from "./features/home/HomePage";
 import { createSessionBackup, parseSessionBackup } from "./features/sessions/sessionBackup";
+import { SettingsPage } from "./features/settings/SettingsPage";
 import {
   deleteActiveSession,
   deleteAllCompletedSessions,
@@ -50,7 +52,6 @@ import type {
 import {
   formatSessionDate,
   getBackupDefaultFileName,
-  getDateLocale,
   getGreetingKey,
   getWeekdayFromTimestamp,
 } from "./shared/utils/dateUtils";
@@ -58,13 +59,10 @@ import {
   getEffectiveDuration,
   getPausedDuration,
   getTimerDisplayNow,
-  formatDuration,
   formatHumanDuration,
 } from "./shared/utils/durationUtils";
 import {
   getEnergyBadgeClasses,
-  getEnergyFromIndex,
-  getEnergyIndex,
   getEnergySortValue,
   isHighInterruptionSession,
 } from "./shared/utils/energyUtils";
@@ -1259,349 +1257,49 @@ function App() {
     );
   }
 
-  function renderCreateSessionModal() {
-    if (!isCreateSessionOpen) return null;
-
-    return (
-      <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/45 p-6">
-        <div className="w-full max-w-xl rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-2xl">
-          <h2 className="text-lg font-semibold text-[var(--text)]">{t("sessionModal.title")}</h2>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">{t("sessionModal.description")}</p>
-
-          <div className="mt-5 grid gap-4">
-            <label className="flex flex-col gap-2 text-sm text-[var(--text-muted)]">
-              <span className="flex items-center gap-1">
-                {t("sessionModal.sessionTitle")}
-                <span className="text-[var(--accent)]">*</span>
-              </span>
-              <input
-                value={title}
-                onChange={(event) => setTitle(event.target.value)}
-                className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
-                placeholder={t("sessionModal.titlePlaceholder")}
-              />
-            </label>
-
-            <label className="relative flex flex-col gap-2 text-sm text-[var(--text-muted)]">
-              {t("sessionModal.category")}
-              <input
-                value={category}
-                onChange={(event) => setCategory(event.target.value)}
-                onFocus={() => setCategorySuggestionsOpen(true)}
-                onBlur={() => setTimeout(() => setCategorySuggestionsOpen(false), 150)}
-                className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
-                placeholder={t("sessionModal.categoryPlaceholder")}
-              />
-              {categorySuggestionsOpen && filteredCategorySuggestions.length > 0 && (
-                <ul className="absolute top-full left-0 right-0 z-10 mt-1 max-h-40 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] shadow-lg">
-                  {filteredCategorySuggestions.map((s) => (
-                    <li
-                      key={s}
-                      className="cursor-pointer px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--panel-muted)]"
-                      onMouseDown={() => {
-                        setCategory(s);
-                        setCategorySuggestionsOpen(false);
-                      }}
-                    >
-                      {s}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </label>
-
-            <label className="relative flex flex-col gap-2 text-sm text-[var(--text-muted)]">
-              {t("sessionModal.tags")}
-              <input
-                value={tagsInput}
-                onChange={(event) => setTagsInput(event.target.value)}
-                onFocus={() => setTagSuggestionsOpen(true)}
-                onBlur={() => setTimeout(() => setTagSuggestionsOpen(false), 150)}
-                className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
-                placeholder={t("sessionModal.tagsPlaceholder")}
-              />
-              {tagSuggestionsOpen && filteredTagSuggestions.length > 0 && (
-                <ul className="absolute top-full left-0 right-0 z-10 mt-1 max-h-40 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] shadow-lg">
-                  {filteredTagSuggestions.map((t) => (
-                    <li
-                      key={t}
-                      className="cursor-pointer px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--panel-muted)]"
-                      onMouseDown={() => {
-                        const parts = tagsInput.split(",");
-                        parts[parts.length - 1] = t;
-                        setTagsInput(parts.join(", ").replace(/,\s*$/, "").replace(/,\s*,/g, ","));
-                        setTagSuggestionsOpen(false);
-                      }}
-                    >
-                      {t}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </label>
-
-            <div className="flex flex-col gap-2 text-sm text-[var(--text-muted)]">
-              <span>{t("sessionModal.energy")}</span>
-              <span className="text-xs text-[var(--text-muted)]/90">
-                {t("sessionModal.energyDescription")}
-              </span>
-              <div
-                role="radiogroup"
-                aria-label={t("sessionModal.energy")}
-                className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-3"
-              >
-                <div className="relative mx-1 h-12 overflow-hidden">
-                  <div className="absolute left-0 right-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-[var(--panel-bg)]" />
-                  <div className="pointer-events-none absolute inset-0 grid grid-cols-3 items-center">
-                    <div
-                      className="flex justify-center transition-transform duration-300 ease-out"
-                      style={{ transform: `translateX(${getEnergyIndex(energy) * 100}%)` }}
-                    >
-                      <div className="h-8 w-8 rounded-full bg-[var(--accent)] shadow-md" />
-                    </div>
-                  </div>
-                  <div className="absolute inset-0 grid grid-cols-3 items-center">
-                    {(["bad", "regular", "good"] as EnergyLevel[]).map((level) => {
-                      const selected = energy === level;
-                      return (
-                        <button
-                          key={level}
-                          type="button"
-                          role="radio"
-                          aria-checked={selected}
-                          aria-label={t(`sessionModal.energyOptions.${level}`)}
-                          onClick={() => setEnergy(level)}
-                          onKeyDown={(event) => {
-                            if (event.key === "ArrowRight") {
-                              event.preventDefault();
-                              setEnergy((prev) => getEnergyFromIndex(getEnergyIndex(prev) + 1));
-                            }
-                            if (event.key === "ArrowLeft") {
-                              event.preventDefault();
-                              setEnergy((prev) => getEnergyFromIndex(getEnergyIndex(prev) - 1));
-                            }
-                          }}
-                          className={`z-10 mx-auto flex h-9 w-9 items-center justify-center rounded-full transition-colors ${
-                            selected ? "text-white" : "text-[var(--text-muted)]"
-                          }`}
-                        >
-                          {renderMoodFace(level, "h-5 w-5")}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="mt-2 grid grid-cols-3 text-center text-xs">
-                  <span>{t("sessionModal.energyOptions.bad")}</span>
-                  <span>{t("sessionModal.energyOptions.regular")}</span>
-                  <span>{t("sessionModal.energyOptions.good")}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-6 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={() => setIsCreateSessionOpen(false)}
-              disabled={isStartingSession}
-              className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-4 py-2 text-sm font-medium text-[var(--text-muted)] hover:opacity-90"
-            >
-              {t("sessionModal.cancel")}
-            </button>
-            <button
-              type="button"
-              onClick={() => void requestStartSession()}
-              disabled={!canStartSession}
-              className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isStartingSession ? t("sessionModal.starting") : t("sessionModal.start")}
-            </button>
-          </div>
-        </div>
-
-        {duplicateTitleCandidate ? (
-          <div className="absolute inset-0 z-30 flex items-center justify-center bg-slate-950/45 p-6">
-            <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-2xl">
-              <h3 className="text-lg font-semibold text-[var(--text)]">
-                {t("sessionModal.duplicateTitle.title")}
-              </h3>
-              <p className="mt-2 text-sm text-[var(--text-muted)]">
-                {t("sessionModal.duplicateTitle.description", { title: duplicateTitleCandidate })}
-              </p>
-              <div className="mt-6 flex flex-wrap justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setDuplicateTitleCandidate(null)}
-                  disabled={isStartingSession}
-                  className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm font-medium text-[var(--text-muted)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {t("sessionModal.duplicateTitle.cancel")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void commitStartSession(duplicateTitleCandidate)}
-                  disabled={isStartingSession}
-                  className="rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {t("sessionModal.duplicateTitle.createAnyway")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    void commitStartSession(getAutoRenamedSessionTitle(duplicateTitleCandidate))
-                  }
-                  disabled={isStartingSession}
-                  className="rounded-xl bg-[var(--accent)] px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {t("sessionModal.duplicateTitle.autoRename")}
-                </button>
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </div>
-    );
-  }
-
   function renderHome() {
     return (
-      <section className="relative flex h-full flex-col px-10 py-9 lg:px-12 lg:py-10">
-        <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center text-center">
-          {recoveryNoticeVisible ? (
-            <div className="mb-5 w-full max-w-3xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              <div className="flex items-center justify-between gap-3">
-                <p>{t("home.recoveredPausedSession")}</p>
-                <button
-                  type="button"
-                  onClick={() => setRecoveryNoticeVisible(false)}
-                  className="rounded-lg border border-amber-300 bg-amber-100 px-2 py-1 text-xs font-medium text-amber-900 hover:bg-amber-200"
-                >
-                  {t("home.dismissRecoveryNotice")}
-                </button>
-              </div>
-            </div>
-          ) : null}
-
-          <p className="text-2xl font-medium text-[var(--text-muted)] lg:text-3xl">
-            {t(greetingKey)}
-          </p>
-          <p className="mt-1.5 text-lg text-[var(--text-muted)] lg:text-xl">
-            {nowDate.toLocaleDateString(getDateLocale(language), {
-              weekday: "long",
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}{" "}
-            - {nowDate.toLocaleTimeString(getDateLocale(language))}
-          </p>
-
-          <div className="mt-12 rounded-[1.75rem] border border-[var(--border)] bg-[var(--panel-bg)] px-12 py-10 shadow-[0_10px_30px_rgba(15,23,42,0.06)] lg:mt-14 lg:px-14 lg:py-12">
-            <p className="text-base font-semibold uppercase tracking-[0.14em] text-[var(--text-muted)] lg:text-lg">
-              {t("home.activeSessionTimer")}
-            </p>
-            <p className="mt-4 text-[4.2rem] leading-none font-semibold tracking-tight text-[var(--text)] lg:text-[6rem]">
-              {activeSession ? formatDuration(effectiveDurationMs) : "00:00:00"}
-            </p>
-            <div className="mt-5 flex items-center justify-center gap-2.5">
-              <span
-                className={`rounded-full px-4 py-1.5 text-base font-medium lg:px-5 lg:py-2 lg:text-lg ${
-                  activeSession?.status === "running"
-                    ? "bg-emerald-100 text-emerald-700"
-                    : activeSession?.status === "paused"
-                      ? "bg-amber-100 text-amber-700"
-                      : "bg-[var(--panel-muted)] text-[var(--text-muted)]"
-                }`}
-              >
-                {activeSession
-                  ? activeSession.status === "running"
-                    ? t("home.statusRunning")
-                    : t("home.statusPaused")
-                  : t("home.noActiveSession")}
-              </span>
-            </div>
-            {activeSession ? (
-              <div className="mt-4 text-base text-[var(--text-muted)]">
-                <p className="font-medium text-[var(--text)]">{activeSession.title}</p>
-                <p>{activeSession.category || t("home.uncategorized")}</p>
-                {activeSession.tags.length > 0 ? (
-                  <div className="mt-2 flex flex-wrap justify-center gap-2">
-                    {activeSession.tags.map((tag) => (
-                      <span
-                        key={`${activeSession.id}-active-${tag}`}
-                        className="rounded-full border border-[var(--border)] px-2 py-0.5 text-sm text-[var(--text-muted)]"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
-
-          <div className="mt-10 flex min-h-16 flex-wrap items-center justify-center gap-4 lg:mt-12 lg:gap-5">
-            {!activeSession ? (
-              <button
-                type="button"
-                onClick={() => setIsCreateSessionOpen(true)}
-                className="rounded-full bg-gradient-to-r from-[#4E89FF] to-[#5F8FFF] px-10 py-4 text-xl font-semibold text-white shadow-[0_10px_24px_rgba(78,137,255,0.34)] transition duration-200 ease-out hover:scale-[1.02] hover:from-[#5B93FF] hover:to-[#6D9BFF] hover:shadow-[0_14px_30px_rgba(78,137,255,0.42)] active:scale-[0.98] lg:px-12 lg:py-5 lg:text-2xl"
-              >
-                {t("home.createSession")}
-              </button>
-            ) : null}
-
-            {activeSession?.status === "running" ? (
-              <button
-                type="button"
-                onClick={pauseSession}
-                disabled={
-                  isPausingSession || isResumingSession || isStartingSession || isFinishingSession
-                }
-                className="rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-5 py-2.5 text-base font-medium text-[var(--text)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[var(--panel-muted)] hover:opacity-95 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {t("home.pause")}
-              </button>
-            ) : null}
-
-            {activeSession?.status === "paused" ? (
-              <button
-                type="button"
-                onClick={resumeSession}
-                disabled={
-                  isResumingSession || isPausingSession || isStartingSession || isFinishingSession
-                }
-                className="rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-5 py-2.5 text-base font-medium text-[var(--text)] transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-[var(--panel-muted)] hover:opacity-95 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {t("home.resume")}
-              </button>
-            ) : null}
-
-            {activeSession ? (
-              <>
-                <button
-                  type="button"
-                  onClick={finishSession}
-                  disabled={isFinishingSession}
-                  className="rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-2.5 text-base font-medium text-emerald-800 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-emerald-100 hover:opacity-95 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {isFinishingSession ? t("home.finishing") : t("home.finish")}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={discardSession}
-                  className="rounded-xl border border-rose-300 bg-rose-50 px-5 py-2.5 text-base font-medium text-rose-800 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-rose-100 hover:opacity-95 active:translate-y-0"
-                >
-                  {t("home.discard")}
-                </button>
-              </>
-            ) : null}
-          </div>
-        </div>
-
-        {renderCreateSessionModal()}
-      </section>
+      <HomePage
+        recoveryNoticeVisible={recoveryNoticeVisible}
+        onDismissRecoveryNotice={() => setRecoveryNoticeVisible(false)}
+        greetingKey={greetingKey}
+        nowDate={nowDate}
+        language={language}
+        activeSession={activeSession}
+        effectiveDurationMs={effectiveDurationMs}
+        onOpenCreateSession={() => setIsCreateSessionOpen(true)}
+        pauseSession={pauseSession}
+        resumeSession={resumeSession}
+        finishSession={finishSession}
+        discardSession={discardSession}
+        isStartingSession={isStartingSession}
+        isPausingSession={isPausingSession}
+        isResumingSession={isResumingSession}
+        isFinishingSession={isFinishingSession}
+        isCreateSessionOpen={isCreateSessionOpen}
+        title={title}
+        setTitle={setTitle}
+        category={category}
+        setCategory={setCategory}
+        tagsInput={tagsInput}
+        setTagsInput={setTagsInput}
+        energy={energy}
+        setEnergy={setEnergy}
+        categorySuggestionsOpen={categorySuggestionsOpen}
+        setCategorySuggestionsOpen={setCategorySuggestionsOpen}
+        filteredCategorySuggestions={filteredCategorySuggestions}
+        tagSuggestionsOpen={tagSuggestionsOpen}
+        setTagSuggestionsOpen={setTagSuggestionsOpen}
+        filteredTagSuggestions={filteredTagSuggestions}
+        canStartSession={canStartSession}
+        requestStartSession={requestStartSession}
+        closeCreateSession={() => setIsCreateSessionOpen(false)}
+        renderMoodFace={renderMoodFace}
+        duplicateTitleCandidate={duplicateTitleCandidate}
+        setDuplicateTitleCandidate={setDuplicateTitleCandidate}
+        commitStartSession={commitStartSession}
+        getAutoRenamedSessionTitle={getAutoRenamedSessionTitle}
+      />
     );
   }
 
@@ -2538,243 +2236,26 @@ function App() {
 
   function renderSettingsPage() {
     return (
-      <section className="flex h-full items-start justify-center px-8 py-10">
-        <div className="w-full max-w-3xl space-y-4">
-          {settingsFeedback ? (
-            <div
-              className={`rounded-xl border px-4 py-3 text-sm ${
-                settingsFeedback.type === "success"
-                  ? "border-emerald-300 bg-emerald-50 text-emerald-800"
-                  : "border-rose-300 bg-rose-50 text-rose-800"
-              }`}
-            >
-              {settingsFeedback.message}
-            </div>
-          ) : null}
-
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
-            <h2 className="text-lg font-semibold text-[var(--text)]">{t("settings.language")}</h2>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">
-              {t("settings.languageDescription")}
-            </p>
-            <div className="mt-4 max-w-sm">
-              <label
-                className="mb-2 block text-sm font-medium text-[var(--text-muted)]"
-                htmlFor="language-select"
-              >
-                {t("settings.appLanguage")}
-              </label>
-              <select
-                id="language-select"
-                value={language}
-                onChange={(event) => setLanguage(event.target.value as Language)}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
-              >
-                <option value="en">{t("settings.english")}</option>
-                <option value="es">{t("settings.spanish")}</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
-            <h2 className="text-lg font-semibold text-[var(--text)]">{t("settings.theme")}</h2>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">
-              {t("settings.themeDescription")}
-            </p>
-            <div className="mt-4 flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-3">
-              <span className="text-sm font-medium text-[var(--text-muted)]">
-                {themeMode === "light" ? t("settings.lightMode") : t("settings.darkMode")}
-              </span>
-              <button
-                type="button"
-                onClick={() => setThemeMode((prev) => (prev === "light" ? "dark" : "light"))}
-                className={`relative h-8 w-14 shrink-0 rounded-full transition-colors duration-200 ${
-                  themeMode === "dark" ? "bg-[var(--accent)]" : "bg-slate-300"
-                }`}
-                aria-label="Toggle theme"
-              >
-                <span
-                  className={`absolute left-1 top-1 h-6 w-6 rounded-full shadow transition-transform duration-200 ${
-                    themeMode === "dark"
-                      ? "translate-x-6 bg-[var(--panel-bg)]"
-                      : "translate-x-0 bg-[var(--panel-bg)]"
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
-            <h2 className="text-lg font-semibold text-[var(--text)]">{t("settings.startup")}</h2>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">
-              {t("settings.startupDescription")}
-            </p>
-            <div className="mt-4 flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-3">
-              <span className="text-sm font-medium text-[var(--text-muted)]">
-                {t("settings.openAtStartup")}
-              </span>
-              <button
-                type="button"
-                onClick={() => void handleToggleAutostart()}
-                disabled={isAutostartLoading}
-                className={`relative h-8 w-14 shrink-0 rounded-full transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-60 ${
-                  isAutostartEnabled ? "bg-[var(--accent)]" : "bg-slate-300"
-                }`}
-                aria-label={t("settings.openAtStartup")}
-              >
-                <span
-                  className={`absolute left-1 top-1 h-6 w-6 rounded-full shadow transition-transform duration-200 ${
-                    isAutostartEnabled
-                      ? "translate-x-6 bg-[var(--panel-bg)]"
-                      : "translate-x-0 bg-[var(--panel-bg)]"
-                  }`}
-                />
-              </button>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-rose-300/70 bg-rose-50/60 p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)] dark:border-rose-500/30 dark:bg-rose-500/10">
-            <h2 className="text-lg font-semibold text-rose-800 dark:text-rose-300">
-              {t("settings.dangerZone")}
-            </h2>
-            <p className="mt-1 text-sm text-rose-700/85 dark:text-rose-300/85">
-              {t("settings.dangerZoneDescription")}
-            </p>
-            <button
-              type="button"
-              onClick={() => setIsDeleteAllConfirmOpen(true)}
-              className="mt-4 rounded-xl border border-rose-700 bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition duration-200 ease-out hover:bg-rose-700"
-            >
-              {t("settings.deleteAllSessions")}
-            </button>
-          </div>
-
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
-            <h2 className="text-lg font-semibold text-[var(--text)]">{t("settings.helpAbout")}</h2>
-            <p className="mt-3 text-sm text-[var(--text-muted)]">
-              {t("settings.aboutDescription")}
-            </p>
-            <dl className="mt-4 grid grid-cols-1 gap-2 text-sm text-[var(--text-muted)] sm:grid-cols-2">
-              <div>
-                <dt className="font-medium text-[var(--text)]">{t("settings.version")}</dt>
-                <dd>0.1.0</dd>
-              </div>
-              <div>
-                <dt className="font-medium text-[var(--text)]">{t("settings.license")}</dt>
-                <dd>MIT</dd>
-              </div>
-              <div className="sm:col-span-2">
-                <dt className="font-medium text-[var(--text)]">{t("settings.author")}</dt>
-                <dd>Raúl García Balongo</dd>
-              </div>
-            </dl>
-            <button
-              type="button"
-              disabled
-              className="mt-5 rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-4 py-2 text-sm font-medium text-[var(--text-muted)] opacity-70"
-            >
-              {t("settings.checkUpdates")}
-            </button>
-          </div>
-
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
-            <h2 className="text-lg font-semibold text-[var(--text)]">
-              {t("settings.debug.title")}
-            </h2>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">
-              {t("settings.debug.description")}
-            </p>
-
-            <p className="mt-3 text-sm text-[var(--text-muted)]">
-              {t("settings.debug.recentErrors", { count: debugLogEntries.length })}
-            </p>
-
-            {debugLogEntries.length === 0 ? (
-              <p className="mt-2 text-sm text-[var(--text-muted)]">{t("settings.debug.empty")}</p>
-            ) : (
-              <div className="mt-3 max-h-64 space-y-2 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-3">
-                {debugLogEntries.slice(0, 10).map((entry) => (
-                  <div
-                    key={entry.id}
-                    className="rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] p-3"
-                  >
-                    <div className="text-xs text-[var(--text-muted)]">{entry.timestamp}</div>
-                    <div className="mt-1 text-sm font-medium text-[var(--text)]">
-                      {entry.source}
-                    </div>
-                    <div className="mt-1 text-sm text-[var(--text-muted)]">{entry.message}</div>
-                    {entry.stack ? (
-                      <pre className="mt-2 overflow-x-auto rounded bg-[var(--panel-muted)] p-2 text-[11px] text-[var(--text-muted)]">
-                        {entry.stack}
-                      </pre>
-                    ) : null}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => void handleCopyDebugInfo()}
-                disabled={isDebugActionBusy}
-                className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--panel-bg)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {t("settings.debug.copy")}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleClearDebugLogs()}
-                disabled={isDebugActionBusy || debugLogEntries.length === 0}
-                className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--panel-bg)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {t("settings.debug.clear")}
-              </button>
-              <button
-                type="button"
-                onClick={() => void handleExportDebugReport()}
-                disabled={isDebugActionBusy}
-                className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--panel-bg)] disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {t("settings.debug.export")}
-              </button>
-            </div>
-          </div>
-
-          {isDeleteAllConfirmOpen ? (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-6">
-              <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-2xl">
-                <h3 className="text-lg font-semibold text-[var(--text)]">
-                  {t("settings.deleteAllSessionsConfirmTitle")}
-                </h3>
-                <p className="mt-2 text-sm text-[var(--text-muted)]">
-                  {t("settings.deleteAllSessionsConfirmDescription")}
-                </p>
-                <div className="mt-5 flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsDeleteAllConfirmOpen(false)}
-                    disabled={isDeletingAllSessions}
-                    className="rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-4 py-2 text-sm font-medium text-[var(--text)] transition duration-200 ease-out hover:bg-[var(--panel-muted)] disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {t("settings.cancel")}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => void handleConfirmDeleteAllSessions()}
-                    disabled={isDeletingAllSessions}
-                    className="rounded-xl border border-rose-700 bg-rose-600 px-4 py-2 text-sm font-semibold text-white transition duration-200 ease-out hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {isDeletingAllSessions
-                      ? t("analytics.sessionHistory.backup.processing")
-                      : t("settings.confirmDeleteAllSessions")}
-                  </button>
-                </div>
-              </div>
-            </div>
-          ) : null}
-        </div>
-      </section>
+      <SettingsPage
+        settingsFeedback={settingsFeedback}
+        language={language}
+        setLanguage={setLanguage}
+        themeMode={themeMode}
+        toggleThemeMode={() => setThemeMode((prev) => (prev === "light" ? "dark" : "light"))}
+        handleToggleAutostart={handleToggleAutostart}
+        isAutostartLoading={isAutostartLoading}
+        isAutostartEnabled={isAutostartEnabled}
+        openDeleteAllConfirm={() => setIsDeleteAllConfirmOpen(true)}
+        debugLogEntries={debugLogEntries}
+        isDebugActionBusy={isDebugActionBusy}
+        handleCopyDebugInfo={handleCopyDebugInfo}
+        handleClearDebugLogs={handleClearDebugLogs}
+        handleExportDebugReport={handleExportDebugReport}
+        isDeleteAllConfirmOpen={isDeleteAllConfirmOpen}
+        closeDeleteAllConfirm={() => setIsDeleteAllConfirmOpen(false)}
+        isDeletingAllSessions={isDeletingAllSessions}
+        handleConfirmDeleteAllSessions={handleConfirmDeleteAllSessions}
+      />
     );
   }
 
