@@ -4,6 +4,21 @@ import { open, save } from "@tauri-apps/plugin-dialog";
 import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { useTranslation } from "react-i18next";
+import AppLayout from "./app/AppLayout";
+import type {
+  AnalyticsTab,
+  BackupFeedbackType,
+  Language,
+  NavItem,
+  Page,
+  SessionHistoryDurationFilter,
+  SessionHistoryEditableField,
+  SessionHistoryPauseFilter,
+  SessionHistorySortKey,
+  SettingsFeedbackType,
+  SortDirection,
+  ThemeMode,
+} from "./app/appTypes";
 import logoHeader from "./assets/logo/logoHeader.png";
 import { buildAnalyticsSummary } from "./features/analytics/analyticsSummary";
 import {
@@ -31,180 +46,36 @@ import type {
   ActiveSession,
   CompletedSession,
   EnergyLevel,
-  PausePeriod,
 } from "./features/sessions/sessionTypes";
-
-type Page = "home" | "analytics" | "settings";
-type AnalyticsTab = "dashboard" | "sessionHistory";
-type Language = "en" | "es";
-type ThemeMode = "light" | "dark";
-type BackupFeedbackType = "success" | "error";
-type SessionHistoryDurationFilter = "all" | "under30m" | "30mTo1h" | "1hTo2h" | "over2h";
-type SessionHistoryPauseFilter = "all" | "withPauses" | "withoutPauses";
-type SessionHistorySortKey =
-  | "startedAt"
-  | "endedAt"
-  | "effectiveDurationMs"
-  | "pauseCount"
-  | "energy";
-type SortDirection = "asc" | "desc";
-type SessionHistoryEditableField = "title" | "category" | "tags" | "energy" | "weekday";
-type SettingsFeedbackType = "success" | "error";
+import {
+  formatSessionDate,
+  getBackupDefaultFileName,
+  getDateLocale,
+  getGreetingKey,
+  getWeekdayFromTimestamp,
+} from "./shared/utils/dateUtils";
+import {
+  getEffectiveDuration,
+  getPausedDuration,
+  getTimerDisplayNow,
+  formatDuration,
+  formatHumanDuration,
+} from "./shared/utils/durationUtils";
+import {
+  getEnergyBadgeClasses,
+  getEnergyFromIndex,
+  getEnergyIndex,
+  getEnergySortValue,
+  isHighInterruptionSession,
+} from "./shared/utils/energyUtils";
+import {
+  normalizeDuplicateTitle,
+  normalizeSearchValue,
+  parseTags,
+} from "./shared/utils/searchUtils";
 
 const SESSION_HISTORY_PAGE_SIZE = 8;
 const APP_VERSION = "0.1.0";
-
-function parseTags(value: string): string[] {
-  return value
-    .split(",")
-    .map((tag) => tag.trim())
-    .filter(Boolean);
-}
-
-function formatDuration(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const hours = Math.floor(totalSeconds / 3600);
-  const minutes = Math.floor((totalSeconds % 3600) / 60);
-  const seconds = totalSeconds % 60;
-  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-}
-
-function formatHumanDuration(ms: number): string {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  if (totalSeconds < 60) {
-    return `${totalSeconds} ${totalSeconds === 1 ? "second" : "seconds"}`;
-  }
-
-  const totalMinutes = totalSeconds / 60;
-  if (totalMinutes < 60) {
-    const roundedMinutes = Math.round(totalMinutes);
-    return `${roundedMinutes} ${roundedMinutes === 1 ? "minute" : "minutes"}`;
-  }
-
-  const totalHours = totalMinutes / 60;
-  const roundedHours = totalHours < 10 ? Math.round(totalHours * 10) / 10 : Math.round(totalHours);
-  return `${roundedHours} ${roundedHours === 1 ? "hour" : "hours"}`;
-}
-
-function formatSessionDate(timestamp: number): string {
-  return new Date(timestamp).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function normalizeSearchValue(value: string): string {
-  return value
-    .toLowerCase()
-    .trim()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function normalizeDuplicateTitle(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
-}
-
-function getBackupDefaultFileName(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, "0");
-  const d = String(now.getDate()).padStart(2, "0");
-  return `chronolytic-session-history-${y}-${m}-${d}.json`;
-}
-
-function getPausedDuration(pauses: PausePeriod[], now: number): number {
-  return pauses.reduce((acc, pause) => {
-    if (pause.endedAt === null) {
-      return acc + (now - pause.startedAt);
-    }
-    return acc + (pause.endedAt - pause.startedAt);
-  }, 0);
-}
-
-function getEffectiveDuration(session: ActiveSession, now: number): number {
-  const total = now - session.startedAt;
-  const paused = getPausedDuration(session.pauses, now);
-  return Math.max(0, total - paused);
-}
-
-function getTimerDisplayNow(session: ActiveSession, now: number): number {
-  const base = Math.max(now, session.startedAt);
-
-  if (session.status === "running") {
-    const latestClosedPauseEndedAt = session.pauses.reduce((latest, pause) => {
-      if (typeof pause.endedAt !== "number") return latest;
-      return Math.max(latest, pause.endedAt);
-    }, session.startedAt);
-
-    return Math.max(base, latestClosedPauseEndedAt);
-  }
-
-  const openPauseStartedAt = session.pauses.reduce((latest, pause) => {
-    if (pause.endedAt !== null) return latest;
-    return Math.max(latest, pause.startedAt);
-  }, session.startedAt);
-
-  return Math.max(base, openPauseStartedAt);
-}
-
-function getGreetingKey(date: Date): string {
-  const hour = date.getHours();
-  if (hour >= 6 && hour < 13) return "home.goodMorning";
-  if (hour >= 13 && hour < 21) return "home.goodAfternoon";
-  return "home.goodEvening";
-}
-
-function getDateLocale(language: Language): string {
-  return language === "es" ? "es-ES" : "en-US";
-}
-
-function getWeekdayFromTimestamp(timestamp: number): string {
-  const dayIndex = new Date(timestamp).getDay();
-  const weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
-  return weekdays[dayIndex] ?? "monday";
-}
-
-function getEnergyIndex(energy: EnergyLevel): number {
-  if (energy === "bad") return 0;
-  if (energy === "regular") return 1;
-  return 2;
-}
-
-function getEnergyFromIndex(index: number): EnergyLevel {
-  if (index <= 0) return "bad";
-  if (index >= 2) return "good";
-  return "regular";
-}
-
-function getEnergySortValue(energy: EnergyLevel): number {
-  if (energy === "bad") return 0;
-  if (energy === "regular") return 1;
-  return 2;
-}
-
-function getEnergyBadgeClasses(energy: EnergyLevel): string {
-  if (energy === "bad") {
-    return "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-500/25 dark:bg-rose-500/10 dark:text-rose-300";
-  }
-
-  if (energy === "regular") {
-    return "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/25 dark:bg-amber-500/10 dark:text-amber-300";
-  }
-
-  return "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-300";
-}
-
-function isHighInterruptionSession(session: CompletedSession): boolean {
-  return session.pauseCount >= 4 || session.pausedDurationMs >= 30 * 60 * 1000;
-}
 
 function getStoredLanguage(): Language {
   const value = window.localStorage.getItem("chronolytic.language");
@@ -2949,81 +2820,31 @@ function App() {
     );
   }
 
-  const navItems: Array<{ page: Page; label: string }> = [
+  const navItems: NavItem[] = [
     { page: "home", label: t("nav.home") },
     { page: "analytics", label: t("nav.analytics") },
     { page: "settings", label: t("nav.settings") },
   ];
 
   return (
-    <>
-      {!isStartupComplete && (
-        <div
-          className={`fixed inset-0 z-50 flex flex-col items-center justify-center transition-opacity duration-300 ${isStartupLeaving ? "opacity-0" : "opacity-100"}`}
-          style={{ background: "radial-gradient(ellipse at 50% 40%, #131c31 0%, #0a0f1a 100%)" }}
-        >
-          <style>{`@keyframes dot-pulse{0%,20%{opacity:.2;transform:scale(.6)}50%{opacity:1;transform:scale(1)}80%,100%{opacity:.2;transform:scale(.6)}}`}</style>
-          <img src={logoHeader} alt="Chronolytic" className="h-40 w-auto object-contain" />
-          <div className="mt-8 flex items-center gap-2.5">
-            {[0, 1, 2].map((i) => (
-              <div
-                key={i}
-                className="h-3 w-3 rounded-full bg-[#4E89FF]"
-                style={{ animation: `dot-pulse 1.4s ease-in-out infinite ${i * 0.2}s` }}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-      {sessionSavedFeedbackVisible ? (
-        <div className="fixed right-6 top-6 z-40 rounded-xl border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800 shadow-[0_10px_24px_rgba(16,185,129,0.22)] dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
-          {t("home.sessionSavedSuccess")}
-        </div>
-      ) : null}
-      <main className="flex h-screen w-screen overflow-hidden">
-        <div className="flex h-full w-full flex-col overflow-hidden bg-[var(--shell-bg)] text-[var(--text)]">
-          {renderHeader()}
-
-          <div className="flex min-h-0 flex-1">
-            <aside className="flex w-56 shrink-0 border-r border-[var(--border)] bg-[var(--sidebar-bg)] px-4 py-7">
-              <nav className="flex h-full w-full flex-col justify-evenly">
-                {navItems.map((item) => (
-                  <button
-                    key={item.page}
-                    type="button"
-                    onClick={() => setActivePage(item.page)}
-                    className={`relative flex flex-col items-center justify-center gap-3 rounded-3xl px-3 py-5 text-center transition ${
-                      activePage === item.page
-                        ? "text-[#4E89FF]"
-                        : "text-[var(--text-muted)] hover:bg-[var(--panel-muted)] hover:text-[#4E89FF]"
-                    }`}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`absolute bottom-2 left-0 top-2 w-0.5 rounded-r-md bg-[#4E89FF] transition-all duration-200 ease-out ${
-                        activePage === item.page ? "opacity-100" : "opacity-0"
-                      }`}
-                    />
-                    {renderNavIcon(item.page)}
-                    <span className="text-lg font-semibold leading-none tracking-[0.05em]">
-                      {item.label}
-                    </span>
-                  </button>
-                ))}
-              </nav>
-            </aside>
-
-            <div className="min-w-0 flex-1 overflow-y-auto bg-[var(--panel-bg)]">
-              {activePage === "home"
-                ? renderHome()
-                : activePage === "settings"
-                  ? renderSettingsPage()
-                  : renderAnalyticsPage()}
-            </div>
-          </div>
-        </div>
-      </main>
-    </>
+    <AppLayout
+      header={renderHeader()}
+      navItems={navItems}
+      activePage={activePage}
+      onNavigate={setActivePage}
+      renderNavIcon={renderNavIcon}
+      isStartupComplete={isStartupComplete}
+      isStartupLeaving={isStartupLeaving}
+      sessionSavedFeedbackVisible={sessionSavedFeedbackVisible}
+      sessionSavedFeedbackMessage={t("home.sessionSavedSuccess")}
+      startupLogoSrc={logoHeader}
+    >
+      {activePage === "home"
+        ? renderHome()
+        : activePage === "settings"
+          ? renderSettingsPage()
+          : renderAnalyticsPage()}
+    </AppLayout>
   );
 }
 
