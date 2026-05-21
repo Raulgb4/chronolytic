@@ -227,7 +227,21 @@
     "version": "Version",
     "license": "License",
     "author": "Author",
-    "checkUpdates": "Check for updates (coming soon)"
+    "checkUpdates": "Check for updates (coming soon)",
+    "debug": {
+      "title": "Debug / Diagnostics",
+      "description": "Local-only troubleshooting logs for critical app errors.",
+      "recentErrors": "Recent critical errors: {{count}}",
+      "empty": "No critical errors recorded.",
+      "copy": "Copy debug info",
+      "copySuccess": "Debug report copied to clipboard.",
+      "copyError": "Could not copy debug report.",
+      "clear": "Clear logs",
+      "clearSuccess": "Debug logs cleared.",
+      "export": "Export debug report",
+      "exportSuccess": "Debug report exported successfully.",
+      "exportError": "Could not export debug report."
+    }
   },
   "placeholder": {
     "futurePage": "This page is intentionally a placeholder for a future iteration."

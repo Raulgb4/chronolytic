@@ -6,6 +6,13 @@ import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
 import { useTranslation } from "react-i18next";
 import logoHeader from "./assets/logo/logoHeader.png";
 import { buildAnalyticsSummary } from "./features/analytics/analyticsSummary";
+import {
+  buildDebugReport,
+  clearDebugLogEntries,
+  getDebugLogEntries,
+  recordCriticalError,
+  type DebugLogEntry,
+} from "./features/diagnostics/debugLog";
 import { createSessionBackup, parseSessionBackup } from "./features/sessions/sessionBackup";
 import {
   deleteActiveSession,
@@ -45,6 +52,7 @@ type SessionHistoryEditableField = "title" | "category" | "tags" | "energy" | "w
 type SettingsFeedbackType = "success" | "error";
 
 const SESSION_HISTORY_PAGE_SIZE = 8;
+const APP_VERSION = "0.1.0";
 
 function parseTags(value: string): string[] {
   return value
@@ -235,6 +243,10 @@ function App() {
     type: SettingsFeedbackType;
     message: string;
   } | null>(null);
+  const [debugLogEntries, setDebugLogEntries] = useState<DebugLogEntry[]>(() =>
+    getDebugLogEntries(),
+  );
+  const [isDebugActionBusy, setIsDebugActionBusy] = useState(false);
   const [isStartupSessionLoaded, setIsStartupSessionLoaded] = useState(false);
   const [isStartupMinElapsed, setIsStartupMinElapsed] = useState(false);
   const [isStartupLeaving, setIsStartupLeaving] = useState(false);
@@ -244,6 +256,11 @@ function App() {
   const [duplicateTitleCandidate, setDuplicateTitleCandidate] = useState<string | null>(null);
   const backupFadeTimeoutRef = useRef<number | null>(null);
   const backupRemoveTimeoutRef = useRef<number | null>(null);
+
+  function logCriticalError(source: string, error: unknown, details?: Record<string, unknown>) {
+    recordCriticalError(source, error, details);
+    setDebugLogEntries(getDebugLogEntries());
+  }
 
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -302,6 +319,7 @@ function App() {
           error,
           source: "loadSessionState",
         });
+        logCriticalError("startup.loadSessionState", error);
       } finally {
         if (!cancelled) {
           setIsStartupSessionLoaded(true);
@@ -328,6 +346,9 @@ function App() {
           source: "touchActiveSession",
           sessionId: activeSession.id,
         });
+        logCriticalError("session.touchActiveSession", error, {
+          sessionId: activeSession.id,
+        });
       });
     }, 7500);
 
@@ -347,6 +368,7 @@ function App() {
         }
       } catch (error) {
         console.error("Failed to load autostart state", error);
+        logCriticalError("settings.loadAutostartState", error);
       }
     }
 
@@ -368,6 +390,29 @@ function App() {
     const timer = setTimeout(() => setIsStartupComplete(true), 300);
     return () => clearTimeout(timer);
   }, [isStartupLeaving]);
+
+  useEffect(() => {
+    const onWindowError = (event: ErrorEvent) => {
+      const normalizedError = event.error ?? new Error(event.message || "window_error");
+      logCriticalError("runtime.windowError", normalizedError, {
+        filename: event.filename,
+        line: event.lineno,
+        column: event.colno,
+      });
+    };
+
+    const onUnhandledRejection = (event: PromiseRejectionEvent) => {
+      logCriticalError("runtime.unhandledRejection", event.reason);
+    };
+
+    window.addEventListener("error", onWindowError);
+    window.addEventListener("unhandledrejection", onUnhandledRejection);
+
+    return () => {
+      window.removeEventListener("error", onWindowError);
+      window.removeEventListener("unhandledrejection", onUnhandledRejection);
+    };
+  }, []);
 
   useEffect(() => {
     if (backupFadeTimeoutRef.current) {
@@ -688,6 +733,9 @@ function App() {
         source: "saveActiveSession",
         sessionId: session.id,
       });
+      logCriticalError("session.start.saveActiveSession", error, {
+        sessionId: session.id,
+      });
     } finally {
       setIsStartingSession(false);
     }
@@ -723,6 +771,9 @@ function App() {
         source: "saveActiveSession",
         sessionId: activeSession.id,
       });
+      logCriticalError("session.pause.saveActiveSession", error, {
+        sessionId: activeSession.id,
+      });
     }
   }
 
@@ -749,6 +800,9 @@ function App() {
       console.error("Failed to persist active session on resume", {
         error,
         source: "saveActiveSession",
+        sessionId: activeSession.id,
+      });
+      logCriticalError("session.resume.saveActiveSession", error, {
         sessionId: activeSession.id,
       });
     }
@@ -811,6 +865,11 @@ function App() {
         weekday: completed.weekday,
         energy: completed.energy,
       });
+      logCriticalError("session.finish.saveCompletedSession", error, {
+        sessionId: completed.id,
+        startedAt: completed.startedAt,
+        endedAt: completed.endedAt,
+      });
     } finally {
       setIsFinishingSession(false);
     }
@@ -858,6 +917,9 @@ function App() {
         source: "deleteActiveSession",
         sessionId: activeSession.id,
       });
+      logCriticalError("session.discard.deleteActiveSession", error, {
+        sessionId: activeSession.id,
+      });
     }
   }
 
@@ -867,6 +929,9 @@ function App() {
       setCompletedSessions((prev) => prev.filter((session) => session.id !== sessionId));
     } catch (error) {
       console.error("Failed to delete completed session from SQLite", error);
+      logCriticalError("sessionHistory.deleteCompletedSession", error, {
+        sessionId,
+      });
     }
   }
 
@@ -963,6 +1028,9 @@ function App() {
       setSessionHistoryEditing(null);
     } catch (error) {
       console.error("Failed to update completed session", error);
+      logCriticalError("sessionHistory.updateCompletedSession", error, {
+        sessionId: nextSession.id,
+      });
       setSessionHistoryEditError(t("analytics.sessionHistory.inlineEdit.saveError"));
     } finally {
       setIsSessionHistorySavingEdit(false);
@@ -1010,6 +1078,7 @@ function App() {
       });
     } catch (error) {
       console.error("Failed to export session backup", error);
+      logCriticalError("backup.export", error);
       setBackupFeedback({
         type: "error",
         message: t("analytics.sessionHistory.backup.exportError"),
@@ -1073,6 +1142,7 @@ function App() {
       });
     } catch (error) {
       console.error("Failed to import session backup", error);
+      logCriticalError("backup.import", error);
       setBackupFeedback({
         type: "error",
         message: t("analytics.sessionHistory.backup.importError"),
@@ -1100,6 +1170,7 @@ function App() {
       setIsAutostartEnabled(nextEnabled);
     } catch (error) {
       console.error("Failed to toggle autostart", error);
+      logCriticalError("settings.toggleAutostart", error);
       setSettingsFeedback({
         type: "error",
         message: t("settings.startupError"),
@@ -1132,6 +1203,7 @@ function App() {
       setIsDeleteAllConfirmOpen(false);
     } catch (error) {
       console.error("Failed to delete all completed sessions", error);
+      logCriticalError("settings.deleteAllSessions", error);
       setSettingsFeedback({
         type: "error",
         message: t("settings.deleteAllSessionsError"),
@@ -1157,6 +1229,73 @@ function App() {
     setSessionHistoryDurationFilter("all");
     setSessionHistoryPauseFilter("all");
     setSessionHistorySort({ key: "endedAt", direction: "desc" });
+  }
+
+  async function handleCopyDebugInfo() {
+    if (isDebugActionBusy) return;
+    setIsDebugActionBusy(true);
+    try {
+      const entries = getDebugLogEntries();
+      const report = buildDebugReport(entries, {
+        appVersion: APP_VERSION,
+        platform: navigator.platform,
+        userAgent: navigator.userAgent,
+      });
+      await navigator.clipboard.writeText(report);
+    } catch (error) {
+      console.error("Failed to copy debug report", error);
+      logCriticalError("settings.debug.copy", error);
+      setSettingsFeedback({
+        type: "error",
+        message: t("settings.debug.copyError"),
+      });
+    } finally {
+      setIsDebugActionBusy(false);
+    }
+  }
+
+  function handleClearDebugLogs() {
+    clearDebugLogEntries();
+    setDebugLogEntries([]);
+    setSettingsFeedback({
+      type: "success",
+      message: t("settings.debug.clearSuccess"),
+    });
+  }
+
+  async function handleExportDebugReport() {
+    if (isDebugActionBusy) return;
+    setIsDebugActionBusy(true);
+    try {
+      const selectedPath = await save({
+        title: t("settings.debug.export"),
+        defaultPath: `chronolytic-debug-${new Date().toISOString().slice(0, 10)}.txt`,
+        filters: [{ name: "Text", extensions: ["txt"] }],
+      });
+
+      if (!selectedPath) return;
+
+      const entries = getDebugLogEntries();
+      const report = buildDebugReport(entries, {
+        appVersion: APP_VERSION,
+        platform: navigator.platform,
+        userAgent: navigator.userAgent,
+      });
+      await writeTextFile(selectedPath, report);
+      setSettingsFeedback({
+        type: "success",
+        message: t("settings.debug.exportSuccess"),
+      });
+    } catch (error) {
+      console.error("Failed to export debug report", error);
+      logCriticalError("settings.debug.export", error);
+      setSettingsFeedback({
+        type: "error",
+        message: t("settings.debug.exportError"),
+      });
+    } finally {
+      setIsDebugActionBusy(false);
+    }
   }
 
   function getSortIndicator(sortKey: SessionHistorySortKey): string {
@@ -2585,6 +2724,70 @@ function App() {
             >
               {t("settings.checkUpdates")}
             </button>
+          </div>
+
+          <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
+            <h2 className="text-lg font-semibold text-[var(--text)]">
+              {t("settings.debug.title")}
+            </h2>
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
+              {t("settings.debug.description")}
+            </p>
+
+            <p className="mt-3 text-sm text-[var(--text-muted)]">
+              {t("settings.debug.recentErrors", { count: debugLogEntries.length })}
+            </p>
+
+            {debugLogEntries.length === 0 ? (
+              <p className="mt-2 text-sm text-[var(--text-muted)]">{t("settings.debug.empty")}</p>
+            ) : (
+              <div className="mt-3 max-h-64 space-y-2 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-3">
+                {debugLogEntries.slice(0, 10).map((entry) => (
+                  <div
+                    key={entry.id}
+                    className="rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] p-3"
+                  >
+                    <div className="text-xs text-[var(--text-muted)]">{entry.timestamp}</div>
+                    <div className="mt-1 text-sm font-medium text-[var(--text)]">
+                      {entry.source}
+                    </div>
+                    <div className="mt-1 text-sm text-[var(--text-muted)]">{entry.message}</div>
+                    {entry.stack ? (
+                      <pre className="mt-2 overflow-x-auto rounded bg-[var(--panel-muted)] p-2 text-[11px] text-[var(--text-muted)]">
+                        {entry.stack}
+                      </pre>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void handleCopyDebugInfo()}
+                disabled={isDebugActionBusy}
+                className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--panel-bg)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {t("settings.debug.copy")}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleClearDebugLogs()}
+                disabled={isDebugActionBusy || debugLogEntries.length === 0}
+                className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--panel-bg)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {t("settings.debug.clear")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleExportDebugReport()}
+                disabled={isDebugActionBusy}
+                className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--panel-bg)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {t("settings.debug.export")}
+              </button>
+            </div>
           </div>
 
           {isDeleteAllConfirmOpen ? (

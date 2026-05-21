@@ -227,7 +227,21 @@
     "version": "Versión",
     "license": "Licencia",
     "author": "Autor",
-    "checkUpdates": "Buscar actualizaciones (próximamente)"
+    "checkUpdates": "Buscar actualizaciones (próximamente)",
+    "debug": {
+      "title": "Depuración / Diagnóstico",
+      "description": "Registros locales para diagnosticar errores críticos de la app.",
+      "recentErrors": "Errores críticos recientes: {{count}}",
+      "empty": "No hay errores críticos registrados.",
+      "copy": "Copiar información de depuración",
+      "copySuccess": "Reporte de depuración copiado al portapapeles.",
+      "copyError": "No se pudo copiar el reporte de depuración.",
+      "clear": "Limpiar registros",
+      "clearSuccess": "Registros de depuración eliminados.",
+      "export": "Exportar reporte de depuración",
+      "exportSuccess": "Reporte de depuración exportado correctamente.",
+      "exportError": "No se pudo exportar el reporte de depuración."
+    }
   },
   "placeholder": {
     "futurePage": "Esta página es un marcador de posición para una iteración futura."
