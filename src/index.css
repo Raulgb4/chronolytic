@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  height: 100%;
+  min-height: 100%;
+}
+
+:root {
+  font-family: "Segoe UI", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 17px;
+  --app-bg: #f4f6f8;
+  --shell-bg: #ffffff;
+  --panel-bg: #ffffff;
+  --panel-muted: #f8fafc;
+  --sidebar-bg: #f8fafc;
+  --border: #e2e8f0;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --accent: #0f172a;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+:root[data-theme="dark"] {
+  --app-bg: #040816;
+  --shell-bg: #07101d;
+  --panel-bg: #0b1628;
+  --panel-muted: #101d31;
+  --sidebar-bg: #081221;
+  --border: #1d3557;
+  --text: #eaf2ff;
+  --text-muted: #9fb3cc;
+  --accent: #5f8fff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #ffffff 0%, var(--app-bg) 62%);
+  color: var(--text);
+  transition:
+    background 200ms ease,
+    color 200ms ease,
+    border-color 200ms ease;
+}
+
+:root[data-theme="dark"] body {
+  background: radial-gradient(circle at top, #111f35 0%, var(--app-bg) 68%);
+}
+
+/* Light mode scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #c6d2e5 #eef2f7;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #eef2f7;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #c6d2e5;
+  border: 2px solid #eef2f7;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #aebfd9;
+}
+
+/* Dark mode scrollbar */
+:root[data-theme="dark"] * {
+  scrollbar-color: #4e89ff #061021;
+}
+
+:root[data-theme="dark"] *::-webkit-scrollbar-track {
+  background: #061021;
+}
+
+:root[data-theme="dark"] *::-webkit-scrollbar-thumb {
+  background: #4e89ff;
+  border: 2px solid #061021;
+}
+
+:root[data-theme="dark"] *::-webkit-scrollbar-thumb:hover {
+  background: #6b9cff;
+}
+
+button,
+input,
+select,
+svg {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    fill 180ms ease,
+    stroke 180ms ease,
+    transform 180ms ease,
+    opacity 180ms ease;
+}
