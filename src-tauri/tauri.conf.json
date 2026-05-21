@@ -25,13 +25,24 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "publisher": "Raúl García Balongo",
+    "shortDescription": "Local-first desktop productivity analytics app",
+    "longDescription": "Track effective work/study sessions and transform personal time data into metrics, dashboards, trends, and behavioral insights.",
+    "category": "Productivity",
+    "copyright": "Copyright © 2026 Raúl García Balongo",
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "sidebarImage": "icons/installer.bmp"
+      }
+    }
   }
 }
