@@ -4,6 +4,17 @@ Chronolytic is a local-first Tauri desktop app for tracking focused work/study s
 
 It prioritizes effective time, interruption patterns, and historical evolution, not just stopwatch totals.
 
+## Installation (Windows)
+
+Chronolytic v0.1.0 currently supports Windows desktop.
+
+1. Open this repository's **Releases** page on GitHub.
+2. Download the Windows installer file (`.exe`) for the version you want.
+3. Run the installer and follow the setup wizard steps.
+4. Launch Chronolytic from the Start menu or desktop shortcut.
+
+Note: Windows may show a security warning because the application is not digitally signed yet. You can click `More info` -> `Run anyway` if you trust the release source.
+
 ## Current Features
 
 - Tauri desktop app with React + TypeScript + Tailwind CSS UI.
