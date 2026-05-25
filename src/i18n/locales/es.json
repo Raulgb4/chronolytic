@@ -82,7 +82,6 @@
         "duration": "DURACIÓN",
         "pauseCount": "PAUSAS",
         "pausedTime": "Tiempo pausado",
-        "tags": "Etiquetas",
         "weekday": "Día",
         "energy": "ENERGÍA",
         "actions": "Acciones"
@@ -95,7 +94,6 @@
         "cancel": "Cancelar",
         "confirm": "Eliminar"
       },
-      "noTags": "-",
       "emptyTitle": "Aún no hay sesiones completadas",
       "emptyDescription": "Finaliza una sesión para ver tu historial aquí."
     },
@@ -179,13 +177,11 @@
   },
   "sessionModal": {
     "title": "Crear sesión",
-    "description": "Define título, categoría y etiquetas antes de comenzar.",
+    "description": "Define título y categoría antes de comenzar.",
     "sessionTitle": "Título",
     "titlePlaceholder": "Estudio: Álgebra lineal",
     "category": "Categoría",
     "categoryPlaceholder": "Estudio",
-    "tags": "Etiquetas (separadas por comas)",
-    "tagsPlaceholder": "matemáticas, enfoque, examen",
     "energy": "Ánimo / Energía",
     "energyDescription": "¿Cómo te sientes antes de esta sesión?",
     "energyOptions": {

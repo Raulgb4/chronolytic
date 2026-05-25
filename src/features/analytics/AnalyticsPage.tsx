@@ -757,9 +757,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                           {props.t("analytics.sessionHistory.columns.pausedTime")}
                         </th>
                         <th className="px-5 py-3.5 font-semibold">
-                          {props.t("analytics.sessionHistory.columns.tags")}
-                        </th>
-                        <th className="px-5 py-3.5 font-semibold">
                           <button
                             type="button"
                             onClick={() => props.handleSessionHistorySort("energy")}
@@ -898,50 +895,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
                             {formatHumanDuration(session.pausedDurationMs)}
-                          </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {props.sessionHistoryEditing?.sessionId === session.id &&
-                            props.sessionHistoryEditing.field === "tags" ? (
-                              <input
-                                autoFocus
-                                value={props.sessionHistoryEditing.value}
-                                onChange={(event) =>
-                                  props.setSessionHistoryEditing((prev) =>
-                                    prev ? { ...prev, value: event.target.value } : prev,
-                                  )
-                                }
-                                onBlur={() => void props.saveSessionHistoryInlineEdit()}
-                                onKeyDown={props.handleSessionHistoryInlineEditKeyDown}
-                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
-                              />
-                            ) : session.tags.length > 0 ? (
-                              <div className="flex flex-wrap gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    props.startSessionHistoryInlineEdit(session, "tags")
-                                  }
-                                  className="contents"
-                                >
-                                  {session.tags.map((tag) => (
-                                    <span
-                                      key={`${session.id}-table-${tag}`}
-                                      className="rounded-full border border-[var(--border)] bg-[var(--panel-muted)] px-2 py-0.5 text-xs text-[var(--text-muted)]"
-                                    >
-                                      {tag}
-                                    </span>
-                                  ))}
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => props.startSessionHistoryInlineEdit(session, "tags")}
-                                className="text-[var(--text-muted)]/80 hover:text-[var(--accent)]"
-                              >
-                                {props.t("analytics.sessionHistory.noTags")}
-                              </button>
-                            )}
                           </td>
                           <td className="px-5 py-4 text-sm">
                             {props.sessionHistoryEditing?.sessionId === session.id &&

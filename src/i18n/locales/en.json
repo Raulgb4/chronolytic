@@ -82,7 +82,6 @@
         "duration": "Duration",
         "pauseCount": "Pauses",
         "pausedTime": "Paused time",
-        "tags": "Tags",
         "weekday": "Weekday",
         "energy": "Energy",
         "actions": "Actions"
@@ -95,7 +94,6 @@
         "cancel": "Cancel",
         "confirm": "Delete"
       },
-      "noTags": "-",
       "emptyTitle": "No completed sessions yet",
       "emptyDescription": "Finish a session to see your history here."
     },
@@ -179,13 +177,11 @@
   },
   "sessionModal": {
     "title": "Create Session",
-    "description": "Define title, category, and tags before starting.",
+    "description": "Define title and category before starting.",
     "sessionTitle": "Title",
     "titlePlaceholder": "Study: Linear Algebra",
     "category": "Category",
     "categoryPlaceholder": "Study",
-    "tags": "Tags (comma-separated)",
-    "tagsPlaceholder": "math, focus, exam",
     "energy": "Mood / Energy",
     "energyDescription": "How are you feeling before this session?",
     "energyOptions": {

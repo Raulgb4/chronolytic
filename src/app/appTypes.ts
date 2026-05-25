@@ -12,7 +12,7 @@ export type SessionHistorySortKey =
   | "pauseCount"
   | "energy";
 export type SortDirection = "asc" | "desc";
-export type SessionHistoryEditableField = "title" | "category" | "tags" | "energy" | "weekday";
+export type SessionHistoryEditableField = "title" | "category" | "energy" | "weekday";
 export type SettingsFeedbackType = "success" | "error";
 
 export type NavItem = {

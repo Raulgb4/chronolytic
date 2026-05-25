@@ -10,16 +10,11 @@ type CreateSessionModalProps = {
   setTitle: (value: string) => void;
   category: string;
   setCategory: (value: string) => void;
-  tagsInput: string;
-  setTagsInput: (value: string) => void;
   energy: EnergyLevel;
   setEnergy: (value: EnergyLevel | ((previous: EnergyLevel) => EnergyLevel)) => void;
   categorySuggestionsOpen: boolean;
   setCategorySuggestionsOpen: (value: boolean) => void;
   filteredCategorySuggestions: string[];
-  tagSuggestionsOpen: boolean;
-  setTagSuggestionsOpen: (value: boolean) => void;
-  filteredTagSuggestions: string[];
   isStartingSession: boolean;
   canStartSession: boolean;
   requestStartSession: () => Promise<void>;
@@ -37,16 +32,11 @@ export function CreateSessionModal({
   setTitle,
   category,
   setCategory,
-  tagsInput,
-  setTagsInput,
   energy,
   setEnergy,
   categorySuggestionsOpen,
   setCategorySuggestionsOpen,
   filteredCategorySuggestions,
-  tagSuggestionsOpen,
-  setTagSuggestionsOpen,
-  filteredTagSuggestions,
   isStartingSession,
   canStartSession,
   requestStartSession,
@@ -103,36 +93,6 @@ export function CreateSessionModal({
                     }}
                   >
                     {suggestion}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
-          </label>
-
-          <label className="relative flex flex-col gap-2 text-sm text-[var(--text-muted)]">
-            {t("sessionModal.tags")}
-            <input
-              value={tagsInput}
-              onChange={(event) => setTagsInput(event.target.value)}
-              onFocus={() => setTagSuggestionsOpen(true)}
-              onBlur={() => setTimeout(() => setTagSuggestionsOpen(false), 150)}
-              className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
-              placeholder={t("sessionModal.tagsPlaceholder")}
-            />
-            {tagSuggestionsOpen && filteredTagSuggestions.length > 0 ? (
-              <ul className="absolute left-0 right-0 top-full z-10 mt-1 max-h-40 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] shadow-lg">
-                {filteredTagSuggestions.map((tagSuggestion) => (
-                  <li
-                    key={tagSuggestion}
-                    className="cursor-pointer px-3 py-2 text-sm text-[var(--text)] hover:bg-[var(--panel-muted)]"
-                    onMouseDown={() => {
-                      const parts = tagsInput.split(",");
-                      parts[parts.length - 1] = tagSuggestion;
-                      setTagsInput(parts.join(", ").replace(/,\s*$/, "").replace(/,\s*,/g, ","));
-                      setTagSuggestionsOpen(false);
-                    }}
-                  >
-                    {tagSuggestion}
                   </li>
                 ))}
               </ul>

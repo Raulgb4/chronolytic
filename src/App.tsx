@@ -63,7 +63,6 @@ import { getEnergySortValue } from "./shared/utils/energyUtils";
 import {
   normalizeDuplicateTitle,
   normalizeSearchValue,
-  parseTags,
 } from "./shared/utils/searchUtils";
 
 const SESSION_HISTORY_PAGE_SIZE = 8;
@@ -88,12 +87,10 @@ function App() {
   const [now, setNow] = useState<number>(Date.now());
   const [title, setTitle] = useState<string>("");
   const [category, setCategory] = useState<string>("");
-  const [tagsInput, setTagsInput] = useState<string>("");
   const [energy, setEnergy] = useState<EnergyLevel>("regular");
   const [activeSession, setActiveSession] = useState<ActiveSession | null>(null);
   const [completedSessions, setCompletedSessions] = useState<CompletedSession[]>([]);
   const [categorySuggestionsOpen, setCategorySuggestionsOpen] = useState(false);
-  const [tagSuggestionsOpen, setTagSuggestionsOpen] = useState(false);
   const [analyticsTab, setAnalyticsTab] = useState<AnalyticsTab>("dashboard");
   const [recoveryNoticeVisible, setRecoveryNoticeVisible] = useState(false);
   const [isBackupBusy, setIsBackupBusy] = useState(false);
@@ -365,11 +362,6 @@ function App() {
     [completedSessions],
   );
 
-  const currentTagSegment = useMemo(() => {
-    const parts = tagsInput.split(",");
-    return parts[parts.length - 1]?.trim() || "";
-  }, [tagsInput]);
-
   const filteredCategorySuggestions = useMemo(
     () =>
       category.length > 0
@@ -382,30 +374,11 @@ function App() {
     [usedCategories, category],
   );
 
-  const usedTags = useMemo(
-    () => [...new Set(completedSessions.flatMap((s) => s.tags))].filter(Boolean),
-    [completedSessions],
-  );
-
-  const filteredTagSuggestions = useMemo(
-    () =>
-      currentTagSegment.length > 0
-        ? usedTags.filter(
-            (t) =>
-              t.toLowerCase() !== currentTagSegment.toLowerCase() &&
-              t.toLowerCase().includes(currentTagSegment.toLowerCase()),
-          )
-        : [],
-    [usedTags, currentTagSegment],
-  );
-
   const sessionHistorySearchIndex = useMemo(
     () =>
       completedSessions.map((session) => ({
         session,
-        searchableText: normalizeSearchValue(
-          `${session.title} ${session.category} ${session.tags.join(" ")}`,
-        ),
+        searchableText: normalizeSearchValue(`${session.title} ${session.category}`),
       })),
     [completedSessions],
   );
@@ -609,7 +582,6 @@ function App() {
       id: crypto.randomUUID(),
       title: finalTitle.trim(),
       category: category.trim(),
-      tags: parseTags(tagsInput),
       energy,
       startedAt,
       pauses: [],
@@ -761,7 +733,6 @@ function App() {
       id: sessionToSave.id,
       title: sessionToSave.title,
       category: sessionToSave.category,
-      tags: sessionToSave.tags,
       energy: sessionToSave.energy,
       startedAt: sessionToSave.startedAt,
       endedAt,
@@ -780,7 +751,6 @@ function App() {
       setActiveSession(null);
       setTitle("");
       setCategory("");
-      setTagsInput("");
       setEnergy("regular");
       setIsCreateSessionOpen(false);
       setRecoveryNoticeVisible(false);
@@ -879,9 +849,7 @@ function App() {
     if (isSessionHistorySavingEdit) return;
 
     const initialValue =
-      field === "tags"
-        ? session.tags.join(", ")
-        : field === "energy"
+      field === "energy"
           ? session.energy
           : field === "weekday"
             ? session.weekday
@@ -931,10 +899,6 @@ function App() {
 
     if (field === "category") {
       nextSession.category = trimmedValue;
-    }
-
-    if (field === "tags") {
-      nextSession.tags = parseTags(rawValue);
     }
 
     if (field === "energy") {
@@ -1270,16 +1234,11 @@ function App() {
         setTitle={setTitle}
         category={category}
         setCategory={setCategory}
-        tagsInput={tagsInput}
-        setTagsInput={setTagsInput}
         energy={energy}
         setEnergy={setEnergy}
         categorySuggestionsOpen={categorySuggestionsOpen}
         setCategorySuggestionsOpen={setCategorySuggestionsOpen}
         filteredCategorySuggestions={filteredCategorySuggestions}
-        tagSuggestionsOpen={tagSuggestionsOpen}
-        setTagSuggestionsOpen={setTagSuggestionsOpen}
-        filteredTagSuggestions={filteredTagSuggestions}
         canStartSession={canStartSession}
         requestStartSession={requestStartSession}
         closeCreateSession={() => setIsCreateSessionOpen(false)}
