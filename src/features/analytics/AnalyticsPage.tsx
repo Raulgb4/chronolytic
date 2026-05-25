@@ -29,6 +29,10 @@ type AnalyticsPageProps = {
   analyticsTab: AnalyticsTab;
   setAnalyticsTab: (tab: AnalyticsTab) => void;
   completedSessions: CompletedSession[];
+  dashboardSessions: CompletedSession[];
+  dashboardCategoryFilter: string;
+  setDashboardCategoryFilter: (value: string) => void;
+  dashboardCategoryOptions: Array<{ value: string; label: string }>;
   sessionHistorySearch: string;
   setSessionHistorySearch: (value: string) => void;
   handleExportBackup: () => void;
@@ -81,19 +85,22 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
     { key: "sessionHistory", label: props.t("analytics.tabs.sessionHistory") },
   ];
 
-  const summary = buildAnalyticsSummary(props.completedSessions, props.t("home.uncategorized"));
+  const summary = buildAnalyticsSummary(props.dashboardSessions, props.t("home.uncategorized"));
 
   const maxCategoryMs = Math.max(...summary.effectiveByCategory.map((item) => item.effectiveMs), 1);
   const maxWeekdayMs = Math.max(...summary.effectiveByWeekday.map((item) => item.effectiveMs), 1);
-  const maxEnergyCount = Math.max(...summary.sessionsByEnergy.map((item) => item.count), 1);
-  const maxCompareMs = Math.max(...summary.effectiveVsPaused.map((item) => item.valueMs), 1);
   const maxTimeSlotMs = Math.max(...summary.effectiveByTimeSlot.map((item) => item.effectiveMs), 1);
   const maxEnergyInterruptPausedMs = Math.max(
     ...summary.energyInterruptionStats.map((item) => item.averagePausedMs),
     1,
   );
+  const maxRecentDailyMs = Math.max(
+    ...summary.recentDailyEffectiveHours.map((item) => item.effectiveMs),
+    1,
+  );
 
   const formatPercentage = (value: number): string => `${Math.round(value * 100)}%`;
+  const formatHours = (durationMs: number): string => `${(durationMs / (60 * 60 * 1000)).toFixed(1)}h`;
   const getSortIndicator = (sortKey: SessionHistorySortKey): string => {
     if (props.sessionHistorySort.key !== sortKey) return "";
     return props.sessionHistorySort.direction === "asc" ? "↑" : "↓";
@@ -170,7 +177,25 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <label className="text-sm font-medium text-[var(--text-muted)]" htmlFor="dashboard-category-filter">
+                  {props.t("analytics.dashboard.filters.category")}
+                </label>
+                <select
+                  id="dashboard-category-filter"
+                  value={props.dashboardCategoryFilter}
+                  onChange={(event) => props.setDashboardCategoryFilter(event.target.value)}
+                  className="app-select min-w-52 px-3 py-2 text-sm"
+                >
+                  {props.dashboardCategoryOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {[
                   {
                     label: props.t("analytics.dashboard.kpis.totalEffectiveTime"),
@@ -183,10 +208,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                   {
                     label: props.t("analytics.dashboard.kpis.completedSessions"),
                     value: String(summary.completedCount),
-                  },
-                  {
-                    label: props.t("analytics.dashboard.kpis.totalPauseCount"),
-                    value: String(summary.totalPauseCount),
                   },
                   {
                     label: props.t("analytics.dashboard.kpis.averageSessionDuration"),
@@ -263,20 +284,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                       : "-"}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                    {props.t("analytics.dashboard.kpis.mostInterruptedSession")}
-                  </p>
-                  <p className="mt-2 truncate text-lg font-semibold text-[var(--text)]">
-                    {summary.mostInterruptedSession?.title ??
-                      props.t("analytics.dashboard.emptyMetric")}
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--text-muted)]">
-                    {summary.mostInterruptedSession
-                      ? `${summary.mostInterruptedSession.pauseCount} · ${formatHumanDuration(summary.mostInterruptedSession.pausedDurationMs)}`
-                      : "-"}
-                  </p>
-                </div>
               </div>
 
               <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -327,51 +334,27 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                 </div>
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
                   <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                    {props.t("analytics.dashboard.charts.effectiveVsPaused")}
+                    {props.t("analytics.dashboard.charts.recentDailyEffectiveHours")}
                   </h3>
-                  <div className="mt-4 space-y-4">
-                    {summary.effectiveVsPaused.map((item) => (
-                      <div key={item.key}>
-                        <div className="mb-1.5 flex items-center justify-between text-sm">
-                          <span className="text-[var(--text)]">
-                            {item.key === "effective"
-                              ? props.t("analytics.dashboard.series.effective")
-                              : props.t("analytics.dashboard.series.paused")}
-                          </span>
-                          <span className="text-[var(--text-muted)]">
-                            {formatHumanDuration(item.valueMs)}
-                          </span>
-                        </div>
-                        <div className="h-2 rounded-full bg-[var(--panel-muted)]">
+                  <div className="mt-4 grid grid-cols-5 gap-2.5">
+                    {summary.recentDailyEffectiveHours.map((item) => (
+                      <div key={item.dateKey} className="flex flex-col items-center gap-2">
+                        <div className="flex h-28 w-full items-end rounded-md bg-[var(--panel-muted)] px-1.5 py-1">
                           <div
-                            className={`h-2 rounded-full ${item.key === "effective" ? "bg-[#4E89FF]" : "bg-amber-500"}`}
-                            style={{ width: `${(item.valueMs / maxCompareMs) * 100}%` }}
+                            className="w-full rounded-sm bg-[#4E89FF]"
+                            style={{
+                              height: `${Math.max((item.effectiveMs / maxRecentDailyMs) * 100, 6)}%`,
+                            }}
                           />
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                    {props.t("analytics.dashboard.charts.sessionsByEnergy")}
-                  </h3>
-                  <div className="mt-4 space-y-3">
-                    {summary.sessionsByEnergy.map((item) => (
-                      <div key={item.energy}>
-                        <div className="mb-1.5 flex items-center justify-between text-sm">
-                          <span className="inline-flex items-center gap-1.5 text-[var(--text)]">
-                            {props.renderMoodFace(item.energy, "h-4 w-4")}
-                            {props.t(`analytics.energy.${item.energy}`)}
-                          </span>
-                          <span className="text-[var(--text-muted)]">{item.count}</span>
-                        </div>
-                        <div className="h-2 rounded-full bg-[var(--panel-muted)]">
-                          <div
-                            className="h-2 rounded-full bg-[var(--accent)]"
-                            style={{ width: `${(item.count / maxEnergyCount) * 100}%` }}
-                          />
-                        </div>
+                        <span className="text-[10px] font-medium uppercase text-[var(--text-muted)]">
+                          {item.label}
+                        </span>
+                        <span className="text-[10px] text-[var(--text-muted)]">
+                          {props.t("analytics.dashboard.series.hours", {
+                            value: formatHours(item.effectiveMs),
+                          })}
+                        </span>
                       </div>
                     ))}
                   </div>

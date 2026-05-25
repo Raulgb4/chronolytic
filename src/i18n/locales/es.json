@@ -114,6 +114,10 @@
     "dashboard": {
       "emptyTitle": "Aún no hay analíticas",
       "emptyDescription": "Finaliza algunas sesiones para desbloquear tus primeros insights.",
+      "filters": {
+        "category": "Categoría",
+        "allSessions": "Todas las sesiones"
+      },
       "kpis": {
         "totalEffectiveTime": "Tiempo efectivo total",
         "totalPausedTime": "Tiempo pausado total",
@@ -132,13 +136,15 @@
         "effectiveVsPaused": "Tiempo efectivo vs pausado",
         "sessionsByEnergy": "Sesiones por energía",
         "energyInterruptions": "Energía vs interrupciones",
-        "effectiveByTimeSlot": "Tiempo efectivo por franja"
+        "effectiveByTimeSlot": "Tiempo efectivo por franja",
+        "recentDailyEffectiveHours": "Horas efectivas de días recientes"
       },
       "series": {
         "effective": "Efectivo",
         "paused": "Pausado",
         "averagePauseCount": "Promedio de pausas",
-        "averagePausedTime": "Promedio pausado"
+        "averagePausedTime": "Promedio pausado",
+        "hours": "{{value}}"
       },
       "timeSlots": {
         "morning": "Mañana",

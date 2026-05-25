@@ -95,6 +95,7 @@ function App() {
   const [recoveryNoticeVisible, setRecoveryNoticeVisible] = useState(false);
   const [isBackupBusy, setIsBackupBusy] = useState(false);
   const [sessionHistorySearch, setSessionHistorySearch] = useState("");
+  const [dashboardCategoryFilter, setDashboardCategoryFilter] = useState("all");
   const [sessionHistoryWeekdayFilter, setSessionHistoryWeekdayFilter] = useState("all");
   const [sessionHistoryEnergyFilter, setSessionHistoryEnergyFilter] = useState("all");
   const [sessionHistoryCategoryFilter, setSessionHistoryCategoryFilter] = useState("all");
@@ -362,6 +363,35 @@ function App() {
     [completedSessions],
   );
 
+  const hasUncategorizedSessions = useMemo(
+    () => completedSessions.some((session) => session.category.trim().length === 0),
+    [completedSessions],
+  );
+
+  const dashboardCategoryOptions = useMemo(() => {
+    const options: Array<{ value: string; label: string }> = [
+      {
+        value: "all",
+        label: t("analytics.dashboard.filters.allSessions"),
+      },
+      ...usedCategories.map((category) => ({ value: category, label: category })),
+    ];
+
+    if (hasUncategorizedSessions) {
+      options.push({ value: "__uncategorized__", label: t("home.uncategorized") });
+    }
+
+    return options;
+  }, [hasUncategorizedSessions, t, usedCategories]);
+
+  const dashboardSessions = useMemo(() => {
+    if (dashboardCategoryFilter === "all") return completedSessions;
+    if (dashboardCategoryFilter === "__uncategorized__") {
+      return completedSessions.filter((session) => session.category.trim().length === 0);
+    }
+    return completedSessions.filter((session) => session.category === dashboardCategoryFilter);
+  }, [completedSessions, dashboardCategoryFilter]);
+
   const filteredCategorySuggestions = useMemo(
     () =>
       category.length > 0
@@ -546,6 +576,13 @@ function App() {
       setSessionHistoryPage(sessionHistoryTotalPages);
     }
   }, [sessionHistoryPage, sessionHistoryTotalPages]);
+
+  useEffect(() => {
+    const isValid = dashboardCategoryOptions.some((option) => option.value === dashboardCategoryFilter);
+    if (!isValid) {
+      setDashboardCategoryFilter("all");
+    }
+  }, [dashboardCategoryFilter, dashboardCategoryOptions]);
 
   const canStartSession = title.trim().length > 0 && !activeSession && !isStartingSession;
 
@@ -1256,6 +1293,10 @@ function App() {
     analyticsTab,
     setAnalyticsTab,
     completedSessions,
+    dashboardSessions,
+    dashboardCategoryFilter,
+    setDashboardCategoryFilter,
+    dashboardCategoryOptions,
     sessionHistorySearch,
     setSessionHistorySearch,
     handleExportBackup,

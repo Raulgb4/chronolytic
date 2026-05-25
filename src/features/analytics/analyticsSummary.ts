@@ -16,15 +16,11 @@ export type AnalyticsSummary = {
   totalEffectiveMs: number;
   totalPausedMs: number;
   completedCount: number;
-  totalPauseCount: number;
   averageSessionMs: number;
   effectiveByCategory: Array<{ category: string; effectiveMs: number }>;
   effectiveByWeekday: Array<{ weekday: string; effectiveMs: number }>;
-  effectiveVsPaused: Array<{ key: "effective" | "paused"; valueMs: number }>;
-  sessionsByEnergy: Array<{ energy: EnergyLevel; count: number }>;
   focusRatio: number;
   interruptionRatio: number;
-  mostInterruptedSession: CompletedSession | null;
   energyInterruptionStats: Array<{
     energy: EnergyLevel;
     averagePauseCount: number;
@@ -34,8 +30,58 @@ export type AnalyticsSummary = {
   mostProductiveCategory: { category: string; effectiveMs: number } | null;
   bestTimeSlot: { slot: TimeSlot; effectiveMs: number } | null;
   effectiveByTimeSlot: Array<{ slot: TimeSlot; effectiveMs: number }>;
+  recentDailyEffectiveHours: Array<{ label: string; dateKey: string; effectiveMs: number }>;
   latestSessions: CompletedSession[];
 };
+
+function toLocalDateKey(timestamp: number): string {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatShortWeekday(timestamp: number): string {
+  return new Date(timestamp).toLocaleDateString(undefined, { weekday: "short" });
+}
+
+export function buildRecentDailyEffectiveHours(
+  sessions: CompletedSession[],
+  dayCount = 5,
+): Array<{ label: string; dateKey: string; effectiveMs: number }> {
+  const count = Math.max(1, dayCount);
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const dayStarts: Date[] = [];
+  for (let index = count - 1; index >= 0; index -= 1) {
+    const day = new Date(today);
+    day.setDate(today.getDate() - index);
+    dayStarts.push(day);
+  }
+
+  const totalsByDay = new Map<string, number>();
+  for (const day of dayStarts) {
+    totalsByDay.set(toLocalDateKey(day.getTime()), 0);
+  }
+
+  for (const session of sessions) {
+    const key = toLocalDateKey(session.endedAt);
+    if (!totalsByDay.has(key)) continue;
+    totalsByDay.set(key, (totalsByDay.get(key) ?? 0) + session.effectiveDurationMs);
+  }
+
+  return dayStarts.map((day) => {
+    const timestamp = day.getTime();
+    const dateKey = toLocalDateKey(timestamp);
+    return {
+      label: formatShortWeekday(timestamp),
+      dateKey,
+      effectiveMs: totalsByDay.get(dateKey) ?? 0,
+    };
+  });
+}
 
 function getTimeSlot(hour: number): TimeSlot {
   if (hour >= 6 && hour <= 11) return "morning";
@@ -50,7 +96,6 @@ export function buildAnalyticsSummary(
 ): AnalyticsSummary {
   const totalEffectiveMs = sessions.reduce((acc, session) => acc + session.effectiveDurationMs, 0);
   const totalPausedMs = sessions.reduce((acc, session) => acc + session.pausedDurationMs, 0);
-  const totalPauseCount = sessions.reduce((acc, session) => acc + session.pauseCount, 0);
   const completedCount = sessions.length;
   const averageSessionMs = completedCount > 0 ? Math.round(totalEffectiveMs / completedCount) : 0;
   const totalTimeMs = totalEffectiveMs + totalPausedMs;
@@ -113,30 +158,6 @@ export function buildAnalyticsSummary(
     effectiveMs: weekdayMap.get(weekday) ?? 0,
   }));
 
-  const effectiveVsPaused: Array<{ key: "effective" | "paused"; valueMs: number }> = [
-    { key: "effective", valueMs: totalEffectiveMs },
-    { key: "paused", valueMs: totalPausedMs },
-  ];
-
-  const sessionsByEnergy: Array<{ energy: EnergyLevel; count: number }> = [
-    "bad",
-    "regular",
-    "good",
-  ].map((energy) => ({ energy, count: energyMap.get(energy as EnergyLevel) ?? 0 })) as Array<{
-    energy: EnergyLevel;
-    count: number;
-  }>;
-
-  const mostInterruptedSession =
-    sessions.length > 0
-      ? [...sessions].sort((a, b) => {
-          if (b.pauseCount !== a.pauseCount) {
-            return b.pauseCount - a.pauseCount;
-          }
-          return b.pausedDurationMs - a.pausedDurationMs;
-        })[0]
-      : null;
-
   const energyInterruptionStats: Array<{
     energy: EnergyLevel;
     averagePauseCount: number;
@@ -174,24 +195,22 @@ export function buildAnalyticsSummary(
       : null;
 
   const latestSessions = sessions.slice(0, 5);
+  const recentDailyEffectiveHours = buildRecentDailyEffectiveHours(sessions);
 
   return {
     totalEffectiveMs,
     totalPausedMs,
     completedCount,
-    totalPauseCount,
     averageSessionMs,
     effectiveByCategory,
     effectiveByWeekday,
-    effectiveVsPaused,
-    sessionsByEnergy,
     focusRatio,
     interruptionRatio,
-    mostInterruptedSession,
     energyInterruptionStats,
     mostProductiveCategory,
     bestTimeSlot,
     effectiveByTimeSlot,
+    recentDailyEffectiveHours,
     latestSessions,
   };
 }
