@@ -64,7 +64,6 @@ function parseSession(value: unknown): CompletedSession | null {
   const id = value.id;
   const title = value.title;
   const category = value.category;
-  const tags = value.tags;
   const energy = parseEnergy(value.energy);
   const startedAt = value.startedAt;
   const endedAt = value.endedAt;
@@ -77,7 +76,6 @@ function parseSession(value: unknown): CompletedSession | null {
   if (typeof id !== "string" || id.trim().length === 0) return null;
   if (typeof title !== "string" || title.trim().length === 0) return null;
   if (typeof category !== "string") return null;
-  if (!Array.isArray(tags) || tags.some((tag) => typeof tag !== "string")) return null;
   if (!energy) return null;
   if (!isFiniteNumber(startedAt) || !isFiniteNumber(endedAt)) return null;
   if (endedAt < startedAt) return null;
@@ -94,7 +92,6 @@ function parseSession(value: unknown): CompletedSession | null {
     id,
     title,
     category,
-    tags,
     energy,
     startedAt,
     endedAt,

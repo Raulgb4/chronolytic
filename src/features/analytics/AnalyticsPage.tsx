@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { buildAnalyticsSummary } from "./analyticsSummary";
 import type {
@@ -28,6 +29,10 @@ type AnalyticsPageProps = {
   analyticsTab: AnalyticsTab;
   setAnalyticsTab: (tab: AnalyticsTab) => void;
   completedSessions: CompletedSession[];
+  dashboardSessions: CompletedSession[];
+  dashboardCategoryFilter: string;
+  setDashboardCategoryFilter: (value: string) => void;
+  dashboardCategoryOptions: Array<{ value: string; label: string }>;
   sessionHistorySearch: string;
   setSessionHistorySearch: (value: string) => void;
   handleExportBackup: () => void;
@@ -73,27 +78,72 @@ type AnalyticsPageProps = {
 };
 
 export function AnalyticsPage(props: AnalyticsPageProps) {
+  const [sessionPendingDeleteId, setSessionPendingDeleteId] = useState<string | null>(null);
+
   const analyticsTabs: Array<{ key: AnalyticsTab; label: string }> = [
     { key: "dashboard", label: props.t("analytics.tabs.dashboard") },
     { key: "sessionHistory", label: props.t("analytics.tabs.sessionHistory") },
   ];
 
-  const summary = buildAnalyticsSummary(props.completedSessions, props.t("home.uncategorized"));
+  const summary = buildAnalyticsSummary(props.dashboardSessions, props.t("home.uncategorized"));
 
   const maxCategoryMs = Math.max(...summary.effectiveByCategory.map((item) => item.effectiveMs), 1);
   const maxWeekdayMs = Math.max(...summary.effectiveByWeekday.map((item) => item.effectiveMs), 1);
-  const maxEnergyCount = Math.max(...summary.sessionsByEnergy.map((item) => item.count), 1);
-  const maxCompareMs = Math.max(...summary.effectiveVsPaused.map((item) => item.valueMs), 1);
   const maxTimeSlotMs = Math.max(...summary.effectiveByTimeSlot.map((item) => item.effectiveMs), 1);
   const maxEnergyInterruptPausedMs = Math.max(
     ...summary.energyInterruptionStats.map((item) => item.averagePausedMs),
     1,
   );
+  const maxRecentDailyMs = Math.max(
+    ...summary.recentDailyEffectiveHours.map((item) => item.effectiveMs),
+    1,
+  );
 
   const formatPercentage = (value: number): string => `${Math.round(value * 100)}%`;
+  const formatHours = (durationMs: number): string =>
+    `${(durationMs / (60 * 60 * 1000)).toFixed(1)}h`;
+  const todayDateKey = (() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  })();
   const getSortIndicator = (sortKey: SessionHistorySortKey): string => {
     if (props.sessionHistorySort.key !== sortKey) return "";
     return props.sessionHistorySort.direction === "asc" ? "↑" : "↓";
+  };
+
+  const sessionPendingDelete =
+    sessionPendingDeleteId === null
+      ? null
+      : (props.completedSessions.find((session) => session.id === sessionPendingDeleteId) ?? null);
+
+  useEffect(() => {
+    if (!sessionPendingDeleteId) return;
+
+    const handleEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSessionPendingDeleteId(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [sessionPendingDeleteId]);
+
+  useEffect(() => {
+    if (sessionPendingDeleteId && !sessionPendingDelete) {
+      setSessionPendingDeleteId(null);
+    }
+  }, [sessionPendingDeleteId, sessionPendingDelete]);
+
+  const confirmDeletePendingSession = () => {
+    if (!sessionPendingDelete) return;
+    props.deleteCompletedSession(sessionPendingDelete.id);
+    setSessionPendingDeleteId(null);
   };
 
   return (
@@ -135,7 +185,28 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                <label
+                  className="text-sm font-medium text-[var(--text-muted)]"
+                  htmlFor="dashboard-category-filter"
+                >
+                  {props.t("analytics.dashboard.filters.category")}
+                </label>
+                <select
+                  id="dashboard-category-filter"
+                  value={props.dashboardCategoryFilter}
+                  onChange={(event) => props.setDashboardCategoryFilter(event.target.value)}
+                  className="app-select min-w-52 px-3 py-2 text-sm"
+                >
+                  {props.dashboardCategoryOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 {[
                   {
                     label: props.t("analytics.dashboard.kpis.totalEffectiveTime"),
@@ -148,10 +219,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                   {
                     label: props.t("analytics.dashboard.kpis.completedSessions"),
                     value: String(summary.completedCount),
-                  },
-                  {
-                    label: props.t("analytics.dashboard.kpis.totalPauseCount"),
-                    value: String(summary.totalPauseCount),
                   },
                   {
                     label: props.t("analytics.dashboard.kpis.averageSessionDuration"),
@@ -228,20 +295,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                       : "-"}
                   </p>
                 </div>
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                    {props.t("analytics.dashboard.kpis.mostInterruptedSession")}
-                  </p>
-                  <p className="mt-2 truncate text-lg font-semibold text-[var(--text)]">
-                    {summary.mostInterruptedSession?.title ??
-                      props.t("analytics.dashboard.emptyMetric")}
-                  </p>
-                  <p className="mt-1 text-sm text-[var(--text-muted)]">
-                    {summary.mostInterruptedSession
-                      ? `${summary.mostInterruptedSession.pauseCount} · ${formatHumanDuration(summary.mostInterruptedSession.pausedDurationMs)}`
-                      : "-"}
-                  </p>
-                </div>
               </div>
 
               <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
@@ -270,6 +323,33 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                 </div>
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
                   <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                    {props.t("analytics.dashboard.charts.recentDailyEffectiveHours")}
+                  </h3>
+                  <div className="mt-4 grid grid-cols-5 gap-2.5">
+                    {summary.recentDailyEffectiveHours.map((item) => (
+                      <div key={item.dateKey} className="flex flex-col items-center gap-2">
+                        <div className="flex h-28 w-full items-end rounded-md bg-[var(--panel-muted)] px-1.5 py-1">
+                          <div
+                            className={`w-full rounded-sm ${item.dateKey === todayDateKey ? "bg-amber-500" : "bg-[#4E89FF]"}`}
+                            style={{
+                              height: `${Math.max((item.effectiveMs / maxRecentDailyMs) * 100, 6)}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-medium uppercase text-[var(--text-muted)]">
+                          {item.label}
+                        </span>
+                        <span className="text-xs text-[var(--text-muted)]">
+                          {props.t("analytics.dashboard.series.hours", {
+                            value: formatHours(item.effectiveMs),
+                          })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
                     {props.t("analytics.dashboard.charts.effectiveByWeekday")}
                   </h3>
                   <div className="mt-4 grid grid-cols-7 gap-2">
@@ -286,57 +366,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                         <span className="text-[10px] font-medium uppercase text-[var(--text-muted)]">
                           {props.t(`analytics.weekdays.${item.weekday}`).slice(0, 3)}
                         </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                    {props.t("analytics.dashboard.charts.effectiveVsPaused")}
-                  </h3>
-                  <div className="mt-4 space-y-4">
-                    {summary.effectiveVsPaused.map((item) => (
-                      <div key={item.key}>
-                        <div className="mb-1.5 flex items-center justify-between text-sm">
-                          <span className="text-[var(--text)]">
-                            {item.key === "effective"
-                              ? props.t("analytics.dashboard.series.effective")
-                              : props.t("analytics.dashboard.series.paused")}
-                          </span>
-                          <span className="text-[var(--text-muted)]">
-                            {formatHumanDuration(item.valueMs)}
-                          </span>
-                        </div>
-                        <div className="h-2 rounded-full bg-[var(--panel-muted)]">
-                          <div
-                            className={`h-2 rounded-full ${item.key === "effective" ? "bg-[#4E89FF]" : "bg-amber-500"}`}
-                            style={{ width: `${(item.valueMs / maxCompareMs) * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                    {props.t("analytics.dashboard.charts.sessionsByEnergy")}
-                  </h3>
-                  <div className="mt-4 space-y-3">
-                    {summary.sessionsByEnergy.map((item) => (
-                      <div key={item.energy}>
-                        <div className="mb-1.5 flex items-center justify-between text-sm">
-                          <span className="inline-flex items-center gap-1.5 text-[var(--text)]">
-                            {props.renderMoodFace(item.energy, "h-4 w-4")}
-                            {props.t(`analytics.energy.${item.energy}`)}
-                          </span>
-                          <span className="text-[var(--text-muted)]">{item.count}</span>
-                        </div>
-                        <div className="h-2 rounded-full bg-[var(--panel-muted)]">
-                          <div
-                            className="h-2 rounded-full bg-[var(--accent)]"
-                            style={{ width: `${(item.count / maxEnergyCount) * 100}%` }}
-                          />
-                        </div>
                       </div>
                     ))}
                   </div>
@@ -662,6 +691,22 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                           {props.t("analytics.sessionHistory.columns.category")}
                         </th>
                         <th className="px-5 py-3.5 font-semibold">
+                          {props.t("analytics.sessionHistory.columns.weekday")}
+                        </th>
+                        <th className="px-5 py-3.5 font-semibold">
+                          <button
+                            type="button"
+                            onClick={() => props.handleSessionHistorySort("effectiveDurationMs")}
+                            aria-label={props.t("analytics.sessionHistory.sorting.sortByDuration")}
+                            className="inline-flex items-center gap-1 hover:text-[var(--text)]"
+                          >
+                            <span>{props.t("analytics.sessionHistory.columns.duration")}</span>
+                            <span className="text-[var(--text-muted)]">
+                              {getSortIndicator("effectiveDurationMs")}
+                            </span>
+                          </button>
+                        </th>
+                        <th className="px-5 py-3.5 font-semibold">
                           <button
                             type="button"
                             onClick={() => props.handleSessionHistorySort("startedAt")}
@@ -690,19 +735,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                         <th className="px-5 py-3.5 font-semibold">
                           <button
                             type="button"
-                            onClick={() => props.handleSessionHistorySort("effectiveDurationMs")}
-                            aria-label={props.t("analytics.sessionHistory.sorting.sortByDuration")}
-                            className="inline-flex items-center gap-1 hover:text-[var(--text)]"
-                          >
-                            <span>{props.t("analytics.sessionHistory.columns.duration")}</span>
-                            <span className="text-[var(--text-muted)]">
-                              {getSortIndicator("effectiveDurationMs")}
-                            </span>
-                          </button>
-                        </th>
-                        <th className="px-5 py-3.5 font-semibold">
-                          <button
-                            type="button"
                             onClick={() => props.handleSessionHistorySort("pauseCount")}
                             aria-label={props.t(
                               "analytics.sessionHistory.sorting.sortByPauseCount",
@@ -717,12 +749,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                         </th>
                         <th className="px-5 py-3.5 font-semibold">
                           {props.t("analytics.sessionHistory.columns.pausedTime")}
-                        </th>
-                        <th className="px-5 py-3.5 font-semibold">
-                          {props.t("analytics.sessionHistory.columns.tags")}
-                        </th>
-                        <th className="px-5 py-3.5 font-semibold">
-                          {props.t("analytics.sessionHistory.columns.weekday")}
                         </th>
                         <th className="px-5 py-3.5 font-semibold">
                           <button
@@ -803,72 +829,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                             )}
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {formatSessionDate(session.startedAt)}
-                          </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {formatSessionDate(session.endedAt)}
-                          </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text)]">
-                            {formatHumanDuration(session.effectiveDurationMs)}
-                          </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            <div className="inline-flex items-center gap-2">
-                              <span>{session.pauseCount}</span>
-                              {isHighInterruptionSession(session) ? (
-                                <span className="rounded-full border border-amber-500/30 bg-amber-500/12 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-300">
-                                  {props.t("analytics.sessionHistory.indicators.highInterruptions")}
-                                </span>
-                              ) : null}
-                            </div>
-                          </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {formatHumanDuration(session.pausedDurationMs)}
-                          </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {props.sessionHistoryEditing?.sessionId === session.id &&
-                            props.sessionHistoryEditing.field === "tags" ? (
-                              <input
-                                autoFocus
-                                value={props.sessionHistoryEditing.value}
-                                onChange={(event) =>
-                                  props.setSessionHistoryEditing((prev) =>
-                                    prev ? { ...prev, value: event.target.value } : prev,
-                                  )
-                                }
-                                onBlur={() => void props.saveSessionHistoryInlineEdit()}
-                                onKeyDown={props.handleSessionHistoryInlineEditKeyDown}
-                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
-                              />
-                            ) : session.tags.length > 0 ? (
-                              <div className="flex flex-wrap gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    props.startSessionHistoryInlineEdit(session, "tags")
-                                  }
-                                  className="contents"
-                                >
-                                  {session.tags.map((tag) => (
-                                    <span
-                                      key={`${session.id}-table-${tag}`}
-                                      className="rounded-full border border-[var(--border)] bg-[var(--panel-muted)] px-2 py-0.5 text-xs text-[var(--text-muted)]"
-                                    >
-                                      {tag}
-                                    </span>
-                                  ))}
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => props.startSessionHistoryInlineEdit(session, "tags")}
-                                className="text-[var(--text-muted)]/80 hover:text-[var(--accent)]"
-                              >
-                                {props.t("analytics.sessionHistory.noTags")}
-                              </button>
-                            )}
-                          </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
                             {props.sessionHistoryEditing?.sessionId === session.id &&
                             props.sessionHistoryEditing.field === "weekday" ? (
                               <select
@@ -907,6 +867,28 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                                 {props.t(`analytics.weekdays.${session.weekday}`)}
                               </button>
                             )}
+                          </td>
+                          <td className="px-5 py-4 text-sm text-[var(--text)]">
+                            {formatHumanDuration(session.effectiveDurationMs)}
+                          </td>
+                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                            {formatSessionDate(session.startedAt)}
+                          </td>
+                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                            {formatSessionDate(session.endedAt)}
+                          </td>
+                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                            <div className="inline-flex items-center gap-2">
+                              <span>{session.pauseCount}</span>
+                              {isHighInterruptionSession(session) ? (
+                                <span className="rounded-full border border-amber-500/30 bg-amber-500/12 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-300">
+                                  {props.t("analytics.sessionHistory.indicators.highInterruptions")}
+                                </span>
+                              ) : null}
+                            </div>
+                          </td>
+                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                            {formatHumanDuration(session.pausedDurationMs)}
                           </td>
                           <td className="px-5 py-4 text-sm">
                             {props.sessionHistoryEditing?.sessionId === session.id &&
@@ -949,23 +931,26 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                           <td className="px-5 py-4 text-right">
                             <button
                               type="button"
-                              onClick={() => props.deleteCompletedSession(session.id)}
+                              onClick={() => setSessionPendingDeleteId(session.id)}
                               aria-label={props.t("analytics.sessionHistory.deleteSession")}
-                              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-rose-400 transition duration-200 ease-out hover:bg-rose-500/10 hover:text-rose-500"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-rose-500 transition duration-200 ease-out hover:bg-rose-500/10 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel-bg)]"
                             >
                               <svg
                                 viewBox="0 0 24 24"
-                                className="h-4 w-4"
+                                className="h-5 w-5"
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth="1.8"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                aria-hidden="true"
                               >
-                                <path d="M4 7h16" />
-                                <path d="M9 7V5h6v2" />
-                                <path d="M8 7l1 12h6l1-12" />
-                                <path d="M10 11v5M14 11v5" />
+                                <path d="M3 6h18" />
+                                <path d="M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2" />
+                                <path d="M19 6l-1 13a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+                                <path d="M10 11v6" />
+                                <path d="M14 11v6" />
                               </svg>
-                              <span>{props.t("analytics.sessionHistory.delete")}</span>
                             </button>
                           </td>
                         </tr>
@@ -1011,6 +996,50 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
           </div>
         </div>
       )}
+
+      {sessionPendingDelete ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-4"
+          onClick={() => setSessionPendingDeleteId(null)}
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-session-modal-title"
+            className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_24px_60px_rgba(15,23,42,0.35)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3
+              id="delete-session-modal-title"
+              className="text-lg font-semibold text-[var(--text)]"
+            >
+              {props.t("analytics.sessionHistory.deleteConfirm.title")}
+            </h3>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">
+              {props.t("analytics.sessionHistory.deleteConfirm.description")}
+            </p>
+
+            <div className="mt-5 flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setSessionPendingDeleteId(null)}
+                className="rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-4 py-2 text-sm font-medium text-[var(--text)] transition duration-200 ease-out hover:bg-[var(--panel-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+                autoFocus
+              >
+                {props.t("analytics.sessionHistory.deleteConfirm.cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeletePendingSession}
+                className="rounded-lg border border-rose-500/35 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-600 transition duration-200 ease-out hover:bg-rose-500/16 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 dark:text-rose-300 dark:hover:text-rose-200"
+              >
+                {props.t("analytics.sessionHistory.deleteConfirm.confirm")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

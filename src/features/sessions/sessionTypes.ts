@@ -9,7 +9,6 @@ export type ActiveSession = {
   id: string;
   title: string;
   category: string;
-  tags: string[];
   energy: EnergyLevel;
   startedAt: number;
   pauses: PausePeriod[];
@@ -20,7 +19,6 @@ export type CompletedSession = {
   id: string;
   title: string;
   category: string;
-  tags: string[];
   energy: EnergyLevel;
   startedAt: number;
   endedAt: number;

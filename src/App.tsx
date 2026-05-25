@@ -60,11 +60,7 @@ import {
   getTimerDisplayNow,
 } from "./shared/utils/durationUtils";
 import { getEnergySortValue } from "./shared/utils/energyUtils";
-import {
-  normalizeDuplicateTitle,
-  normalizeSearchValue,
-  parseTags,
-} from "./shared/utils/searchUtils";
+import { normalizeDuplicateTitle, normalizeSearchValue } from "./shared/utils/searchUtils";
 
 const SESSION_HISTORY_PAGE_SIZE = 8;
 const APP_VERSION = "0.1.0";
@@ -88,16 +84,15 @@ function App() {
   const [now, setNow] = useState<number>(Date.now());
   const [title, setTitle] = useState<string>("");
   const [category, setCategory] = useState<string>("");
-  const [tagsInput, setTagsInput] = useState<string>("");
   const [energy, setEnergy] = useState<EnergyLevel>("regular");
   const [activeSession, setActiveSession] = useState<ActiveSession | null>(null);
   const [completedSessions, setCompletedSessions] = useState<CompletedSession[]>([]);
   const [categorySuggestionsOpen, setCategorySuggestionsOpen] = useState(false);
-  const [tagSuggestionsOpen, setTagSuggestionsOpen] = useState(false);
   const [analyticsTab, setAnalyticsTab] = useState<AnalyticsTab>("dashboard");
   const [recoveryNoticeVisible, setRecoveryNoticeVisible] = useState(false);
   const [isBackupBusy, setIsBackupBusy] = useState(false);
   const [sessionHistorySearch, setSessionHistorySearch] = useState("");
+  const [dashboardCategoryFilter, setDashboardCategoryFilter] = useState("all");
   const [sessionHistoryWeekdayFilter, setSessionHistoryWeekdayFilter] = useState("all");
   const [sessionHistoryEnergyFilter, setSessionHistoryEnergyFilter] = useState("all");
   const [sessionHistoryCategoryFilter, setSessionHistoryCategoryFilter] = useState("all");
@@ -365,10 +360,34 @@ function App() {
     [completedSessions],
   );
 
-  const currentTagSegment = useMemo(() => {
-    const parts = tagsInput.split(",");
-    return parts[parts.length - 1]?.trim() || "";
-  }, [tagsInput]);
+  const hasUncategorizedSessions = useMemo(
+    () => completedSessions.some((session) => session.category.trim().length === 0),
+    [completedSessions],
+  );
+
+  const dashboardCategoryOptions = useMemo(() => {
+    const options: Array<{ value: string; label: string }> = [
+      {
+        value: "all",
+        label: t("analytics.dashboard.filters.allSessions"),
+      },
+      ...usedCategories.map((category) => ({ value: category, label: category })),
+    ];
+
+    if (hasUncategorizedSessions) {
+      options.push({ value: "__uncategorized__", label: t("home.uncategorized") });
+    }
+
+    return options;
+  }, [hasUncategorizedSessions, t, usedCategories]);
+
+  const dashboardSessions = useMemo(() => {
+    if (dashboardCategoryFilter === "all") return completedSessions;
+    if (dashboardCategoryFilter === "__uncategorized__") {
+      return completedSessions.filter((session) => session.category.trim().length === 0);
+    }
+    return completedSessions.filter((session) => session.category === dashboardCategoryFilter);
+  }, [completedSessions, dashboardCategoryFilter]);
 
   const filteredCategorySuggestions = useMemo(
     () =>
@@ -382,30 +401,11 @@ function App() {
     [usedCategories, category],
   );
 
-  const usedTags = useMemo(
-    () => [...new Set(completedSessions.flatMap((s) => s.tags))].filter(Boolean),
-    [completedSessions],
-  );
-
-  const filteredTagSuggestions = useMemo(
-    () =>
-      currentTagSegment.length > 0
-        ? usedTags.filter(
-            (t) =>
-              t.toLowerCase() !== currentTagSegment.toLowerCase() &&
-              t.toLowerCase().includes(currentTagSegment.toLowerCase()),
-          )
-        : [],
-    [usedTags, currentTagSegment],
-  );
-
   const sessionHistorySearchIndex = useMemo(
     () =>
       completedSessions.map((session) => ({
         session,
-        searchableText: normalizeSearchValue(
-          `${session.title} ${session.category} ${session.tags.join(" ")}`,
-        ),
+        searchableText: normalizeSearchValue(`${session.title} ${session.category}`),
       })),
     [completedSessions],
   );
@@ -574,6 +574,15 @@ function App() {
     }
   }, [sessionHistoryPage, sessionHistoryTotalPages]);
 
+  useEffect(() => {
+    const isValid = dashboardCategoryOptions.some(
+      (option) => option.value === dashboardCategoryFilter,
+    );
+    if (!isValid) {
+      setDashboardCategoryFilter("all");
+    }
+  }, [dashboardCategoryFilter, dashboardCategoryOptions]);
+
   const canStartSession = title.trim().length > 0 && !activeSession && !isStartingSession;
 
   function hasDuplicateCompletedTitle(candidate: string): boolean {
@@ -609,7 +618,6 @@ function App() {
       id: crypto.randomUUID(),
       title: finalTitle.trim(),
       category: category.trim(),
-      tags: parseTags(tagsInput),
       energy,
       startedAt,
       pauses: [],
@@ -761,7 +769,6 @@ function App() {
       id: sessionToSave.id,
       title: sessionToSave.title,
       category: sessionToSave.category,
-      tags: sessionToSave.tags,
       energy: sessionToSave.energy,
       startedAt: sessionToSave.startedAt,
       endedAt,
@@ -780,7 +787,6 @@ function App() {
       setActiveSession(null);
       setTitle("");
       setCategory("");
-      setTagsInput("");
       setEnergy("regular");
       setIsCreateSessionOpen(false);
       setRecoveryNoticeVisible(false);
@@ -879,15 +885,13 @@ function App() {
     if (isSessionHistorySavingEdit) return;
 
     const initialValue =
-      field === "tags"
-        ? session.tags.join(", ")
-        : field === "energy"
-          ? session.energy
-          : field === "weekday"
-            ? session.weekday
-            : field === "title"
-              ? session.title
-              : session.category;
+      field === "energy"
+        ? session.energy
+        : field === "weekday"
+          ? session.weekday
+          : field === "title"
+            ? session.title
+            : session.category;
 
     setSessionHistoryEditError(null);
     setSessionHistoryEditing({
@@ -931,10 +935,6 @@ function App() {
 
     if (field === "category") {
       nextSession.category = trimmedValue;
-    }
-
-    if (field === "tags") {
-      nextSession.tags = parseTags(rawValue);
     }
 
     if (field === "energy") {
@@ -1270,16 +1270,11 @@ function App() {
         setTitle={setTitle}
         category={category}
         setCategory={setCategory}
-        tagsInput={tagsInput}
-        setTagsInput={setTagsInput}
         energy={energy}
         setEnergy={setEnergy}
         categorySuggestionsOpen={categorySuggestionsOpen}
         setCategorySuggestionsOpen={setCategorySuggestionsOpen}
         filteredCategorySuggestions={filteredCategorySuggestions}
-        tagSuggestionsOpen={tagSuggestionsOpen}
-        setTagSuggestionsOpen={setTagSuggestionsOpen}
-        filteredTagSuggestions={filteredTagSuggestions}
         canStartSession={canStartSession}
         requestStartSession={requestStartSession}
         closeCreateSession={() => setIsCreateSessionOpen(false)}
@@ -1297,6 +1292,10 @@ function App() {
     analyticsTab,
     setAnalyticsTab,
     completedSessions,
+    dashboardSessions,
+    dashboardCategoryFilter,
+    setDashboardCategoryFilter,
+    dashboardCategoryOptions,
     sessionHistorySearch,
     setSessionHistorySearch,
     handleExportBackup,
@@ -1401,8 +1400,16 @@ function App() {
         stroke="currentColor"
         strokeWidth="1.8"
       >
-        <path d="M12 8.8a3.2 3.2 0 1 0 0 6.4 3.2 3.2 0 0 0 0-6.4Z" />
-        <path d="M19 12a1 1 0 0 0-.7-1l-1.1-.3a5.6 5.6 0 0 0-.5-1.2l.6-1a1 1 0 0 0-.1-1.2l-.9-.9a1 1 0 0 0-1.2-.1l-1 .6a5.6 5.6 0 0 0-1.2-.5l-.3-1.1a1 1 0 0 0-1-.7h-1.2a1 1 0 0 0-1 .7l-.3 1.1a5.6 5.6 0 0 0-1.2.5l-1-.6a1 1 0 0 0-1.2.1l-.9.9a1 1 0 0 0-.1 1.2l.6 1a5.6 5.6 0 0 0-.5 1.2l-1.1.3a1 1 0 0 0-.7 1v1.2a1 1 0 0 0 .7 1l1.1.3c.1.4.3.8.5 1.2l-.6 1a1 1 0 0 0 .1 1.2l.9.9a1 1 0 0 0 1.2.1l1-.6c.4.2.8.4 1.2.5l.3 1.1a1 1 0 0 0 1 .7h1.2a1 1 0 0 0 1-.7l.3-1.1c.4-.1.8-.3 1.2-.5l1 .6a1 1 0 0 0 1.2-.1l.9-.9a1 1 0 0 0 .1-1.2l-.6-1c.2-.4.4-.8.5-1.2l1.1-.3a1 1 0 0 0 .7-1V12Z" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.427 1.756 2.925 0 3.352a1.724 1.724 0 0 0-1.066 2.572c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.427 1.756-2.925 1.756-3.352 0a1.724 1.724 0 0 0-2.572-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.427-1.756-2.925 0-3.352a1.724 1.724 0 0 0 1.066-2.572c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065Z"
+        />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z"
+        />
       </svg>
     );
   }
@@ -1425,6 +1432,7 @@ function App() {
       sessionSavedFeedbackVisible={sessionSavedFeedbackVisible}
       sessionSavedFeedbackMessage={t("home.sessionSavedSuccess")}
       startupLogoSrc={logoHeader}
+      themeMode={themeMode}
     >
       {activePage === "home"
         ? renderHome()

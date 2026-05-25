@@ -63,7 +63,7 @@
         "sortByStartDate": "Sort by start date",
         "sortByEndDate": "Sort by end date",
         "sortByDuration": "Sort by duration",
-        "sortByPauseCount": "Sort by pause count",
+        "sortByPauseCount": "Sort by pauses",
         "sortByEnergy": "Sort by energy"
       },
       "pagination": {
@@ -80,16 +80,20 @@
         "startDate": "Start date",
         "endDate": "End date",
         "duration": "Duration",
-        "pauseCount": "Pause count",
+        "pauseCount": "Pauses",
         "pausedTime": "Paused time",
-        "tags": "Tags",
         "weekday": "Weekday",
         "energy": "Energy",
         "actions": "Actions"
       },
       "delete": "Delete",
       "deleteSession": "Delete completed session",
-      "noTags": "-",
+      "deleteConfirm": {
+        "title": "Delete session?",
+        "description": "This action permanently removes this session from your history.",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      },
       "emptyTitle": "No completed sessions yet",
       "emptyDescription": "Finish a session to see your history here."
     },
@@ -110,6 +114,10 @@
     "dashboard": {
       "emptyTitle": "No analytics yet",
       "emptyDescription": "Finish a few sessions to unlock your first insights.",
+      "filters": {
+        "category": "Category",
+        "allSessions": "All sessions"
+      },
       "kpis": {
         "totalEffectiveTime": "Total effective time",
         "totalPausedTime": "Total paused time",
@@ -128,13 +136,15 @@
         "effectiveVsPaused": "Effective time vs paused time",
         "sessionsByEnergy": "Sessions by energy",
         "energyInterruptions": "Energy vs interruptions",
-        "effectiveByTimeSlot": "Effective time by time slot"
+        "effectiveByTimeSlot": "Effective time by time slot",
+        "recentDailyEffectiveHours": "Recent daily effective hours"
       },
       "series": {
         "effective": "Effective",
         "paused": "Paused",
         "averagePauseCount": "Avg pause count",
-        "averagePausedTime": "Avg paused time"
+        "averagePausedTime": "Avg paused time",
+        "hours": "{{value}}"
       },
       "timeSlots": {
         "morning": "Morning",
@@ -173,13 +183,11 @@
   },
   "sessionModal": {
     "title": "Create Session",
-    "description": "Define title, category, and tags before starting.",
+    "description": "Define title and category before starting.",
     "sessionTitle": "Title",
     "titlePlaceholder": "Study: Linear Algebra",
     "category": "Category",
     "categoryPlaceholder": "Study",
-    "tags": "Tags (comma-separated)",
-    "tagsPlaceholder": "math, focus, exam",
     "energy": "Mood / Energy",
     "energyDescription": "How are you feeling before this session?",
     "energyOptions": {

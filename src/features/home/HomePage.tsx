@@ -29,16 +29,11 @@ type HomePageProps = {
   setTitle: (value: string) => void;
   category: string;
   setCategory: (value: string) => void;
-  tagsInput: string;
-  setTagsInput: (value: string) => void;
   energy: EnergyLevel;
   setEnergy: (value: EnergyLevel | ((previous: EnergyLevel) => EnergyLevel)) => void;
   categorySuggestionsOpen: boolean;
   setCategorySuggestionsOpen: (value: boolean) => void;
   filteredCategorySuggestions: string[];
-  tagSuggestionsOpen: boolean;
-  setTagSuggestionsOpen: (value: boolean) => void;
-  filteredTagSuggestions: string[];
   canStartSession: boolean;
   requestStartSession: () => Promise<void>;
   closeCreateSession: () => void;
@@ -111,18 +106,6 @@ export function HomePage(props: HomePageProps) {
             <div className="mt-4 text-base text-[var(--text-muted)]">
               <p className="font-medium text-[var(--text)]">{props.activeSession.title}</p>
               <p>{props.activeSession.category || t("home.uncategorized")}</p>
-              {props.activeSession.tags.length > 0 ? (
-                <div className="mt-2 flex flex-wrap justify-center gap-2">
-                  {props.activeSession.tags.map((tag) => (
-                    <span
-                      key={`${props.activeSession?.id}-active-${tag}`}
-                      className="rounded-full border border-[var(--border)] px-2 py-0.5 text-sm text-[var(--text-muted)]"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              ) : null}
             </div>
           ) : null}
         </div>
@@ -199,16 +182,11 @@ export function HomePage(props: HomePageProps) {
         setTitle={props.setTitle}
         category={props.category}
         setCategory={props.setCategory}
-        tagsInput={props.tagsInput}
-        setTagsInput={props.setTagsInput}
         energy={props.energy}
         setEnergy={props.setEnergy}
         categorySuggestionsOpen={props.categorySuggestionsOpen}
         setCategorySuggestionsOpen={props.setCategorySuggestionsOpen}
         filteredCategorySuggestions={props.filteredCategorySuggestions}
-        tagSuggestionsOpen={props.tagSuggestionsOpen}
-        setTagSuggestionsOpen={props.setTagSuggestionsOpen}
-        filteredTagSuggestions={props.filteredTagSuggestions}
         isStartingSession={props.isStartingSession}
         canStartSession={props.canStartSession}
         requestStartSession={props.requestStartSession}

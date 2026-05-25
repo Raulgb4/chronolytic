@@ -63,7 +63,7 @@
         "sortByStartDate": "Ordenar por fecha de inicio",
         "sortByEndDate": "Ordenar por fecha de fin",
         "sortByDuration": "Ordenar por duración",
-        "sortByPauseCount": "Ordenar por cantidad de pausas",
+        "sortByPauseCount": "Ordenar por pausas",
         "sortByEnergy": "Ordenar por energía"
       },
       "pagination": {
@@ -80,16 +80,20 @@
         "startDate": "FECHA DE INICIO",
         "endDate": "FECHA DE FIN",
         "duration": "DURACIÓN",
-        "pauseCount": "CANTIDAD DE PAUSAS",
+        "pauseCount": "PAUSAS",
         "pausedTime": "Tiempo pausado",
-        "tags": "Etiquetas",
         "weekday": "Día",
         "energy": "ENERGÍA",
         "actions": "Acciones"
       },
       "delete": "Eliminar",
       "deleteSession": "Eliminar sesión completada",
-      "noTags": "-",
+      "deleteConfirm": {
+        "title": "¿Eliminar sesión?",
+        "description": "Esta acción elimina permanentemente esta sesión de tu historial.",
+        "cancel": "Cancelar",
+        "confirm": "Eliminar"
+      },
       "emptyTitle": "Aún no hay sesiones completadas",
       "emptyDescription": "Finaliza una sesión para ver tu historial aquí."
     },
@@ -110,6 +114,10 @@
     "dashboard": {
       "emptyTitle": "Aún no hay analíticas",
       "emptyDescription": "Finaliza algunas sesiones para desbloquear tus primeros insights.",
+      "filters": {
+        "category": "Categoría",
+        "allSessions": "Todas las sesiones"
+      },
       "kpis": {
         "totalEffectiveTime": "Tiempo efectivo total",
         "totalPausedTime": "Tiempo pausado total",
@@ -128,13 +136,15 @@
         "effectiveVsPaused": "Tiempo efectivo vs pausado",
         "sessionsByEnergy": "Sesiones por energía",
         "energyInterruptions": "Energía vs interrupciones",
-        "effectiveByTimeSlot": "Tiempo efectivo por franja"
+        "effectiveByTimeSlot": "Tiempo efectivo por franja",
+        "recentDailyEffectiveHours": "Horas efectivas de días recientes"
       },
       "series": {
         "effective": "Efectivo",
         "paused": "Pausado",
         "averagePauseCount": "Promedio de pausas",
-        "averagePausedTime": "Promedio pausado"
+        "averagePausedTime": "Promedio pausado",
+        "hours": "{{value}}"
       },
       "timeSlots": {
         "morning": "Mañana",
@@ -173,13 +183,11 @@
   },
   "sessionModal": {
     "title": "Crear sesión",
-    "description": "Define título, categoría y etiquetas antes de comenzar.",
+    "description": "Define título y categoría antes de comenzar.",
     "sessionTitle": "Título",
     "titlePlaceholder": "Estudio: Álgebra lineal",
     "category": "Categoría",
     "categoryPlaceholder": "Estudio",
-    "tags": "Etiquetas (separadas por comas)",
-    "tagsPlaceholder": "matemáticas, enfoque, examen",
     "energy": "Ánimo / Energía",
     "energyDescription": "¿Cómo te sientes antes de esta sesión?",
     "energyOptions": {
