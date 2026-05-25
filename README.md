@@ -6,7 +6,7 @@ It prioritizes effective time, interruption patterns, and historical evolution, 
 
 ## Installation (Windows)
 
-Chronolytic v0.1.0 currently supports Windows desktop.
+Chronolytic v0.1.1 currently supports Windows desktop.
 
 1. Open this repository's **Releases** page on GitHub.
 2. Download the Windows installer file (`.exe`) for the version you want.

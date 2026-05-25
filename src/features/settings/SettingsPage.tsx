@@ -144,7 +144,7 @@ export function SettingsPage(props: SettingsPageProps) {
           <dl className="mt-4 grid grid-cols-1 gap-2 text-sm text-[var(--text-muted)] sm:grid-cols-2">
             <div>
               <dt className="font-medium text-[var(--text)]">{t("settings.version")}</dt>
-              <dd>0.1.0</dd>
+              <dd>0.1.1</dd>
             </div>
             <div>
               <dt className="font-medium text-[var(--text)]">{t("settings.license")}</dt>

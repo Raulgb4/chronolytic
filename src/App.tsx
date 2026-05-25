@@ -63,7 +63,7 @@ import { getEnergySortValue } from "./shared/utils/energyUtils";
 import { normalizeDuplicateTitle, normalizeSearchValue } from "./shared/utils/searchUtils";
 
 const SESSION_HISTORY_PAGE_SIZE = 8;
-const APP_VERSION = "0.1.0";
+const APP_VERSION = "0.1.1";
 
 function getStoredLanguage(): Language {
   const value = window.localStorage.getItem("chronolytic.language");
