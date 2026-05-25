@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { NavItem, Page } from "./appTypes";
+import type { ThemeMode } from "./appTypes";
 
 type AppLayoutProps = {
   children: ReactNode;
@@ -13,6 +14,7 @@ type AppLayoutProps = {
   sessionSavedFeedbackVisible: boolean;
   sessionSavedFeedbackMessage: string;
   startupLogoSrc: string;
+  themeMode: ThemeMode;
 };
 
 function AppLayout({
@@ -27,13 +29,19 @@ function AppLayout({
   sessionSavedFeedbackVisible,
   sessionSavedFeedbackMessage,
   startupLogoSrc,
+  themeMode,
 }: AppLayoutProps) {
+  const startupBackground =
+    themeMode === "dark"
+      ? "radial-gradient(ellipse at 50% 40%, #131c31 0%, #0a0f1a 100%)"
+      : "radial-gradient(ellipse at 50% 40%, #ffffff 0%, #eef3f8 100%)";
+
   return (
     <>
       {!isStartupComplete && (
         <div
           className={`fixed inset-0 z-50 flex flex-col items-center justify-center transition-opacity duration-300 ${isStartupLeaving ? "opacity-0" : "opacity-100"}`}
-          style={{ background: "radial-gradient(ellipse at 50% 40%, #131c31 0%, #0a0f1a 100%)" }}
+          style={{ background: startupBackground }}
         >
           <style>{`@keyframes dot-pulse{0%,20%{opacity:.2;transform:scale(.6)}50%{opacity:1;transform:scale(1)}80%,100%{opacity:.2;transform:scale(.6)}}`}</style>
           <img src={startupLogoSrc} alt="Chronolytic" className="h-40 w-auto object-contain" />

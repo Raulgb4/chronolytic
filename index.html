@@ -8,12 +8,25 @@
       content="Chronolytic is a local-first desktop productivity analytics app built with Tauri, React, and TypeScript."
     />
     <title>Chronolytic</title>
+    <script>
+      (function () {
+        var storedTheme = window.localStorage.getItem("chronolytic.theme");
+        var theme = storedTheme === "dark" ? "dark" : "light";
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
     <style>
       html,
       body,
       #root {
         margin: 0;
         padding: 0;
+        background-color: #f4f6f8;
+      }
+
+      html[data-theme="dark"],
+      html[data-theme="dark"] body,
+      html[data-theme="dark"] #root {
         background-color: #0a0f1a;
       }
     </style>

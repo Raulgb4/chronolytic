@@ -1429,6 +1429,7 @@ function App() {
       sessionSavedFeedbackVisible={sessionSavedFeedbackVisible}
       sessionSavedFeedbackMessage={t("home.sessionSavedSuccess")}
       startupLogoSrc={logoHeader}
+      themeMode={themeMode}
     >
       {activePage === "home"
         ? renderHome()
