@@ -1,13 +1,13 @@
 import type { CompletedSession, EnergyLevel } from "../sessions/sessionTypes";
 
 const WEEKDAY_ORDER = [
-  "sunday",
   "monday",
   "tuesday",
   "wednesday",
   "thursday",
   "friday",
   "saturday",
+  "sunday",
 ] as const;
 
 type TimeSlot = "morning" | "afternoon" | "evening" | "night";
