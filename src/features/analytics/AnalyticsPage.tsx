@@ -101,6 +101,13 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
 
   const formatPercentage = (value: number): string => `${Math.round(value * 100)}%`;
   const formatHours = (durationMs: number): string => `${(durationMs / (60 * 60 * 1000)).toFixed(1)}h`;
+  const todayDateKey = (() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, "0");
+    const day = String(today.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  })();
   const getSortIndicator = (sortKey: SessionHistorySortKey): string => {
     if (props.sessionHistorySort.key !== sortKey) return "";
     return props.sessionHistorySort.direction === "asc" ? "↑" : "↓";
@@ -312,6 +319,33 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                 </div>
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
                   <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                    {props.t("analytics.dashboard.charts.recentDailyEffectiveHours")}
+                  </h3>
+                  <div className="mt-4 grid grid-cols-5 gap-2.5">
+                    {summary.recentDailyEffectiveHours.map((item) => (
+                      <div key={item.dateKey} className="flex flex-col items-center gap-2">
+                        <div className="flex h-28 w-full items-end rounded-md bg-[var(--panel-muted)] px-1.5 py-1">
+                          <div
+                            className={`w-full rounded-sm ${item.dateKey === todayDateKey ? "bg-amber-500" : "bg-[#4E89FF]"}`}
+                            style={{
+                              height: `${Math.max((item.effectiveMs / maxRecentDailyMs) * 100, 6)}%`,
+                            }}
+                          />
+                        </div>
+                        <span className="text-[10px] font-medium uppercase text-[var(--text-muted)]">
+                          {item.label}
+                        </span>
+                        <span className="text-xs text-[var(--text-muted)]">
+                          {props.t("analytics.dashboard.series.hours", {
+                            value: formatHours(item.effectiveMs),
+                          })}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
                     {props.t("analytics.dashboard.charts.effectiveByWeekday")}
                   </h3>
                   <div className="mt-4 grid grid-cols-7 gap-2">
@@ -327,33 +361,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                         </div>
                         <span className="text-[10px] font-medium uppercase text-[var(--text-muted)]">
                           {props.t(`analytics.weekdays.${item.weekday}`).slice(0, 3)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                    {props.t("analytics.dashboard.charts.recentDailyEffectiveHours")}
-                  </h3>
-                  <div className="mt-4 grid grid-cols-5 gap-2.5">
-                    {summary.recentDailyEffectiveHours.map((item) => (
-                      <div key={item.dateKey} className="flex flex-col items-center gap-2">
-                        <div className="flex h-28 w-full items-end rounded-md bg-[var(--panel-muted)] px-1.5 py-1">
-                          <div
-                            className="w-full rounded-sm bg-[#4E89FF]"
-                            style={{
-                              height: `${Math.max((item.effectiveMs / maxRecentDailyMs) * 100, 6)}%`,
-                            }}
-                          />
-                        </div>
-                        <span className="text-[10px] font-medium uppercase text-[var(--text-muted)]">
-                          {item.label}
-                        </span>
-                        <span className="text-[10px] text-[var(--text-muted)]">
-                          {props.t("analytics.dashboard.series.hours", {
-                            value: formatHours(item.effectiveMs),
-                          })}
                         </span>
                       </div>
                     ))}

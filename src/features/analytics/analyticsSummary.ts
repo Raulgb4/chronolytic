@@ -67,7 +67,8 @@ export function buildRecentDailyEffectiveHours(
   }
 
   for (const session of sessions) {
-    const key = toLocalDateKey(session.endedAt);
+    // Attribute each session to the day it started to match Session History weekday expectations.
+    const key = toLocalDateKey(session.startedAt);
     if (!totalsByDay.has(key)) continue;
     totalsByDay.set(key, (totalsByDay.get(key) ?? 0) + session.effectiveDurationMs);
   }
