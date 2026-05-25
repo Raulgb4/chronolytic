@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { KeyboardEvent, ReactNode } from "react";
 import { buildAnalyticsSummary } from "./analyticsSummary";
 import type {
@@ -73,6 +74,8 @@ type AnalyticsPageProps = {
 };
 
 export function AnalyticsPage(props: AnalyticsPageProps) {
+  const [sessionPendingDeleteId, setSessionPendingDeleteId] = useState<string | null>(null);
+
   const analyticsTabs: Array<{ key: AnalyticsTab; label: string }> = [
     { key: "dashboard", label: props.t("analytics.tabs.dashboard") },
     { key: "sessionHistory", label: props.t("analytics.tabs.sessionHistory") },
@@ -94,6 +97,38 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
   const getSortIndicator = (sortKey: SessionHistorySortKey): string => {
     if (props.sessionHistorySort.key !== sortKey) return "";
     return props.sessionHistorySort.direction === "asc" ? "↑" : "↓";
+  };
+
+  const sessionPendingDelete =
+    sessionPendingDeleteId === null
+      ? null
+      : props.completedSessions.find((session) => session.id === sessionPendingDeleteId) ?? null;
+
+  useEffect(() => {
+    if (!sessionPendingDeleteId) return;
+
+    const handleEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSessionPendingDeleteId(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => {
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [sessionPendingDeleteId]);
+
+  useEffect(() => {
+    if (sessionPendingDeleteId && !sessionPendingDelete) {
+      setSessionPendingDeleteId(null);
+    }
+  }, [sessionPendingDeleteId, sessionPendingDelete]);
+
+  const confirmDeletePendingSession = () => {
+    if (!sessionPendingDelete) return;
+    props.deleteCompletedSession(sessionPendingDelete.id);
+    setSessionPendingDeleteId(null);
   };
 
   return (
@@ -949,7 +984,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                           <td className="px-5 py-4 text-right">
                             <button
                               type="button"
-                              onClick={() => props.deleteCompletedSession(session.id)}
+                              onClick={() => setSessionPendingDeleteId(session.id)}
                               aria-label={props.t("analytics.sessionHistory.deleteSession")}
                               className="inline-flex h-9 w-9 items-center justify-center rounded-full text-rose-500 transition duration-200 ease-out hover:bg-rose-500/10 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel-bg)]"
                             >
@@ -963,10 +998,11 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                                 strokeLinejoin="round"
                                 aria-hidden="true"
                               >
-                                <path d="M4 7h16" />
-                                <path d="M9 7V5h6v2" />
-                                <path d="M8 7l1 12h6l1-12" />
-                                <path d="M10 11v5M14 11v5" />
+                                <path d="M3 6h18" />
+                                <path d="M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2" />
+                                <path d="M19 6l-1 13a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+                                <path d="M10 11v6" />
+                                <path d="M14 11v6" />
                               </svg>
                             </button>
                           </td>
@@ -1013,6 +1049,47 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
           </div>
         </div>
       )}
+
+      {sessionPendingDelete ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/45 px-4"
+          onClick={() => setSessionPendingDeleteId(null)}
+          role="presentation"
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-session-modal-title"
+            className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_24px_60px_rgba(15,23,42,0.35)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 id="delete-session-modal-title" className="text-lg font-semibold text-[var(--text)]">
+              {props.t("analytics.sessionHistory.deleteConfirm.title")}
+            </h3>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">
+              {props.t("analytics.sessionHistory.deleteConfirm.description")}
+            </p>
+
+            <div className="mt-5 flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setSessionPendingDeleteId(null)}
+                className="rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-4 py-2 text-sm font-medium text-[var(--text)] transition duration-200 ease-out hover:bg-[var(--panel-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]/40"
+                autoFocus
+              >
+                {props.t("analytics.sessionHistory.deleteConfirm.cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={confirmDeletePendingSession}
+                className="rounded-lg border border-rose-500/35 bg-rose-500/10 px-4 py-2 text-sm font-semibold text-rose-600 transition duration-200 ease-out hover:bg-rose-500/16 hover:text-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/60 dark:text-rose-300 dark:hover:text-rose-200"
+              >
+                {props.t("analytics.sessionHistory.deleteConfirm.confirm")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

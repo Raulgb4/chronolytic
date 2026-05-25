@@ -89,6 +89,12 @@
       },
       "delete": "Eliminar",
       "deleteSession": "Eliminar sesión completada",
+      "deleteConfirm": {
+        "title": "¿Eliminar sesión?",
+        "description": "Esta acción elimina permanentemente esta sesión de tu historial.",
+        "cancel": "Cancelar",
+        "confirm": "Eliminar"
+      },
       "noTags": "-",
       "emptyTitle": "Aún no hay sesiones completadas",
       "emptyDescription": "Finaliza una sesión para ver tu historial aquí."

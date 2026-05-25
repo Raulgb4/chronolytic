@@ -89,6 +89,12 @@
       },
       "delete": "Delete",
       "deleteSession": "Delete completed session",
+      "deleteConfirm": {
+        "title": "Delete session?",
+        "description": "This action permanently removes this session from your history.",
+        "cancel": "Cancel",
+        "confirm": "Delete"
+      },
       "noTags": "-",
       "emptyTitle": "No completed sessions yet",
       "emptyDescription": "Finish a session to see your history here."
