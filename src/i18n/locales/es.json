@@ -63,7 +63,7 @@
         "sortByStartDate": "Ordenar por fecha de inicio",
         "sortByEndDate": "Ordenar por fecha de fin",
         "sortByDuration": "Ordenar por duración",
-        "sortByPauseCount": "Ordenar por cantidad de pausas",
+        "sortByPauseCount": "Ordenar por pausas",
         "sortByEnergy": "Ordenar por energía"
       },
       "pagination": {
@@ -80,7 +80,7 @@
         "startDate": "FECHA DE INICIO",
         "endDate": "FECHA DE FIN",
         "duration": "DURACIÓN",
-        "pauseCount": "CANTIDAD DE PAUSAS",
+        "pauseCount": "PAUSAS",
         "pausedTime": "Tiempo pausado",
         "tags": "Etiquetas",
         "weekday": "Día",

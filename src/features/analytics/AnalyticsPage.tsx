@@ -662,6 +662,22 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                           {props.t("analytics.sessionHistory.columns.category")}
                         </th>
                         <th className="px-5 py-3.5 font-semibold">
+                          {props.t("analytics.sessionHistory.columns.weekday")}
+                        </th>
+                        <th className="px-5 py-3.5 font-semibold">
+                          <button
+                            type="button"
+                            onClick={() => props.handleSessionHistorySort("effectiveDurationMs")}
+                            aria-label={props.t("analytics.sessionHistory.sorting.sortByDuration")}
+                            className="inline-flex items-center gap-1 hover:text-[var(--text)]"
+                          >
+                            <span>{props.t("analytics.sessionHistory.columns.duration")}</span>
+                            <span className="text-[var(--text-muted)]">
+                              {getSortIndicator("effectiveDurationMs")}
+                            </span>
+                          </button>
+                        </th>
+                        <th className="px-5 py-3.5 font-semibold">
                           <button
                             type="button"
                             onClick={() => props.handleSessionHistorySort("startedAt")}
@@ -690,19 +706,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                         <th className="px-5 py-3.5 font-semibold">
                           <button
                             type="button"
-                            onClick={() => props.handleSessionHistorySort("effectiveDurationMs")}
-                            aria-label={props.t("analytics.sessionHistory.sorting.sortByDuration")}
-                            className="inline-flex items-center gap-1 hover:text-[var(--text)]"
-                          >
-                            <span>{props.t("analytics.sessionHistory.columns.duration")}</span>
-                            <span className="text-[var(--text-muted)]">
-                              {getSortIndicator("effectiveDurationMs")}
-                            </span>
-                          </button>
-                        </th>
-                        <th className="px-5 py-3.5 font-semibold">
-                          <button
-                            type="button"
                             onClick={() => props.handleSessionHistorySort("pauseCount")}
                             aria-label={props.t(
                               "analytics.sessionHistory.sorting.sortByPauseCount",
@@ -720,9 +723,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                         </th>
                         <th className="px-5 py-3.5 font-semibold">
                           {props.t("analytics.sessionHistory.columns.tags")}
-                        </th>
-                        <th className="px-5 py-3.5 font-semibold">
-                          {props.t("analytics.sessionHistory.columns.weekday")}
                         </th>
                         <th className="px-5 py-3.5 font-semibold">
                           <button
@@ -803,13 +803,53 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                             )}
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
+                            {props.sessionHistoryEditing?.sessionId === session.id &&
+                            props.sessionHistoryEditing.field === "weekday" ? (
+                              <select
+                                autoFocus
+                                value={props.sessionHistoryEditing.value}
+                                onChange={(event) =>
+                                  props.setSessionHistoryEditing((prev) =>
+                                    prev ? { ...prev, value: event.target.value } : prev,
+                                  )
+                                }
+                                onBlur={() => void props.saveSessionHistoryInlineEdit()}
+                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
+                              >
+                                {[
+                                  "monday",
+                                  "tuesday",
+                                  "wednesday",
+                                  "thursday",
+                                  "friday",
+                                  "saturday",
+                                  "sunday",
+                                ].map((weekday) => (
+                                  <option key={`${session.id}-${weekday}`} value={weekday}>
+                                    {props.t(`analytics.weekdays.${weekday}`)}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  props.startSessionHistoryInlineEdit(session, "weekday")
+                                }
+                                className="text-left hover:text-[var(--accent)]"
+                              >
+                                {props.t(`analytics.weekdays.${session.weekday}`)}
+                              </button>
+                            )}
+                          </td>
+                          <td className="px-5 py-4 text-sm text-[var(--text)]">
+                            {formatHumanDuration(session.effectiveDurationMs)}
+                          </td>
+                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
                             {formatSessionDate(session.startedAt)}
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
                             {formatSessionDate(session.endedAt)}
-                          </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text)]">
-                            {formatHumanDuration(session.effectiveDurationMs)}
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
                             <div className="inline-flex items-center gap-2">
@@ -868,46 +908,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                               </button>
                             )}
                           </td>
-                          <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {props.sessionHistoryEditing?.sessionId === session.id &&
-                            props.sessionHistoryEditing.field === "weekday" ? (
-                              <select
-                                autoFocus
-                                value={props.sessionHistoryEditing.value}
-                                onChange={(event) =>
-                                  props.setSessionHistoryEditing((prev) =>
-                                    prev ? { ...prev, value: event.target.value } : prev,
-                                  )
-                                }
-                                onBlur={() => void props.saveSessionHistoryInlineEdit()}
-                                className="w-full rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-1 text-sm text-[var(--text)]"
-                              >
-                                {[
-                                  "monday",
-                                  "tuesday",
-                                  "wednesday",
-                                  "thursday",
-                                  "friday",
-                                  "saturday",
-                                  "sunday",
-                                ].map((weekday) => (
-                                  <option key={`${session.id}-${weekday}`} value={weekday}>
-                                    {props.t(`analytics.weekdays.${weekday}`)}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  props.startSessionHistoryInlineEdit(session, "weekday")
-                                }
-                                className="text-left hover:text-[var(--accent)]"
-                              >
-                                {props.t(`analytics.weekdays.${session.weekday}`)}
-                              </button>
-                            )}
-                          </td>
                           <td className="px-5 py-4 text-sm">
                             {props.sessionHistoryEditing?.sessionId === session.id &&
                             props.sessionHistoryEditing.field === "energy" ? (
@@ -951,21 +951,23 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                               type="button"
                               onClick={() => props.deleteCompletedSession(session.id)}
                               aria-label={props.t("analytics.sessionHistory.deleteSession")}
-                              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-rose-400 transition duration-200 ease-out hover:bg-rose-500/10 hover:text-rose-500"
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full text-rose-500 transition duration-200 ease-out hover:bg-rose-500/10 hover:text-rose-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70 focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--panel-bg)]"
                             >
                               <svg
                                 viewBox="0 0 24 24"
-                                className="h-4 w-4"
+                                className="h-5 w-5"
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth="1.8"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                aria-hidden="true"
                               >
                                 <path d="M4 7h16" />
                                 <path d="M9 7V5h6v2" />
                                 <path d="M8 7l1 12h6l1-12" />
                                 <path d="M10 11v5M14 11v5" />
                               </svg>
-                              <span>{props.t("analytics.sessionHistory.delete")}</span>
                             </button>
                           </td>
                         </tr>
@@ -973,7 +975,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                     </tbody>
                   </table>
                 </div>
-
+                
                 {props.visibleSessionHistorySessions.length > props.sessionHistoryPageSize ? (
                   <div className="flex items-center justify-center gap-3 border-t border-[var(--border)] px-5 py-4">
                     <button
