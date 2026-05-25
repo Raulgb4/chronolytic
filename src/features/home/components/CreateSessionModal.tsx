@@ -150,7 +150,7 @@ export function CreateSessionModal({
               className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-3"
             >
               <div className="relative mx-1 h-12 overflow-hidden">
-                <div className="absolute left-0 right-0 top-1/2 h-2 -translate-y-1/2 rounded-full bg-[var(--panel-bg)]" />
+                <div className="absolute left-0 right-0 top-1/2 h-2 -translate-y-1/2 rounded-full border border-slate-200 bg-white dark:border-[var(--border)] dark:bg-[var(--panel-bg)]" />
                 <div className="pointer-events-none absolute inset-0 grid grid-cols-3 items-center">
                   <div
                     className="flex justify-center transition-transform duration-300 ease-out"
