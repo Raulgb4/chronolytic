@@ -60,10 +60,7 @@ import {
   getTimerDisplayNow,
 } from "./shared/utils/durationUtils";
 import { getEnergySortValue } from "./shared/utils/energyUtils";
-import {
-  normalizeDuplicateTitle,
-  normalizeSearchValue,
-} from "./shared/utils/searchUtils";
+import { normalizeDuplicateTitle, normalizeSearchValue } from "./shared/utils/searchUtils";
 
 const SESSION_HISTORY_PAGE_SIZE = 8;
 const APP_VERSION = "0.1.0";
@@ -578,7 +575,9 @@ function App() {
   }, [sessionHistoryPage, sessionHistoryTotalPages]);
 
   useEffect(() => {
-    const isValid = dashboardCategoryOptions.some((option) => option.value === dashboardCategoryFilter);
+    const isValid = dashboardCategoryOptions.some(
+      (option) => option.value === dashboardCategoryFilter,
+    );
     if (!isValid) {
       setDashboardCategoryFilter("all");
     }
@@ -887,12 +886,12 @@ function App() {
 
     const initialValue =
       field === "energy"
-          ? session.energy
-          : field === "weekday"
-            ? session.weekday
-            : field === "title"
-              ? session.title
-              : session.category;
+        ? session.energy
+        : field === "weekday"
+          ? session.weekday
+          : field === "title"
+            ? session.title
+            : session.category;
 
     setSessionHistoryEditError(null);
     setSessionHistoryEditing({
@@ -1406,7 +1405,11 @@ function App() {
           strokeLinejoin="round"
           d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756.427 1.756 2.925 0 3.352a1.724 1.724 0 0 0-1.066 2.572c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 0 0-2.572 1.065c-.427 1.756-2.925 1.756-3.352 0a1.724 1.724 0 0 0-2.572-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 0 0-1.065-2.572c-1.756-.427-1.756-2.925 0-3.352a1.724 1.724 0 0 0 1.066-2.572c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065Z"
         />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z"
+        />
       </svg>
     );
   }

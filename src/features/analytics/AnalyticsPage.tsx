@@ -100,7 +100,8 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
   );
 
   const formatPercentage = (value: number): string => `${Math.round(value * 100)}%`;
-  const formatHours = (durationMs: number): string => `${(durationMs / (60 * 60 * 1000)).toFixed(1)}h`;
+  const formatHours = (durationMs: number): string =>
+    `${(durationMs / (60 * 60 * 1000)).toFixed(1)}h`;
   const todayDateKey = (() => {
     const today = new Date();
     const year = today.getFullYear();
@@ -116,7 +117,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
   const sessionPendingDelete =
     sessionPendingDeleteId === null
       ? null
-      : props.completedSessions.find((session) => session.id === sessionPendingDeleteId) ?? null;
+      : (props.completedSessions.find((session) => session.id === sessionPendingDeleteId) ?? null);
 
   useEffect(() => {
     if (!sessionPendingDeleteId) return;
@@ -185,7 +186,10 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
           ) : (
             <div className="space-y-6">
               <div className="flex flex-wrap items-center justify-end gap-3">
-                <label className="text-sm font-medium text-[var(--text-muted)]" htmlFor="dashboard-category-filter">
+                <label
+                  className="text-sm font-medium text-[var(--text-muted)]"
+                  htmlFor="dashboard-category-filter"
+                >
                   {props.t("analytics.dashboard.filters.category")}
                 </label>
                 <select
@@ -954,7 +958,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                     </tbody>
                   </table>
                 </div>
-                
+
                 {props.visibleSessionHistorySessions.length > props.sessionHistoryPageSize ? (
                   <div className="flex items-center justify-center gap-3 border-t border-[var(--border)] px-5 py-4">
                     <button
@@ -1006,7 +1010,10 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
             className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_24px_60px_rgba(15,23,42,0.35)]"
             onClick={(event) => event.stopPropagation()}
           >
-            <h3 id="delete-session-modal-title" className="text-lg font-semibold text-[var(--text)]">
+            <h3
+              id="delete-session-modal-title"
+              className="text-lg font-semibold text-[var(--text)]"
+            >
               {props.t("analytics.sessionHistory.deleteConfirm.title")}
             </h3>
             <p className="mt-2 text-sm text-[var(--text-muted)]">
