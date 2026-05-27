@@ -147,10 +147,32 @@ function App() {
   }
 
   useEffect(() => {
-    const interval = window.setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-    return () => window.clearInterval(interval);
+    let intervalId: number | null = null;
+    let timeoutId: number | null = null;
+
+    const scheduleAlignedClock = () => {
+      const updateNow = () => setNow(Date.now());
+
+      updateNow();
+      const nowMs = Date.now();
+      const delayToNextSecond = 1000 - (nowMs % 1000);
+
+      timeoutId = window.setTimeout(() => {
+        updateNow();
+        intervalId = window.setInterval(updateNow, 1000);
+      }, delayToNextSecond);
+    };
+
+    scheduleAlignedClock();
+
+    return () => {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+      }
+    };
   }, []);
 
   useEffect(() => {
