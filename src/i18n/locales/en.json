@@ -34,7 +34,7 @@
         "invalidWeekday": "Invalid weekday value."
       },
       "searchLabel": "Search session history",
-      "searchPlaceholder": "Search by title, category, or tag",
+      "searchPlaceholder": "Search by title or category",
       "emptySearchTitle": "No matching sessions",
       "emptySearchDescription": "Adjust your search or filters to find sessions.",
       "filters": {
@@ -54,10 +54,11 @@
       },
       "durationOptions": {
         "all": "Any duration",
-        "under30m": "Under 30 min",
-        "30mTo1h": "30 min to 1 h",
         "1hTo2h": "1 h to 2 h",
-        "over2h": "Over 2 h"
+        "2hTo4h": "2 h to 4 h",
+        "4hTo6h": "4 h to 6 h",
+        "6hTo8h": "6 h to 8 h",
+        "8hTo10h": "8 h to 10 h"
       },
       "sorting": {
         "sortByStartDate": "Sort by start date",
@@ -180,6 +181,10 @@
     "finishing": "Finishing...",
     "discard": "Discard",
     "sessionSavedSuccess": "Session saved. You can find it in Session History inside Analytics."
+    ,"recentSessions": {
+      "title": "Recent sessions",
+      "empty": "No completed sessions yet."
+    }
   },
   "sessionModal": {
     "title": "Create Session",

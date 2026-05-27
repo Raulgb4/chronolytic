@@ -465,28 +465,28 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
         </div>
       ) : (
         <div className="px-8 py-8">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="mb-4 space-y-3">
             <h2 className="text-base font-semibold text-[var(--text)]">
               {props.t("analytics.tabs.sessionHistory")}
             </h2>
 
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-              {props.completedSessions.length > 0 ? (
-                <div className="w-full sm:w-80">
-                  <label className="sr-only" htmlFor="session-history-search">
-                    {props.t("analytics.sessionHistory.searchLabel")}
-                  </label>
-                  <input
-                    id="session-history-search"
-                    type="text"
-                    value={props.sessionHistorySearch}
-                    onChange={(event) => props.setSessionHistorySearch(event.target.value)}
-                    placeholder={props.t("analytics.sessionHistory.searchPlaceholder")}
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
-                  />
-                </div>
-              ) : null}
+            {props.completedSessions.length > 0 ? (
+              <div className="mx-auto w-full max-w-md">
+                <label className="sr-only" htmlFor="session-history-search">
+                  {props.t("analytics.sessionHistory.searchLabel")}
+                </label>
+                <input
+                  id="session-history-search"
+                  type="text"
+                  value={props.sessionHistorySearch}
+                  onChange={(event) => props.setSessionHistorySearch(event.target.value)}
+                  placeholder={props.t("analytics.sessionHistory.searchPlaceholder")}
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
+                />
+              </div>
+            ) : null}
 
+            <div className="flex justify-end">
               {props.completedSessions.length > 0 ? (
                 <button
                   type="button"
@@ -585,17 +585,20 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                   <option value="all">
                     {props.t("analytics.sessionHistory.durationOptions.all")}
                   </option>
-                  <option value="under30m">
-                    {props.t("analytics.sessionHistory.durationOptions.under30m")}
-                  </option>
-                  <option value="30mTo1h">
-                    {props.t("analytics.sessionHistory.durationOptions.30mTo1h")}
-                  </option>
                   <option value="1hTo2h">
                     {props.t("analytics.sessionHistory.durationOptions.1hTo2h")}
                   </option>
-                  <option value="over2h">
-                    {props.t("analytics.sessionHistory.durationOptions.over2h")}
+                  <option value="2hTo4h">
+                    {props.t("analytics.sessionHistory.durationOptions.2hTo4h")}
+                  </option>
+                  <option value="4hTo6h">
+                    {props.t("analytics.sessionHistory.durationOptions.4hTo6h")}
+                  </option>
+                  <option value="6hTo8h">
+                    {props.t("analytics.sessionHistory.durationOptions.6hTo8h")}
+                  </option>
+                  <option value="8hTo10h">
+                    {props.t("analytics.sessionHistory.durationOptions.8hTo10h")}
                   </option>
                 </select>
 

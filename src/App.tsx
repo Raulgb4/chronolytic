@@ -448,22 +448,34 @@ function App() {
       }
 
       const duration = session.effectiveDurationMs;
-      if (sessionHistoryDurationFilter === "under30m" && duration >= 30 * 60 * 1000) {
-        return false;
-      }
-      if (
-        sessionHistoryDurationFilter === "30mTo1h" &&
-        (duration < 30 * 60 * 1000 || duration >= 60 * 60 * 1000)
-      ) {
-        return false;
-      }
       if (
         sessionHistoryDurationFilter === "1hTo2h" &&
         (duration < 60 * 60 * 1000 || duration >= 2 * 60 * 60 * 1000)
       ) {
         return false;
       }
-      if (sessionHistoryDurationFilter === "over2h" && duration < 2 * 60 * 60 * 1000) {
+      if (
+        sessionHistoryDurationFilter === "2hTo4h" &&
+        (duration < 2 * 60 * 60 * 1000 || duration >= 4 * 60 * 60 * 1000)
+      ) {
+        return false;
+      }
+      if (
+        sessionHistoryDurationFilter === "4hTo6h" &&
+        (duration < 4 * 60 * 60 * 1000 || duration >= 6 * 60 * 60 * 1000)
+      ) {
+        return false;
+      }
+      if (
+        sessionHistoryDurationFilter === "6hTo8h" &&
+        (duration < 6 * 60 * 60 * 1000 || duration >= 8 * 60 * 60 * 1000)
+      ) {
+        return false;
+      }
+      if (
+        sessionHistoryDurationFilter === "8hTo10h" &&
+        (duration < 8 * 60 * 60 * 1000 || duration >= 10 * 60 * 60 * 1000)
+      ) {
         return false;
       }
 
@@ -555,6 +567,11 @@ function App() {
     const start = (clampedPage - 1) * SESSION_HISTORY_PAGE_SIZE;
     return visibleSessionHistorySessions.slice(start, start + SESSION_HISTORY_PAGE_SIZE);
   }, [visibleSessionHistorySessions, sessionHistoryPage, sessionHistoryTotalPages]);
+
+  const recentHomeSessions = useMemo(
+    () => [...completedSessions].sort((a, b) => b.endedAt - a.endedAt).slice(0, 3),
+    [completedSessions],
+  );
 
   useEffect(() => {
     setSessionHistoryPage(1);
@@ -1283,6 +1300,7 @@ function App() {
         setDuplicateTitleCandidate={setDuplicateTitleCandidate}
         commitStartSession={commitStartSession}
         getAutoRenamedSessionTitle={getAutoRenamedSessionTitle}
+        recentHomeSessions={recentHomeSessions}
       />
     );
   }

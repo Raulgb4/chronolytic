@@ -2,9 +2,9 @@ import { useTranslation } from "react-i18next";
 import type { ReactNode } from "react";
 
 import { getDateLocale } from "../../shared/utils/dateUtils";
-import { formatDuration } from "../../shared/utils/durationUtils";
+import { formatDuration, formatHumanDuration } from "../../shared/utils/durationUtils";
 import { type Language } from "../../app/appTypes";
-import { type ActiveSession, type EnergyLevel } from "../sessions/sessionTypes";
+import { type ActiveSession, type CompletedSession, type EnergyLevel } from "../sessions/sessionTypes";
 import { CreateSessionModal } from "./components/CreateSessionModal";
 
 type HomePageProps = {
@@ -42,13 +42,14 @@ type HomePageProps = {
   setDuplicateTitleCandidate: (value: string | null) => void;
   commitStartSession: (nextTitle: string) => Promise<void>;
   getAutoRenamedSessionTitle: (baseTitle: string) => string;
+  recentHomeSessions: CompletedSession[];
 };
 
 export function HomePage(props: HomePageProps) {
   const { t } = useTranslation();
 
   return (
-    <section className="relative flex h-full flex-col px-10 py-9 lg:px-12 lg:py-10">
+    <section className="relative flex h-full flex-col px-10 py-9 pb-14 lg:px-12 lg:py-10 lg:pb-16">
       <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center text-center">
         {props.recoveryNoticeVisible ? (
           <div className="mb-5 w-full max-w-3xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
@@ -173,6 +174,40 @@ export function HomePage(props: HomePageProps) {
               </button>
             </>
           ) : null}
+        </div>
+
+        <div className="mt-9 w-full max-w-3xl rounded-2xl border border-[var(--border)]/75 bg-[var(--panel-bg)]/92 p-4 text-left shadow-[0_6px_16px_rgba(15,23,42,0.045)]">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.07em] text-[var(--text-muted)]/90">
+            {t("home.recentSessions.title")}
+          </h3>
+
+          {props.recentHomeSessions.length === 0 ? (
+            <p className="mt-2.5 text-xs text-[var(--text-muted)]/90">{t("home.recentSessions.empty")}</p>
+          ) : (
+            <div className="mt-2.5 space-y-1.5">
+              {props.recentHomeSessions.map((session) => (
+                <div
+                  key={`${session.id}-home-recent`}
+                  className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-[var(--border)]/70 bg-[var(--panel-muted)]/24 px-3 py-1.5"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-[13px] font-semibold text-[var(--text)]">{session.title}</p>
+                    <p className="text-[11px] text-[var(--text-muted)]/90">
+                      {session.category || t("home.uncategorized")}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2.5 text-[11px] text-[var(--text-muted)]/90">
+                    <span>
+                      {new Date(session.endedAt).toLocaleDateString(getDateLocale(props.language), {
+                        weekday: "short",
+                      })}
+                    </span>
+                    <span>{formatHumanDuration(session.effectiveDurationMs)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

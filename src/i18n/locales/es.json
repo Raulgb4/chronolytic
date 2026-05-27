@@ -34,7 +34,7 @@
         "invalidWeekday": "El valor del día no es válido."
       },
       "searchLabel": "Búsqueda en historial de sesiones",
-      "searchPlaceholder": "Buscar por título, categoría o etiqueta",
+      "searchPlaceholder": "Buscar por título o categoría",
       "emptySearchTitle": "No hay sesiones coincidentes",
       "emptySearchDescription": "Ajusta la búsqueda o los filtros para encontrar sesiones.",
       "filters": {
@@ -54,10 +54,11 @@
       },
       "durationOptions": {
         "all": "Cualquier duración",
-        "under30m": "Menos de 30 min",
-        "30mTo1h": "30 min a 1 h",
         "1hTo2h": "1 h a 2 h",
-        "over2h": "Más de 2 h"
+        "2hTo4h": "2 h a 4 h",
+        "4hTo6h": "4 h a 6 h",
+        "6hTo8h": "6 h a 8 h",
+        "8hTo10h": "8 h a 10 h"
       },
       "sorting": {
         "sortByStartDate": "Ordenar por fecha de inicio",
@@ -179,7 +180,11 @@
     "finish": "Finalizar",
     "finishing": "Finalizando...",
     "discard": "Descartar",
-    "sessionSavedSuccess": "Sesión guardada. Puedes encontrarla en Historial de sesiones dentro de Analíticas."
+    "sessionSavedSuccess": "Sesión guardada. Puedes encontrarla en Historial de sesiones dentro de Analíticas.",
+    "recentSessions": {
+      "title": "Sesiones recientes",
+      "empty": "Aún no hay sesiones completadas."
+    }
   },
   "sessionModal": {
     "title": "Crear sesión",
