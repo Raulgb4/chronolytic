@@ -22,11 +22,7 @@ import type {
 import logoHeader from "./assets/logo/logoHeader.png";
 import { AnalyticsPage } from "./features/analytics/AnalyticsPage";
 import {
-  buildDebugReport,
-  clearDebugLogEntries,
-  getDebugLogEntries,
   recordCriticalError,
-  type DebugLogEntry,
 } from "./features/diagnostics/debugLog";
 import { HomePage } from "./features/home/HomePage";
 import { createSessionBackup, parseSessionBackup } from "./features/sessions/sessionBackup";
@@ -64,7 +60,6 @@ import { getEnergySortValue } from "./shared/utils/energyUtils";
 import { normalizeDuplicateTitle, normalizeSearchValue } from "./shared/utils/searchUtils";
 
 const SESSION_HISTORY_PAGE_SIZE = 8;
-const APP_VERSION = "1.0.0";
 type TimeCorrectionMode = "addDuringPause" | "removeDistracted";
 
 function getStoredLanguage(): Language {
@@ -128,10 +123,6 @@ function App() {
     type: SettingsFeedbackType;
     message: string;
   } | null>(null);
-  const [debugLogEntries, setDebugLogEntries] = useState<DebugLogEntry[]>(() =>
-    getDebugLogEntries(),
-  );
-  const [isDebugActionBusy, setIsDebugActionBusy] = useState(false);
   const [isStartupSessionLoaded, setIsStartupSessionLoaded] = useState(false);
   const [isStartupMinElapsed, setIsStartupMinElapsed] = useState(false);
   const [isStartupLeaving, setIsStartupLeaving] = useState(false);
@@ -153,7 +144,6 @@ function App() {
 
   function logCriticalError(source: string, error: unknown, details?: Record<string, unknown>) {
     recordCriticalError(source, error, details);
-    setDebugLogEntries(getDebugLogEntries());
   }
 
   useEffect(() => {
@@ -1298,73 +1288,6 @@ function App() {
     setSessionHistorySort({ key: "endedAt", direction: "desc" });
   }
 
-  async function handleCopyDebugInfo() {
-    if (isDebugActionBusy) return;
-    setIsDebugActionBusy(true);
-    try {
-      const entries = getDebugLogEntries();
-      const report = buildDebugReport(entries, {
-        appVersion: APP_VERSION,
-        platform: navigator.platform,
-        userAgent: navigator.userAgent,
-      });
-      await navigator.clipboard.writeText(report);
-    } catch (error) {
-      console.error("Failed to copy debug report", error);
-      logCriticalError("settings.debug.copy", error);
-      setSettingsFeedback({
-        type: "error",
-        message: t("settings.debug.copyError"),
-      });
-    } finally {
-      setIsDebugActionBusy(false);
-    }
-  }
-
-  function handleClearDebugLogs() {
-    clearDebugLogEntries();
-    setDebugLogEntries([]);
-    setSettingsFeedback({
-      type: "success",
-      message: t("settings.debug.clearSuccess"),
-    });
-  }
-
-  async function handleExportDebugReport() {
-    if (isDebugActionBusy) return;
-    setIsDebugActionBusy(true);
-    try {
-      const selectedPath = await save({
-        title: t("settings.debug.export"),
-        defaultPath: `chronolytic-debug-${new Date().toISOString().slice(0, 10)}.txt`,
-        filters: [{ name: "Text", extensions: ["txt"] }],
-      });
-
-      if (!selectedPath) return;
-
-      const entries = getDebugLogEntries();
-      const report = buildDebugReport(entries, {
-        appVersion: APP_VERSION,
-        platform: navigator.platform,
-        userAgent: navigator.userAgent,
-      });
-      await writeTextFile(selectedPath, report);
-      setSettingsFeedback({
-        type: "success",
-        message: t("settings.debug.exportSuccess"),
-      });
-    } catch (error) {
-      console.error("Failed to export debug report", error);
-      logCriticalError("settings.debug.export", error);
-      setSettingsFeedback({
-        type: "error",
-        message: t("settings.debug.exportError"),
-      });
-    } finally {
-      setIsDebugActionBusy(false);
-    }
-  }
-
   function renderHeader() {
     return (
       <header className="flex h-20 shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--panel-bg)] px-7">
@@ -1497,11 +1420,6 @@ function App() {
         isAutostartLoading={isAutostartLoading}
         isAutostartEnabled={isAutostartEnabled}
         openDeleteAllConfirm={() => setIsDeleteAllConfirmOpen(true)}
-        debugLogEntries={debugLogEntries}
-        isDebugActionBusy={isDebugActionBusy}
-        handleCopyDebugInfo={handleCopyDebugInfo}
-        handleClearDebugLogs={handleClearDebugLogs}
-        handleExportDebugReport={handleExportDebugReport}
         isDeleteAllConfirmOpen={isDeleteAllConfirmOpen}
         closeDeleteAllConfirm={() => setIsDeleteAllConfirmOpen(false)}
         isDeletingAllSessions={isDeletingAllSessions}

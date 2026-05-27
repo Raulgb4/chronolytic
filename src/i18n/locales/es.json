@@ -284,7 +284,7 @@
     "deleteAllSessionsError": "No se pudieron eliminar las sesiones completadas.",
     "lightMode": "Modo claro",
     "darkMode": "Modo oscuro",
-    "helpAbout": "Ayuda / Acerca de",
+    "helpAbout": "Acerca de",
     "aboutDescription": "Chronolytic es una app de analítica de productividad local-first para escritorio, enfocada en sesiones efectivas de trabajo y en patrones de comportamiento.",
     "version": "Versión",
     "license": "Licencia",

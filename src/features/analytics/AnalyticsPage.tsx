@@ -229,7 +229,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="flex flex-wrap items-center justify-end gap-3">
+              <div className="mb-8 flex flex-wrap items-center justify-center gap-3">
                 <label
                   className="text-sm font-medium text-[var(--text-muted)]"
                   htmlFor="dashboard-category-filter"
@@ -284,10 +284,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                     label: props.t("analytics.dashboard.kpis.averageWeeklyEffectiveTime"),
                     value: formatLocalizedDuration(summary.averageWeeklyEffectiveMs),
                   },
-                  {
-                    label: props.t("analytics.dashboard.kpis.averageDailyEffectiveTime"),
-                    value: formatLocalizedDuration(summary.averageDailyEffectiveMs),
-                  },
                 ].map((kpi) => (
                   <div
                     key={kpi.label}
@@ -299,6 +295,17 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                     <p className="mt-2 text-2xl font-semibold text-[var(--text)]">{kpi.value}</p>
                   </div>
                 ))}
+              </div>
+
+              <div className="mx-auto grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:max-w-6xl xl:grid-cols-5">
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                    {props.t("analytics.dashboard.kpis.averageDailyEffectiveTime")}
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-[var(--text)]">
+                    {formatLocalizedDuration(summary.averageDailyEffectiveMs)}
+                  </p>
+                </div>
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
                   <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
                     {props.t("analytics.dashboard.kpis.focusRatio")}
@@ -529,29 +536,31 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                     ))}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                    {props.t("analytics.dashboard.charts.effectiveByTimeSlot")}
-                  </h3>
-                  <div className="mt-4 grid grid-cols-4 gap-3">
-                    {summary.effectiveByTimeSlot.map((item) => (
-                      <div key={item.slot} className="flex flex-col items-center gap-2">
-                        <div className="flex h-28 w-full items-end rounded-md bg-[var(--panel-muted)] px-1.5 py-1">
-                          <div
-                            className={`w-full rounded-sm ${summary.bestTimeSlot?.slot === item.slot ? "bg-[#4E89FF]" : "bg-[#4E89FF]/60"}`}
-                            style={{
-                              height: `${Math.max((item.effectiveMs / maxTimeSlotMs) * 100, 6)}%`,
-                            }}
-                          />
+                <div className="xl:col-span-2 xl:flex xl:justify-center">
+                  <div className="w-full rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)] xl:max-w-3xl">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      {props.t("analytics.dashboard.charts.effectiveByTimeSlot")}
+                    </h3>
+                    <div className="mt-4 grid grid-cols-4 gap-3">
+                      {summary.effectiveByTimeSlot.map((item) => (
+                        <div key={item.slot} className="flex flex-col items-center gap-2">
+                          <div className="flex h-28 w-full items-end rounded-md bg-[var(--panel-muted)] px-1.5 py-1">
+                            <div
+                              className={`w-full rounded-sm ${summary.bestTimeSlot?.slot === item.slot ? "bg-[#4E89FF]" : "bg-[#4E89FF]/60"}`}
+                              style={{
+                                height: `${Math.max((item.effectiveMs / maxTimeSlotMs) * 100, 6)}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-[10px] font-medium uppercase text-[var(--text-muted)]">
+                            {props.t(`analytics.dashboard.timeSlots.${item.slot}`)}
+                          </span>
+                          <span className="text-[10px] text-[var(--text-muted)]">
+                            {formatLocalizedDuration(item.effectiveMs)}
+                          </span>
                         </div>
-                        <span className="text-[10px] font-medium uppercase text-[var(--text-muted)]">
-                          {props.t(`analytics.dashboard.timeSlots.${item.slot}`)}
-                        </span>
-                        <span className="text-[10px] text-[var(--text-muted)]">
-                          {formatLocalizedDuration(item.effectiveMs)}
-                        </span>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -592,10 +601,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
       ) : (
         <div className="px-8 py-8">
           <div className="mb-4 space-y-3">
-            <h2 className="text-base font-semibold text-[var(--text)]">
-              {props.t("analytics.tabs.sessionHistory")}
-            </h2>
-
             {props.completedSessions.length > 0 ? (
               <div className="mx-auto w-full max-w-md">
                 <label className="sr-only" htmlFor="session-history-search">
