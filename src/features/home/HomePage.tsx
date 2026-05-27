@@ -49,8 +49,8 @@ export function HomePage(props: HomePageProps) {
   const { t } = useTranslation();
 
   return (
-    <section className="relative flex h-full flex-col px-10 py-9 pb-14 lg:px-12 lg:py-10 lg:pb-16">
-      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center text-center">
+    <section className="relative flex h-full flex-col px-10 py-9 lg:px-12 lg:py-10">
+      <div className="mx-auto flex w-full max-w-5xl flex-1 flex-col items-center pb-8 text-center lg:pb-10">
         {props.recoveryNoticeVisible ? (
           <div className="mb-5 w-full max-w-3xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
             <div className="flex items-center justify-between gap-3">
