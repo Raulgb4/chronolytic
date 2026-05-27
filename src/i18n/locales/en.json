@@ -125,6 +125,11 @@
         "completedSessions": "Completed sessions",
         "totalPauseCount": "Total pause count",
         "averageSessionDuration": "Average session duration",
+        "currentMonthEffectiveTime": "Current month effective time",
+        "averageMonthlyEffectiveTime": "Average effective time / month",
+        "currentWeekEffectiveTime": "Current week effective time",
+        "averageWeeklyEffectiveTime": "Average effective time / week",
+        "averageDailyEffectiveTime": "Average effective time / day",
         "focusRatio": "Focus ratio",
         "interruptionRatio": "Interruption ratio",
         "mostProductiveCategory": "Most productive category",
@@ -138,7 +143,15 @@
         "sessionsByEnergy": "Sessions by energy",
         "energyInterruptions": "Energy vs interruptions",
         "effectiveByTimeSlot": "Effective time by time slot",
-        "recentDailyEffectiveHours": "Recent daily effective hours"
+        "recentDailyEffectiveHours": "Recent daily effective hours",
+        "monthlyProductivityCalendar": "Monthly productivity calendar"
+      },
+      "calendar": {
+        "today": "Today",
+        "legendLow": "Low (<4h)",
+        "legendMedium": "Medium (4h-7h)",
+        "legendHigh": "High (>7h)",
+        "noHours": "0h"
       },
       "series": {
         "effective": "Effective",

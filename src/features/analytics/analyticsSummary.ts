@@ -12,6 +12,23 @@ const WEEKDAY_ORDER = [
 
 type TimeSlot = "morning" | "afternoon" | "evening" | "night";
 
+type ProductivityLevel = "low" | "medium" | "high";
+
+type MonthlyProductivityDay = {
+  dateKey: string;
+  dayOfMonth: number;
+  effectiveMs: number;
+  isToday: boolean;
+  productivityLevel: ProductivityLevel;
+};
+
+type MonthlyProductivityCalendar = {
+  year: number;
+  monthIndex: number;
+  leadingBlankDays: number;
+  days: MonthlyProductivityDay[];
+};
+
 export type AnalyticsSummary = {
   totalEffectiveMs: number;
   totalPausedMs: number;
@@ -31,6 +48,12 @@ export type AnalyticsSummary = {
   bestTimeSlot: { slot: TimeSlot; effectiveMs: number } | null;
   effectiveByTimeSlot: Array<{ slot: TimeSlot; effectiveMs: number }>;
   recentDailyEffectiveHours: Array<{ label: string; dateKey: string; effectiveMs: number }>;
+  currentMonthEffectiveMs: number;
+  averageMonthlyEffectiveMs: number;
+  currentWeekEffectiveMs: number;
+  averageWeeklyEffectiveMs: number;
+  averageDailyEffectiveMs: number;
+  monthlyProductivityCalendar: MonthlyProductivityCalendar;
   latestSessions: CompletedSession[];
 };
 
@@ -44,6 +67,74 @@ function toLocalDateKey(timestamp: number): string {
 
 function formatShortWeekday(timestamp: number): string {
   return new Date(timestamp).toLocaleDateString(undefined, { weekday: "short" });
+}
+
+function toLocalMonthKey(timestamp: number): string {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  return `${year}-${month}`;
+}
+
+function getMondayFirstWeekdayIndex(date: Date): number {
+  return (date.getDay() + 6) % 7;
+}
+
+function getMondayWeekStart(date: Date): Date {
+  const weekStart = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  weekStart.setDate(weekStart.getDate() - getMondayFirstWeekdayIndex(weekStart));
+  return weekStart;
+}
+
+function toLocalWeekKey(timestamp: number): string {
+  const weekStart = getMondayWeekStart(new Date(timestamp));
+  return toLocalDateKey(weekStart.getTime());
+}
+
+function getProductivityLevel(effectiveMs: number): ProductivityLevel {
+  const hours = effectiveMs / (60 * 60 * 1000);
+  if (hours < 4) return "low";
+  if (hours <= 7) return "medium";
+  return "high";
+}
+
+function buildMonthlyProductivityCalendar(
+  sessions: CompletedSession[],
+): MonthlyProductivityCalendar {
+  const now = new Date();
+  const year = now.getFullYear();
+  const monthIndex = now.getMonth();
+  const firstDayOfMonth = new Date(year, monthIndex, 1);
+  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
+  const leadingBlankDays = getMondayFirstWeekdayIndex(firstDayOfMonth);
+  const todayKey = toLocalDateKey(now.getTime());
+
+  const totalsByDate = new Map<string, number>();
+  for (const session of sessions) {
+    const key = toLocalDateKey(session.startedAt);
+    totalsByDate.set(key, (totalsByDate.get(key) ?? 0) + session.effectiveDurationMs);
+  }
+
+  const days: MonthlyProductivityDay[] = [];
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const date = new Date(year, monthIndex, day);
+    const dateKey = toLocalDateKey(date.getTime());
+    const effectiveMs = totalsByDate.get(dateKey) ?? 0;
+    days.push({
+      dateKey,
+      dayOfMonth: day,
+      effectiveMs,
+      isToday: dateKey === todayKey,
+      productivityLevel: getProductivityLevel(effectiveMs),
+    });
+  }
+
+  return {
+    year,
+    monthIndex,
+    leadingBlankDays,
+    days,
+  };
 }
 
 export function buildRecentDailyEffectiveHours(
@@ -197,6 +288,38 @@ export function buildAnalyticsSummary(
 
   const latestSessions = sessions.slice(0, 5);
   const recentDailyEffectiveHours = buildRecentDailyEffectiveHours(sessions);
+  const monthTotals = new Map<string, number>();
+  const weekTotals = new Map<string, number>();
+  const dayTotals = new Map<string, number>();
+  const currentMonthKey = toLocalMonthKey(Date.now());
+  const currentWeekKey = toLocalWeekKey(Date.now());
+
+  for (const session of sessions) {
+    const monthKey = toLocalMonthKey(session.startedAt);
+    monthTotals.set(monthKey, (monthTotals.get(monthKey) ?? 0) + session.effectiveDurationMs);
+
+    const weekKey = toLocalWeekKey(session.startedAt);
+    weekTotals.set(weekKey, (weekTotals.get(weekKey) ?? 0) + session.effectiveDurationMs);
+
+    const dayKey = toLocalDateKey(session.startedAt);
+    dayTotals.set(dayKey, (dayTotals.get(dayKey) ?? 0) + session.effectiveDurationMs);
+  }
+
+  const currentMonthEffectiveMs = monthTotals.get(currentMonthKey) ?? 0;
+  const averageMonthlyEffectiveMs =
+    monthTotals.size > 0
+      ? Math.round(Array.from(monthTotals.values()).reduce((acc, value) => acc + value, 0) / monthTotals.size)
+      : 0;
+  const currentWeekEffectiveMs = weekTotals.get(currentWeekKey) ?? 0;
+  const averageWeeklyEffectiveMs =
+    weekTotals.size > 0
+      ? Math.round(Array.from(weekTotals.values()).reduce((acc, value) => acc + value, 0) / weekTotals.size)
+      : 0;
+  const averageDailyEffectiveMs =
+    dayTotals.size > 0
+      ? Math.round(Array.from(dayTotals.values()).reduce((acc, value) => acc + value, 0) / dayTotals.size)
+      : 0;
+  const monthlyProductivityCalendar = buildMonthlyProductivityCalendar(sessions);
 
   return {
     totalEffectiveMs,
@@ -212,6 +335,12 @@ export function buildAnalyticsSummary(
     bestTimeSlot,
     effectiveByTimeSlot,
     recentDailyEffectiveHours,
+    currentMonthEffectiveMs,
+    averageMonthlyEffectiveMs,
+    currentWeekEffectiveMs,
+    averageWeeklyEffectiveMs,
+    averageDailyEffectiveMs,
+    monthlyProductivityCalendar,
     latestSessions,
   };
 }

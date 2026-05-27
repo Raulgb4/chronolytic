@@ -109,6 +109,41 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
     const day = String(today.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   })();
+  const calendarMonthLabel = new Date(
+    summary.monthlyProductivityCalendar.year,
+    summary.monthlyProductivityCalendar.monthIndex,
+    1,
+  ).toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+  const calendarWeekdayLabels = [
+    props.t("analytics.weekdays.monday"),
+    props.t("analytics.weekdays.tuesday"),
+    props.t("analytics.weekdays.wednesday"),
+    props.t("analytics.weekdays.thursday"),
+    props.t("analytics.weekdays.friday"),
+    props.t("analytics.weekdays.saturday"),
+    props.t("analytics.weekdays.sunday"),
+  ];
+  const getCalendarDayClassName = (level: "low" | "medium" | "high"): string => {
+    if (level === "low") {
+      return "border border-rose-300 bg-rose-200 text-rose-950 dark:border-rose-800/60 dark:bg-rose-900/25 dark:text-rose-100";
+    }
+    if (level === "medium") {
+      return "border border-amber-300 bg-amber-200 text-amber-950 dark:border-amber-800/60 dark:bg-amber-900/25 dark:text-amber-100";
+    }
+    return "border border-emerald-300 bg-emerald-200 text-emerald-950 dark:border-emerald-800/60 dark:bg-emerald-900/25 dark:text-emerald-100";
+  };
+  const getCalendarDayNumberClassName = (level: "low" | "medium" | "high"): string => {
+    if (level === "low") {
+      return "text-rose-950 dark:text-rose-100";
+    }
+    if (level === "medium") {
+      return "text-amber-950 dark:text-amber-100";
+    }
+    return "text-emerald-950 dark:text-emerald-100";
+  };
   const getSortIndicator = (sortKey: SessionHistorySortKey): string => {
     if (props.sessionHistorySort.key !== sortKey) return "";
     return props.sessionHistorySort.direction === "asc" ? "↑" : "↓";
@@ -206,7 +241,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                 </select>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4 xl:grid-cols-8">
                 {[
                   {
                     label: props.t("analytics.dashboard.kpis.totalEffectiveTime"),
@@ -224,6 +259,26 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                     label: props.t("analytics.dashboard.kpis.averageSessionDuration"),
                     value: formatHumanDuration(summary.averageSessionMs),
                   },
+                  {
+                    label: props.t("analytics.dashboard.kpis.currentMonthEffectiveTime"),
+                    value: formatHumanDuration(summary.currentMonthEffectiveMs),
+                  },
+                  {
+                    label: props.t("analytics.dashboard.kpis.averageMonthlyEffectiveTime"),
+                    value: formatHumanDuration(summary.averageMonthlyEffectiveMs),
+                  },
+                  {
+                    label: props.t("analytics.dashboard.kpis.currentWeekEffectiveTime"),
+                    value: formatHumanDuration(summary.currentWeekEffectiveMs),
+                  },
+                  {
+                    label: props.t("analytics.dashboard.kpis.averageWeeklyEffectiveTime"),
+                    value: formatHumanDuration(summary.averageWeeklyEffectiveMs),
+                  },
+                  {
+                    label: props.t("analytics.dashboard.kpis.averageDailyEffectiveTime"),
+                    value: formatHumanDuration(summary.averageDailyEffectiveMs),
+                  },
                 ].map((kpi) => (
                   <div
                     key={kpi.label}
@@ -235,9 +290,6 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                     <p className="mt-2 text-2xl font-semibold text-[var(--text)]">{kpi.value}</p>
                   </div>
                 ))}
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
                   <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
                     {props.t("analytics.dashboard.kpis.focusRatio")}
@@ -346,6 +398,71 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                         </span>
                       </div>
                     ))}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)] xl:col-span-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      {props.t("analytics.dashboard.charts.monthlyProductivityCalendar")}
+                    </h3>
+                    <p className="text-xs font-medium capitalize text-[var(--text)]">{calendarMonthLabel}</p>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-7 gap-1.5">
+                    {calendarWeekdayLabels.map((label) => (
+                      <div
+                        key={`calendar-weekday-${label}`}
+                        className="text-center text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]"
+                      >
+                        {label.slice(0, 2)}
+                      </div>
+                    ))}
+                    {Array.from({ length: summary.monthlyProductivityCalendar.leadingBlankDays }).map(
+                      (_, index) => (
+                        <div
+                          key={`calendar-blank-${index}`}
+                          className="h-11 rounded-md border border-transparent bg-transparent"
+                          aria-hidden="true"
+                        />
+                      ),
+                    )}
+                    {summary.monthlyProductivityCalendar.days.map((day) => (
+                      <div
+                        key={day.dateKey}
+                        className={`relative h-11 rounded-md px-1.5 py-1 ${getCalendarDayClassName(day.productivityLevel)} ${day.isToday ? "ring-2 ring-[#2563EB] ring-offset-1 ring-offset-[var(--panel-bg)]" : ""}`}
+                      >
+                        <p
+                          className={`text-[10px] font-semibold leading-none ${getCalendarDayNumberClassName(day.productivityLevel)}`}
+                        >
+                          {day.dayOfMonth}
+                        </p>
+                        <p className="mt-1 text-[9px] leading-none opacity-90">
+                          {day.effectiveMs > 0
+                            ? formatHours(day.effectiveMs)
+                            : props.t("analytics.dashboard.calendar.noHours")}
+                        </p>
+                        {day.isToday ? (
+                          <span className="absolute bottom-1 right-1.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-[#4E89FF]">
+                            {props.t("analytics.dashboard.calendar.today")}
+                          </span>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] text-[var(--text-muted)]">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-rose-500" />
+                      {props.t("analytics.dashboard.calendar.legendLow")}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-amber-500" />
+                      {props.t("analytics.dashboard.calendar.legendMedium")}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      {props.t("analytics.dashboard.calendar.legendHigh")}
+                    </span>
                   </div>
                 </div>
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
