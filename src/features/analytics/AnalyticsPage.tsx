@@ -411,7 +411,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                 </div>
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)] xl:col-span-2">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
                       {props.t("analytics.dashboard.charts.monthlyProductivityCalendar")}
                     </h3>
                     <p className="text-xs font-medium capitalize text-[var(--text)]">{calendarMonthLabel}</p>
