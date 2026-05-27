@@ -203,6 +203,19 @@
     "addTime": "Add time",
     "removeTime": "Remove time",
     "discard": "Discard",
+    "sessionConfirm": {
+      "cancel": "Cancel",
+      "discard": {
+        "title": "Discard session?",
+        "description": "This will permanently discard the current session.",
+        "confirm": "Discard"
+      },
+      "finish": {
+        "title": "Finish session?",
+        "description": "This will save and complete the current session.",
+        "confirm": "Finish"
+      }
+    },
     "sessionSavedSuccess": "Session saved. You can find it in Session History inside Analytics.",
     "recentSessions": {
       "title": "Recent sessions",
@@ -277,7 +290,7 @@
     "dangerZoneDescription": "Permanently delete all completed sessions. Your active session will remain untouched.",
     "deleteAllSessions": "Delete all sessions",
     "deleteAllSessionsConfirmTitle": "Delete all sessions?",
-    "deleteAllSessionsConfirmDescription": "This action permanently removes all completed session history from this device.",
+    "deleteAllSessionsConfirmDescription": "This will permanently delete all saved sessions and analytics data.",
     "cancel": "Cancel",
     "confirmDeleteAllSessions": "Delete all sessions",
     "deleteAllSessionsSuccess": "All completed sessions were deleted.",

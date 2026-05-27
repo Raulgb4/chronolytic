@@ -203,6 +203,19 @@
     "addTime": "Agregar tiempo",
     "removeTime": "Quitar tiempo",
     "discard": "Descartar",
+    "sessionConfirm": {
+      "cancel": "Cancelar",
+      "discard": {
+        "title": "¿Descartar sesión?",
+        "description": "Esto descartará permanentemente la sesión actual.",
+        "confirm": "Descartar"
+      },
+      "finish": {
+        "title": "¿Finalizar sesión?",
+        "description": "Esto guardará y completará la sesión actual.",
+        "confirm": "Finalizar"
+      }
+    },
     "sessionSavedSuccess": "Sesión guardada. Puedes encontrarla en Historial de sesiones dentro de Analíticas.",
     "recentSessions": {
       "title": "Sesiones recientes",
@@ -277,7 +290,7 @@
     "dangerZoneDescription": "Elimina permanentemente todas las sesiones completadas. La sesión activa no se modificará.",
     "deleteAllSessions": "Eliminar todas las sesiones",
     "deleteAllSessionsConfirmTitle": "¿Eliminar todas las sesiones?",
-    "deleteAllSessionsConfirmDescription": "Esta acción elimina de forma permanente todo el historial de sesiones completadas de este dispositivo.",
+    "deleteAllSessionsConfirmDescription": "Esto eliminará permanentemente todas las sesiones guardadas y los datos de analíticas.",
     "cancel": "Cancelar",
     "confirmDeleteAllSessions": "Eliminar todas las sesiones",
     "deleteAllSessionsSuccess": "Se eliminaron todas las sesiones completadas.",

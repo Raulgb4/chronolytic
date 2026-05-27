@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { getDateLocale } from "../../shared/utils/dateUtils";
@@ -59,6 +60,20 @@ type HomePageProps = {
 
 export function HomePage(props: HomePageProps) {
   const { t } = useTranslation();
+  const [pendingSessionAction, setPendingSessionAction] = useState<"finish" | "discard" | null>(
+    null,
+  );
+
+  const closeSessionActionConfirm = () => setPendingSessionAction(null);
+
+  const confirmSessionAction = () => {
+    if (pendingSessionAction === "finish") {
+      void props.finishSession();
+    } else if (pendingSessionAction === "discard") {
+      void props.discardSession();
+    }
+    setPendingSessionAction(null);
+  };
   const formatLocalizedDuration = (value: number): string =>
     formatHumanDuration(value, {
       second: t("duration.second"),
@@ -199,7 +214,7 @@ export function HomePage(props: HomePageProps) {
             <>
               <button
                 type="button"
-                onClick={props.finishSession}
+                onClick={() => setPendingSessionAction("finish")}
                 disabled={props.isFinishingSession}
                 className="rounded-xl border border-emerald-300 bg-emerald-50 px-5 py-2.5 text-base font-medium text-emerald-800 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-emerald-100 hover:opacity-95 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
               >
@@ -208,7 +223,7 @@ export function HomePage(props: HomePageProps) {
 
               <button
                 type="button"
-                onClick={props.discardSession}
+                onClick={() => setPendingSessionAction("discard")}
                 className="rounded-xl border border-rose-300 bg-rose-50 px-5 py-2.5 text-base font-medium text-rose-800 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-rose-100 hover:opacity-95 active:translate-y-0"
               >
                 {t("home.discard")}
@@ -326,6 +341,47 @@ export function HomePage(props: HomePageProps) {
                 className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {t("timeCorrection.apply")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {pendingSessionAction ? (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/45 p-6">
+          <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-[var(--text)]">
+              {pendingSessionAction === "finish"
+                ? t("home.sessionConfirm.finish.title")
+                : t("home.sessionConfirm.discard.title")}
+            </h3>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">
+              {pendingSessionAction === "finish"
+                ? t("home.sessionConfirm.finish.description")
+                : t("home.sessionConfirm.discard.description")}
+            </p>
+            <div className="mt-5 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeSessionActionConfirm}
+                disabled={props.isFinishingSession}
+                className="rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-4 py-2 text-sm font-medium text-[var(--text)] transition duration-200 ease-out hover:bg-[var(--panel-muted)] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {t("home.sessionConfirm.cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={confirmSessionAction}
+                disabled={props.isFinishingSession}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold text-white transition duration-200 ease-out disabled:cursor-not-allowed disabled:opacity-60 ${
+                  pendingSessionAction === "finish"
+                    ? "border border-emerald-700 bg-emerald-600 hover:bg-emerald-700"
+                    : "border border-rose-700 bg-rose-600 hover:bg-rose-700"
+                }`}
+              >
+                {pendingSessionAction === "finish"
+                  ? t("home.sessionConfirm.finish.confirm")
+                  : t("home.sessionConfirm.discard.confirm")}
               </button>
             </div>
           </div>
