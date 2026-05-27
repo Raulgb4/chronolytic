@@ -362,7 +362,7 @@ function App() {
     const trimmed = forgottenStartMinutes.trim();
     if (trimmed.length === 0) return null;
     const value = Number(trimmed);
-    if (!Number.isFinite(value) || value < 0) return null;
+    if (!Number.isFinite(value) || value < 0 || value > 120) return null;
     return Math.floor(value);
   }, [forgottenStartMinutes]);
   const isForgottenStartMinutesValid = parsedForgottenStartMinutes !== null;

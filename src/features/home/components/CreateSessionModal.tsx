@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import type { ReactNode } from "react";
 
 import { getEnergyFromIndex, getEnergyIndex } from "../../../shared/utils/energyUtils";
@@ -54,6 +55,7 @@ export function CreateSessionModal({
   getAutoRenamedSessionTitle,
 }: CreateSessionModalProps) {
   const { t } = useTranslation();
+  const [isStartAdjustmentOpen, setIsStartAdjustmentOpen] = useState(false);
 
   if (!isOpen) return null;
 
@@ -168,26 +170,44 @@ export function CreateSessionModal({
             </div>
           </div>
 
-          <label className="flex flex-col gap-2 text-sm text-[var(--text-muted)]">
-            <span>{t("sessionModal.forgottenMinutes.label")}</span>
-            <span className="text-xs text-[var(--text-muted)]/90">
-              {t("sessionModal.forgottenMinutes.description")}
-            </span>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              inputMode="numeric"
-              value={forgottenStartMinutes}
-              onChange={(event) => setForgottenStartMinutes(event.target.value)}
-              className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
-            />
-            {!isForgottenStartMinutesValid ? (
-              <span className="text-xs text-rose-600 dark:text-rose-300">
-                {t("sessionModal.forgottenMinutes.invalid")}
-              </span>
+          <div className="rounded-xl border border-[var(--border)]/70 bg-[var(--panel-muted)]/25 p-3">
+            <button
+              type="button"
+              onClick={() => setIsStartAdjustmentOpen((previous) => !previous)}
+              className="text-xs font-medium text-[var(--text-muted)] transition hover:text-[var(--text)]"
+            >
+              {t("sessionModal.forgottenMinutes.toggle")}
+            </button>
+
+            {isStartAdjustmentOpen ? (
+              <label className="mt-2 flex flex-col gap-2 text-sm text-[var(--text-muted)]">
+                <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]/85">
+                  {t("sessionModal.forgottenMinutes.label")}
+                </span>
+                <span className="font-medium text-[var(--text-muted)]">
+                  {t("sessionModal.forgottenMinutes.workedMinutes")}
+                </span>
+                <span className="text-xs text-[var(--text-muted)]/90">
+                  {t("sessionModal.forgottenMinutes.description")}
+                </span>
+                <input
+                  type="number"
+                  min="0"
+                  max="120"
+                  step="1"
+                  inputMode="numeric"
+                  value={forgottenStartMinutes}
+                  onChange={(event) => setForgottenStartMinutes(event.target.value)}
+                  className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
+                />
+                {!isForgottenStartMinutesValid ? (
+                  <span className="text-xs text-rose-600 dark:text-rose-300">
+                    {t("sessionModal.forgottenMinutes.invalid")}
+                  </span>
+                ) : null}
+              </label>
             ) : null}
-          </label>
+          </div>
         </div>
 
         <div className="mt-6 flex justify-end gap-3">

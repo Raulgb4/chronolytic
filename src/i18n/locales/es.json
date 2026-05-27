@@ -234,9 +234,11 @@
       "autoRename": "Renombrar automáticamente"
     },
     "forgottenMinutes": {
-      "label": "Minutos olvidados",
-      "description": "Inicia como si la sesión hubiera empezado hace estos minutos.",
-      "invalid": "Ingresa un número válido mayor o igual a 0."
+      "toggle": "+ Ajustar inicio",
+      "label": "Ajuste de inicio opcional",
+      "workedMinutes": "Minutos ya trabajados",
+      "description": "Usa esto solo si empezaste a trabajar antes de abrir Chronolytic.",
+      "invalid": "Ingresa un número válido entre 0 y 120."
     }
   },
   "timeCorrection": {
