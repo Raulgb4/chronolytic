@@ -192,6 +192,8 @@
     "resume": "Reanudar",
     "finish": "Finalizar",
     "finishing": "Finalizando...",
+    "addTime": "Agregar tiempo",
+    "removeTime": "Quitar tiempo",
     "discard": "Descartar",
     "sessionSavedSuccess": "Sesión guardada. Puedes encontrarla en Historial de sesiones dentro de Analíticas.",
     "recentSessions": {
@@ -222,7 +224,29 @@
       "cancel": "Cancelar",
       "createAnyway": "Crear de todos modos",
       "autoRename": "Renombrar automáticamente"
+    },
+    "forgottenMinutes": {
+      "label": "Minutos olvidados",
+      "description": "Inicia como si la sesión hubiera empezado hace estos minutos.",
+      "invalid": "Ingresa un número válido mayor o igual a 0."
     }
+  },
+  "timeCorrection": {
+    "add": {
+      "title": "Agregar tiempo",
+      "description": "Convierte tiempo pausado en tiempo efectivo."
+    },
+    "remove": {
+      "title": "Quitar tiempo de distracción",
+      "description": "Resta minutos de distracción del tiempo efectivo."
+    },
+    "minutesLabel": "Minutos",
+    "cancel": "Cancelar",
+    "apply": "Aplicar",
+    "invalidMinutes": "Ingresa una cantidad válida de minutos mayor a 0.",
+    "exceedsPausedTime": "No puedes agregar más tiempo que el total pausado.",
+    "exceedsEffectiveTime": "No puedes quitar más tiempo que la duración efectiva actual.",
+    "genericError": "No se pudo aplicar la corrección de tiempo."
   },
   "settings": {
     "language": "Idioma",

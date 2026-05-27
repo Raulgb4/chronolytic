@@ -29,6 +29,9 @@ type HomePageProps = {
   setTitle: (value: string) => void;
   category: string;
   setCategory: (value: string) => void;
+  forgottenStartMinutes: string;
+  setForgottenStartMinutes: (value: string) => void;
+  isForgottenStartMinutesValid: boolean;
   energy: EnergyLevel;
   setEnergy: (value: EnergyLevel | ((previous: EnergyLevel) => EnergyLevel)) => void;
   categorySuggestionsOpen: boolean;
@@ -43,6 +46,15 @@ type HomePageProps = {
   commitStartSession: (nextTitle: string) => Promise<void>;
   getAutoRenamedSessionTitle: (baseTitle: string) => string;
   recentHomeSessions: CompletedSession[];
+  onOpenAddTimeModal: () => void;
+  onOpenRemoveTimeModal: () => void;
+  timeCorrectionMode: "addDuringPause" | "removeDistracted" | null;
+  timeCorrectionMinutes: string;
+  setTimeCorrectionMinutes: (value: string) => void;
+  timeCorrectionError: string | null;
+  isApplyingTimeCorrection: boolean;
+  onCloseTimeCorrectionModal: () => void;
+  onApplyTimeCorrection: () => Promise<void>;
 };
 
 export function HomePage(props: HomePageProps) {
@@ -154,6 +166,26 @@ export function HomePage(props: HomePageProps) {
             </button>
           ) : null}
 
+          {props.activeSession?.status === "paused" ? (
+            <button
+              type="button"
+              onClick={props.onOpenAddTimeModal}
+              className="rounded-xl border border-sky-300 bg-sky-50 px-5 py-2.5 text-base font-medium text-sky-800 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-sky-100 hover:opacity-95 active:translate-y-0"
+            >
+              {t("home.addTime")}
+            </button>
+          ) : null}
+
+          {props.activeSession?.status === "running" ? (
+            <button
+              type="button"
+              onClick={props.onOpenRemoveTimeModal}
+              className="rounded-xl border border-orange-300 bg-orange-50 px-5 py-2.5 text-base font-medium text-orange-800 transition duration-200 ease-out hover:-translate-y-0.5 hover:bg-orange-100 hover:opacity-95 active:translate-y-0"
+            >
+              {t("home.removeTime")}
+            </button>
+          ) : null}
+
           {props.activeSession ? (
             <>
               <button
@@ -217,6 +249,9 @@ export function HomePage(props: HomePageProps) {
         setTitle={props.setTitle}
         category={props.category}
         setCategory={props.setCategory}
+        forgottenStartMinutes={props.forgottenStartMinutes}
+        setForgottenStartMinutes={props.setForgottenStartMinutes}
+        isForgottenStartMinutesValid={props.isForgottenStartMinutesValid}
         energy={props.energy}
         setEnergy={props.setEnergy}
         categorySuggestionsOpen={props.categorySuggestionsOpen}
@@ -232,6 +267,61 @@ export function HomePage(props: HomePageProps) {
         commitStartSession={props.commitStartSession}
         getAutoRenamedSessionTitle={props.getAutoRenamedSessionTitle}
       />
+
+      {props.timeCorrectionMode ? (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-slate-950/45 p-6">
+          <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-[var(--text)]">
+              {props.timeCorrectionMode === "addDuringPause"
+                ? t("timeCorrection.add.title")
+                : t("timeCorrection.remove.title")}
+            </h3>
+            <p className="mt-2 text-sm text-[var(--text-muted)]">
+              {props.timeCorrectionMode === "addDuringPause"
+                ? t("timeCorrection.add.description")
+                : t("timeCorrection.remove.description")}
+            </p>
+
+            <label className="mt-4 flex flex-col gap-2 text-sm text-[var(--text-muted)]">
+              <span>{t("timeCorrection.minutesLabel")}</span>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                inputMode="numeric"
+                value={props.timeCorrectionMinutes}
+                onChange={(event) => props.setTimeCorrectionMinutes(event.target.value)}
+                className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
+              />
+            </label>
+
+            {props.timeCorrectionError ? (
+              <p className="mt-3 rounded-lg border border-rose-300 bg-rose-50 px-3 py-2 text-xs text-rose-800">
+                {props.timeCorrectionError}
+              </p>
+            ) : null}
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={props.onCloseTimeCorrectionModal}
+                disabled={props.isApplyingTimeCorrection}
+                className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-4 py-2 text-sm font-medium text-[var(--text-muted)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t("timeCorrection.cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void props.onApplyTimeCorrection()}
+                disabled={props.isApplyingTimeCorrection}
+                className="rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {t("timeCorrection.apply")}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

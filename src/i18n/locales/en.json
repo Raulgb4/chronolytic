@@ -192,6 +192,8 @@
     "resume": "Resume",
     "finish": "Finish",
     "finishing": "Finishing...",
+    "addTime": "Add time",
+    "removeTime": "Remove time",
     "discard": "Discard",
     "sessionSavedSuccess": "Session saved. You can find it in Session History inside Analytics."
     ,"recentSessions": {
@@ -222,7 +224,29 @@
       "cancel": "Cancel",
       "createAnyway": "Create anyway",
       "autoRename": "Auto-rename"
+    },
+    "forgottenMinutes": {
+      "label": "Forgotten minutes",
+      "description": "Start as if the session began this many minutes ago.",
+      "invalid": "Enter a valid non-negative number."
     }
+  },
+  "timeCorrection": {
+    "add": {
+      "title": "Add time",
+      "description": "Convert paused time back into effective time."
+    },
+    "remove": {
+      "title": "Remove distracted time",
+      "description": "Subtract distracted minutes from effective time."
+    },
+    "minutesLabel": "Minutes",
+    "cancel": "Cancel",
+    "apply": "Apply",
+    "invalidMinutes": "Enter a valid number of minutes greater than 0.",
+    "exceedsPausedTime": "You cannot add more time than the total paused time.",
+    "exceedsEffectiveTime": "You cannot remove more time than the current effective duration.",
+    "genericError": "Could not apply time correction."
   },
   "settings": {
     "language": "Language",

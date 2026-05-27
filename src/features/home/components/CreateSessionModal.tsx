@@ -10,6 +10,9 @@ type CreateSessionModalProps = {
   setTitle: (value: string) => void;
   category: string;
   setCategory: (value: string) => void;
+  forgottenStartMinutes: string;
+  setForgottenStartMinutes: (value: string) => void;
+  isForgottenStartMinutesValid: boolean;
   energy: EnergyLevel;
   setEnergy: (value: EnergyLevel | ((previous: EnergyLevel) => EnergyLevel)) => void;
   categorySuggestionsOpen: boolean;
@@ -32,6 +35,9 @@ export function CreateSessionModal({
   setTitle,
   category,
   setCategory,
+  forgottenStartMinutes,
+  setForgottenStartMinutes,
+  isForgottenStartMinutesValid,
   energy,
   setEnergy,
   categorySuggestionsOpen,
@@ -161,6 +167,27 @@ export function CreateSessionModal({
               </div>
             </div>
           </div>
+
+          <label className="flex flex-col gap-2 text-sm text-[var(--text-muted)]">
+            <span>{t("sessionModal.forgottenMinutes.label")}</span>
+            <span className="text-xs text-[var(--text-muted)]/90">
+              {t("sessionModal.forgottenMinutes.description")}
+            </span>
+            <input
+              type="number"
+              min="0"
+              step="1"
+              inputMode="numeric"
+              value={forgottenStartMinutes}
+              onChange={(event) => setForgottenStartMinutes(event.target.value)}
+              className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
+            />
+            {!isForgottenStartMinutesValid ? (
+              <span className="text-xs text-rose-600 dark:text-rose-300">
+                {t("sessionModal.forgottenMinutes.invalid")}
+              </span>
+            ) : null}
+          </label>
         </div>
 
         <div className="mt-6 flex justify-end gap-3">

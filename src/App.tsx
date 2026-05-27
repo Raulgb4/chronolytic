@@ -57,6 +57,7 @@ import {
 import {
   getEffectiveDuration,
   getPausedDuration,
+  reducePausedDuration,
   getTimerDisplayNow,
 } from "./shared/utils/durationUtils";
 import { getEnergySortValue } from "./shared/utils/energyUtils";
@@ -64,6 +65,7 @@ import { normalizeDuplicateTitle, normalizeSearchValue } from "./shared/utils/se
 
 const SESSION_HISTORY_PAGE_SIZE = 8;
 const APP_VERSION = "0.1.1";
+type TimeCorrectionMode = "addDuringPause" | "removeDistracted";
 
 function getStoredLanguage(): Language {
   const value = window.localStorage.getItem("chronolytic.language");
@@ -84,6 +86,7 @@ function App() {
   const [now, setNow] = useState<number>(Date.now());
   const [title, setTitle] = useState<string>("");
   const [category, setCategory] = useState<string>("");
+  const [forgottenStartMinutes, setForgottenStartMinutes] = useState<string>("0");
   const [energy, setEnergy] = useState<EnergyLevel>("regular");
   const [activeSession, setActiveSession] = useState<ActiveSession | null>(null);
   const [completedSessions, setCompletedSessions] = useState<CompletedSession[]>([]);
@@ -139,6 +142,11 @@ function App() {
   const [isResumingSession, setIsResumingSession] = useState(false);
   const [duplicateTitleCandidate, setDuplicateTitleCandidate] = useState<string | null>(null);
   const [sessionSavedFeedbackVisible, setSessionSavedFeedbackVisible] = useState(false);
+  const [timeCorrectionMode, setTimeCorrectionMode] = useState<TimeCorrectionMode | null>(null);
+  const [timeCorrectionMinutes, setTimeCorrectionMinutes] = useState<string>("");
+  const [timeCorrectionError, setTimeCorrectionError] = useState<string | null>(null);
+  const [isApplyingTimeCorrection, setIsApplyingTimeCorrection] = useState(false);
+  const [correctionOpenedAt, setCorrectionOpenedAt] = useState<number | null>(null);
   const backupFadeTimeoutRef = useRef<number | null>(null);
   const backupRemoveTimeoutRef = useRef<number | null>(null);
   const sessionSavedFeedbackTimeoutRef = useRef<number | null>(null);
@@ -350,10 +358,23 @@ function App() {
   const nowDate = useMemo(() => new Date(now), [now]);
   const greetingKey = useMemo(() => getGreetingKey(nowDate), [nowDate]);
 
+  const parsedForgottenStartMinutes = useMemo(() => {
+    const trimmed = forgottenStartMinutes.trim();
+    if (trimmed.length === 0) return null;
+    const value = Number(trimmed);
+    if (!Number.isFinite(value) || value < 0) return null;
+    return Math.floor(value);
+  }, [forgottenStartMinutes]);
+  const isForgottenStartMinutesValid = parsedForgottenStartMinutes !== null;
+
   const effectiveDurationMs = useMemo(() => {
     if (!activeSession) return 0;
-    return getEffectiveDuration(activeSession, getTimerDisplayNow(activeSession, now));
-  }, [activeSession, now]);
+    const timerNow =
+      timeCorrectionMode === "removeDistracted" && correctionOpenedAt !== null
+        ? correctionOpenedAt
+        : now;
+    return getEffectiveDuration(activeSession, getTimerDisplayNow(activeSession, timerNow));
+  }, [activeSession, correctionOpenedAt, now, timeCorrectionMode]);
 
   const usedCategories = useMemo(
     () => [...new Set(completedSessions.map((s) => s.category).filter(Boolean))],
@@ -600,7 +621,11 @@ function App() {
     }
   }, [dashboardCategoryFilter, dashboardCategoryOptions]);
 
-  const canStartSession = title.trim().length > 0 && !activeSession && !isStartingSession;
+  const canStartSession =
+    title.trim().length > 0 &&
+    !activeSession &&
+    !isStartingSession &&
+    isForgottenStartMinutesValid;
 
   function hasDuplicateCompletedTitle(candidate: string): boolean {
     const normalizedCandidate = normalizeDuplicateTitle(candidate);
@@ -630,7 +655,9 @@ function App() {
   async function commitStartSession(finalTitle: string) {
     if (isStartingSession || activeSession) return;
 
-    const startedAt = Date.now();
+    const createdAt = Date.now();
+    const forgottenOffsetMs = (parsedForgottenStartMinutes ?? 0) * 60 * 1000;
+    const startedAt = createdAt - forgottenOffsetMs;
     const session: ActiveSession = {
       id: crypto.randomUUID(),
       title: finalTitle.trim(),
@@ -647,10 +674,11 @@ function App() {
         return;
       }
 
-      await saveActiveSession(session, startedAt);
+      await saveActiveSession(session, createdAt);
       setActiveSession(session);
-      setNow(startedAt);
+      setNow(createdAt);
       setIsCreateSessionOpen(false);
+      setForgottenStartMinutes("0");
       setRecoveryNoticeVisible(false);
       setDuplicateTitleCandidate(null);
     } catch (error) {
@@ -668,7 +696,7 @@ function App() {
   }
 
   async function requestStartSession() {
-    if (!canStartSession || isStartingSession || activeSession) return;
+    if (!canStartSession || isStartingSession || activeSession || !isForgottenStartMinutesValid) return;
 
     const trimmedTitle = title.trim();
     if (hasDuplicateCompletedTitle(trimmedTitle)) {
@@ -677,6 +705,90 @@ function App() {
     }
 
     await commitStartSession(trimmedTitle);
+  }
+
+  function closeTimeCorrectionModal() {
+    setTimeCorrectionMode(null);
+    setTimeCorrectionMinutes("");
+    setTimeCorrectionError(null);
+    setCorrectionOpenedAt(null);
+  }
+
+  function openAddTimeModal() {
+    setTimeCorrectionMode("addDuringPause");
+    setTimeCorrectionMinutes("");
+    setTimeCorrectionError(null);
+    setCorrectionOpenedAt(null);
+  }
+
+  function openRemoveTimeModal() {
+    setTimeCorrectionMode("removeDistracted");
+    setTimeCorrectionMinutes("");
+    setTimeCorrectionError(null);
+    setCorrectionOpenedAt(Date.now());
+  }
+
+  function handleTimeCorrectionMinutesChange(value: string) {
+    setTimeCorrectionMinutes(value);
+    if (timeCorrectionError) {
+      setTimeCorrectionError(null);
+    }
+  }
+
+  async function applyTimeCorrection() {
+    if (!activeSession || !timeCorrectionMode || isApplyingTimeCorrection) return;
+
+    const value = Number(timeCorrectionMinutes);
+    const requestedMs = Math.floor(value * 60 * 1000);
+    if (!Number.isFinite(value) || value <= 0 || requestedMs <= 0) {
+      setTimeCorrectionError(t("timeCorrection.invalidMinutes"));
+      return;
+    }
+
+    const applyAt = Date.now();
+    setIsApplyingTimeCorrection(true);
+    try {
+      if (timeCorrectionMode === "addDuringPause") {
+        if (activeSession.status !== "paused") return;
+        const totalPausedMs = getPausedDuration(activeSession.pauses, applyAt);
+        if (requestedMs > totalPausedMs) {
+          setTimeCorrectionError(t("timeCorrection.exceedsPausedTime"));
+          return;
+        }
+
+        const nextSession: ActiveSession = {
+          ...activeSession,
+          pauses: reducePausedDuration(activeSession.pauses, requestedMs, applyAt),
+        };
+        await saveActiveSession(nextSession, applyAt);
+        setActiveSession(nextSession);
+        setNow(applyAt);
+        closeTimeCorrectionModal();
+        return;
+      }
+
+      if (activeSession.status !== "running") return;
+      const effectiveMs = getEffectiveDuration(activeSession, getTimerDisplayNow(activeSession, applyAt));
+      if (requestedMs > effectiveMs) {
+        setTimeCorrectionError(t("timeCorrection.exceedsEffectiveTime"));
+        return;
+      }
+
+      const nextSession: ActiveSession = {
+        ...activeSession,
+        pauses: [...activeSession.pauses, { startedAt: applyAt - requestedMs, endedAt: applyAt }],
+      };
+      await saveActiveSession(nextSession, applyAt);
+      setActiveSession(nextSession);
+      setNow(applyAt);
+      closeTimeCorrectionModal();
+    } catch (error) {
+      console.error("Failed to apply time correction", error);
+      logCriticalError("session.timeCorrection.apply", error);
+      setTimeCorrectionError(t("timeCorrection.genericError"));
+    } finally {
+      setIsApplyingTimeCorrection(false);
+    }
   }
 
   async function pauseSession() {
@@ -870,6 +982,7 @@ function App() {
       await deleteActiveSession(activeSession.id);
       setActiveSession(null);
       setIsCreateSessionOpen(false);
+      setForgottenStartMinutes("0");
       setRecoveryNoticeVisible(false);
     } catch (error) {
       console.error("Failed to delete active session on discard", {
@@ -1287,6 +1400,9 @@ function App() {
         setTitle={setTitle}
         category={category}
         setCategory={setCategory}
+        forgottenStartMinutes={forgottenStartMinutes}
+        setForgottenStartMinutes={setForgottenStartMinutes}
+        isForgottenStartMinutesValid={isForgottenStartMinutesValid}
         energy={energy}
         setEnergy={setEnergy}
         categorySuggestionsOpen={categorySuggestionsOpen}
@@ -1294,13 +1410,25 @@ function App() {
         filteredCategorySuggestions={filteredCategorySuggestions}
         canStartSession={canStartSession}
         requestStartSession={requestStartSession}
-        closeCreateSession={() => setIsCreateSessionOpen(false)}
+        closeCreateSession={() => {
+          setIsCreateSessionOpen(false);
+          setForgottenStartMinutes("0");
+        }}
         renderMoodFace={renderMoodFace}
         duplicateTitleCandidate={duplicateTitleCandidate}
         setDuplicateTitleCandidate={setDuplicateTitleCandidate}
         commitStartSession={commitStartSession}
         getAutoRenamedSessionTitle={getAutoRenamedSessionTitle}
         recentHomeSessions={recentHomeSessions}
+        onOpenAddTimeModal={openAddTimeModal}
+        onOpenRemoveTimeModal={openRemoveTimeModal}
+        timeCorrectionMode={timeCorrectionMode}
+        timeCorrectionMinutes={timeCorrectionMinutes}
+        setTimeCorrectionMinutes={handleTimeCorrectionMinutesChange}
+        timeCorrectionError={timeCorrectionError}
+        isApplyingTimeCorrection={isApplyingTimeCorrection}
+        onCloseTimeCorrectionModal={closeTimeCorrectionModal}
+        onApplyTimeCorrection={applyTimeCorrection}
       />
     );
   }

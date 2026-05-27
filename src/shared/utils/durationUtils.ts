@@ -1,5 +1,32 @@
 import type { ActiveSession, PausePeriod } from "../../features/sessions/sessionTypes";
 
+export function reducePausedDuration(
+  pauses: PausePeriod[],
+  amountMs: number,
+  now: number,
+): PausePeriod[] {
+  let remaining = Math.max(0, Math.floor(amountMs));
+  if (remaining === 0) return pauses;
+
+  const nextPauses = pauses.map((pause) => ({ ...pause }));
+
+  for (let index = nextPauses.length - 1; index >= 0 && remaining > 0; index -= 1) {
+    const pause = nextPauses[index];
+    const pauseEnd = pause.endedAt === null ? now : pause.endedAt;
+    const pauseDuration = Math.max(0, pauseEnd - pause.startedAt);
+    if (pauseDuration === 0) continue;
+
+    const consume = Math.min(remaining, pauseDuration);
+    remaining -= consume;
+    pause.startedAt += consume;
+  }
+
+  return nextPauses.filter((pause) => {
+    if (pause.endedAt === null) return true;
+    return pause.endedAt > pause.startedAt;
+  });
+}
+
 export function formatDuration(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000);
   const hours = Math.floor(totalSeconds / 3600);
