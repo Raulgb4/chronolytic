@@ -100,6 +100,15 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
   );
 
   const formatPercentage = (value: number): string => `${Math.round(value * 100)}%`;
+  const formatLocalizedDuration = (value: number): string =>
+    formatHumanDuration(value, {
+      second: props.t("duration.second"),
+      seconds: props.t("duration.seconds"),
+      minute: props.t("duration.minute"),
+      minutes: props.t("duration.minutes"),
+      hour: props.t("duration.hour"),
+      hours: props.t("duration.hours"),
+    });
   const formatHours = (durationMs: number): string =>
     `${(durationMs / (60 * 60 * 1000)).toFixed(1)}h`;
   const todayDateKey = (() => {
@@ -245,11 +254,11 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                 {[
                   {
                     label: props.t("analytics.dashboard.kpis.totalEffectiveTime"),
-                    value: formatHumanDuration(summary.totalEffectiveMs),
+                    value: formatLocalizedDuration(summary.totalEffectiveMs),
                   },
                   {
                     label: props.t("analytics.dashboard.kpis.totalPausedTime"),
-                    value: formatHumanDuration(summary.totalPausedMs),
+                    value: formatLocalizedDuration(summary.totalPausedMs),
                   },
                   {
                     label: props.t("analytics.dashboard.kpis.completedSessions"),
@@ -257,27 +266,27 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                   },
                   {
                     label: props.t("analytics.dashboard.kpis.averageSessionDuration"),
-                    value: formatHumanDuration(summary.averageSessionMs),
+                    value: formatLocalizedDuration(summary.averageSessionMs),
                   },
                   {
                     label: props.t("analytics.dashboard.kpis.currentMonthEffectiveTime"),
-                    value: formatHumanDuration(summary.currentMonthEffectiveMs),
+                    value: formatLocalizedDuration(summary.currentMonthEffectiveMs),
                   },
                   {
                     label: props.t("analytics.dashboard.kpis.averageMonthlyEffectiveTime"),
-                    value: formatHumanDuration(summary.averageMonthlyEffectiveMs),
+                    value: formatLocalizedDuration(summary.averageMonthlyEffectiveMs),
                   },
                   {
                     label: props.t("analytics.dashboard.kpis.currentWeekEffectiveTime"),
-                    value: formatHumanDuration(summary.currentWeekEffectiveMs),
+                    value: formatLocalizedDuration(summary.currentWeekEffectiveMs),
                   },
                   {
                     label: props.t("analytics.dashboard.kpis.averageWeeklyEffectiveTime"),
-                    value: formatHumanDuration(summary.averageWeeklyEffectiveMs),
+                    value: formatLocalizedDuration(summary.averageWeeklyEffectiveMs),
                   },
                   {
                     label: props.t("analytics.dashboard.kpis.averageDailyEffectiveTime"),
-                    value: formatHumanDuration(summary.averageDailyEffectiveMs),
+                    value: formatLocalizedDuration(summary.averageDailyEffectiveMs),
                   },
                 ].map((kpi) => (
                   <div
@@ -328,7 +337,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                   </p>
                   <p className="mt-1 text-sm text-[var(--text-muted)]">
                     {summary.mostProductiveCategory
-                      ? formatHumanDuration(summary.mostProductiveCategory.effectiveMs)
+                      ? formatLocalizedDuration(summary.mostProductiveCategory.effectiveMs)
                       : "-"}
                   </p>
                 </div>
@@ -343,7 +352,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                   </p>
                   <p className="mt-1 text-sm text-[var(--text-muted)]">
                     {summary.bestTimeSlot
-                      ? formatHumanDuration(summary.bestTimeSlot.effectiveMs)
+                      ? formatLocalizedDuration(summary.bestTimeSlot.effectiveMs)
                       : "-"}
                   </p>
                 </div>
@@ -360,7 +369,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                         <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
                           <span className="truncate text-[var(--text)]">{item.category}</span>
                           <span className="text-[var(--text-muted)]">
-                            {formatHumanDuration(item.effectiveMs)}
+                            {formatLocalizedDuration(item.effectiveMs)}
                           </span>
                         </div>
                         <div className="h-2 rounded-full bg-[var(--panel-muted)]">
@@ -506,7 +515,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                         </div>
                         <div className="mb-1 text-xs text-[var(--text-muted)]">
                           {props.t("analytics.dashboard.series.averagePausedTime")}:{" "}
-                          {formatHumanDuration(item.averagePausedMs)}
+                          {formatLocalizedDuration(item.averagePausedMs)}
                         </div>
                         <div className="h-2 rounded-full bg-[var(--panel-muted)]">
                           <div
@@ -539,7 +548,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                           {props.t(`analytics.dashboard.timeSlots.${item.slot}`)}
                         </span>
                         <span className="text-[10px] text-[var(--text-muted)]">
-                          {formatHumanDuration(item.effectiveMs)}
+                          {formatLocalizedDuration(item.effectiveMs)}
                         </span>
                       </div>
                     ))}
@@ -566,7 +575,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                         </p>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
-                        <span>{formatHumanDuration(session.effectiveDurationMs)}</span>
+                        <span>{formatLocalizedDuration(session.effectiveDurationMs)}</span>
                         <span>{props.t(`analytics.weekdays.${session.weekday}`)}</span>
                         <span className="inline-flex items-center gap-1">
                           {props.renderMoodFace(session.energy, "h-3.5 w-3.5")}
@@ -989,7 +998,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                             )}
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text)]">
-                            {formatHumanDuration(session.effectiveDurationMs)}
+                            {formatLocalizedDuration(session.effectiveDurationMs)}
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
                             {formatSessionDate(session.startedAt)}
@@ -1008,7 +1017,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                             </div>
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {formatHumanDuration(session.pausedDurationMs)}
+                            {formatLocalizedDuration(session.pausedDurationMs)}
                           </td>
                           <td className="px-5 py-4 text-sm">
                             {props.sessionHistoryEditing?.sessionId === session.id &&

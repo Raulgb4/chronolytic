@@ -84,7 +84,7 @@ export function SettingsPage(props: SettingsPageProps) {
               className={`relative h-8 w-14 shrink-0 rounded-full transition-colors duration-200 ${
                 props.themeMode === "dark" ? "bg-[var(--accent)]" : "bg-slate-300"
               }`}
-              aria-label="Toggle theme"
+              aria-label={t("settings.toggleTheme")}
             >
               <span
                 className={`absolute left-1 top-1 h-6 w-6 rounded-full bg-[var(--panel-bg)] shadow transition-transform duration-200 ${
@@ -144,7 +144,7 @@ export function SettingsPage(props: SettingsPageProps) {
           <dl className="mt-4 grid grid-cols-1 gap-2 text-sm text-[var(--text-muted)] sm:grid-cols-2">
             <div>
               <dt className="font-medium text-[var(--text)]">{t("settings.version")}</dt>
-              <dd>0.1.1</dd>
+              <dd>1.0.0</dd>
             </div>
             <div>
               <dt className="font-medium text-[var(--text)]">{t("settings.license")}</dt>

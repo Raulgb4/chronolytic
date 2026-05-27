@@ -2,6 +2,14 @@
   "app": {
     "name": "Chronolytic"
   },
+  "duration": {
+    "second": "second",
+    "seconds": "seconds",
+    "minute": "minute",
+    "minutes": "minutes",
+    "hour": "hour",
+    "hours": "hours"
+  },
   "nav": {
     "home": "Home",
     "analytics": "Analytics",
@@ -195,8 +203,8 @@
     "addTime": "Add time",
     "removeTime": "Remove time",
     "discard": "Discard",
-    "sessionSavedSuccess": "Session saved. You can find it in Session History inside Analytics."
-    ,"recentSessions": {
+    "sessionSavedSuccess": "Session saved. You can find it in Session History inside Analytics.",
+    "recentSessions": {
       "title": "Recent sessions",
       "empty": "No completed sessions yet."
     }
@@ -255,6 +263,7 @@
     "english": "English",
     "spanish": "Spanish",
     "theme": "Theme",
+    "toggleTheme": "Toggle theme",
     "themeDescription": "Choose how Chronolytic should appear on this device.",
     "startup": "Startup",
     "startupDescription": "Configure whether Chronolytic should open when Windows starts.",

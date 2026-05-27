@@ -2,6 +2,14 @@
   "app": {
     "name": "Chronolytic"
   },
+  "duration": {
+    "second": "segundo",
+    "seconds": "segundos",
+    "minute": "minuto",
+    "minutes": "minutos",
+    "hour": "hora",
+    "hours": "horas"
+  },
   "nav": {
     "home": "Inicio",
     "analytics": "Analíticas",
@@ -23,7 +31,7 @@
         "exportError": "No se pudo exportar el respaldo.",
         "importSuccess": "Se importaron {{count}} sesiones correctamente.",
         "importSuccessWithSkipped": "Se importaron {{imported}} sesiones. Se omitieron {{skipped}} duplicadas.",
-        "importError": "No se pudo importar el respaldo. Verifica que el archivo sea un respaldo valido de Chronolytic.",
+        "importError": "No se pudo importar el respaldo. Verifica que el archivo sea un respaldo válido de Chronolytic.",
         "emptyBackupError": "El respaldo no tiene sesiones para importar.",
         "duplicateOnlyError": "Todas las sesiones de este respaldo ya existen."
       },
@@ -114,7 +122,7 @@
     },
     "dashboard": {
       "emptyTitle": "Aún no hay analíticas",
-      "emptyDescription": "Finaliza algunas sesiones para desbloquear tus primeros insights.",
+      "emptyDescription": "Finaliza algunas sesiones para desbloquear tus primeros patrones.",
       "filters": {
         "category": "Categoría",
         "allSessions": "Todas las sesiones"
@@ -184,7 +192,7 @@
     "noActiveSession": "Sin sesión activa",
     "statusRunning": "En progreso",
     "statusPaused": "Pausado",
-    "recoveredPausedSession": "Recuperamos tu sesion anterior y la dejamos en pausa.",
+    "recoveredPausedSession": "Recuperamos tu sesión anterior y la dejamos en pausa.",
     "dismissRecoveryNotice": "Cerrar",
     "uncategorized": "Sin categoría",
     "createSession": "Crear sesión",
@@ -255,6 +263,7 @@
     "english": "Inglés",
     "spanish": "Español",
     "theme": "Tema",
+    "toggleTheme": "Cambiar tema",
     "themeDescription": "Elige como debe verse Chronolytic en este dispositivo.",
     "startup": "Inicio",
     "startupDescription": "Configura si Chronolytic debe abrirse al iniciar Windows.",

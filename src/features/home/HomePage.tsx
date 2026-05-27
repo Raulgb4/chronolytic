@@ -59,6 +59,15 @@ type HomePageProps = {
 
 export function HomePage(props: HomePageProps) {
   const { t } = useTranslation();
+  const formatLocalizedDuration = (value: number): string =>
+    formatHumanDuration(value, {
+      second: t("duration.second"),
+      seconds: t("duration.seconds"),
+      minute: t("duration.minute"),
+      minutes: t("duration.minutes"),
+      hour: t("duration.hour"),
+      hours: t("duration.hours"),
+    });
 
   return (
     <section className="relative flex h-full flex-col px-10 py-9 lg:px-12 lg:py-10">
@@ -234,7 +243,7 @@ export function HomePage(props: HomePageProps) {
                         weekday: "short",
                       })}
                     </span>
-                    <span>{formatHumanDuration(session.effectiveDurationMs)}</span>
+                    <span>{formatLocalizedDuration(session.effectiveDurationMs)}</span>
                   </div>
                 </div>
               ))}

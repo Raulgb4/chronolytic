@@ -64,7 +64,7 @@ import { getEnergySortValue } from "./shared/utils/energyUtils";
 import { normalizeDuplicateTitle, normalizeSearchValue } from "./shared/utils/searchUtils";
 
 const SESSION_HISTORY_PAGE_SIZE = 8;
-const APP_VERSION = "0.1.1";
+const APP_VERSION = "1.0.0";
 type TimeCorrectionMode = "addDuringPause" | "removeDistracted";
 
 function getStoredLanguage(): Language {
