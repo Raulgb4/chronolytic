@@ -155,6 +155,8 @@
         "monthlyProductivityCalendar": "Calendario mensual de productividad"
       },
       "calendar": {
+        "previousMonth": "Mes anterior",
+        "nextMonth": "Mes siguiente",
         "today": "Hoy",
         "legendLow": "Bajo (<4h)",
         "legendMedium": "Medio (4h-7h)",

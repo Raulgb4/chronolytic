@@ -100,13 +100,13 @@ function getProductivityLevel(effectiveMs: number): ProductivityLevel {
 
 function buildMonthlyProductivityCalendar(
   sessions: CompletedSession[],
+  year: number,
+  monthIndex: number,
 ): MonthlyProductivityCalendar {
-  const now = new Date();
-  const year = now.getFullYear();
-  const monthIndex = now.getMonth();
   const firstDayOfMonth = new Date(year, monthIndex, 1);
   const daysInMonth = new Date(year, monthIndex + 1, 0).getDate();
   const leadingBlankDays = getMondayFirstWeekdayIndex(firstDayOfMonth);
+  const now = new Date();
   const todayKey = toLocalDateKey(now.getTime());
 
   const totalsByDate = new Map<string, number>();
@@ -185,6 +185,7 @@ function getTimeSlot(hour: number): TimeSlot {
 export function buildAnalyticsSummary(
   sessions: CompletedSession[],
   uncategorizedLabel: string,
+  calendarMonth?: { year: number; monthIndex: number },
 ): AnalyticsSummary {
   const totalEffectiveMs = sessions.reduce((acc, session) => acc + session.effectiveDurationMs, 0);
   const totalPausedMs = sessions.reduce((acc, session) => acc + session.pausedDurationMs, 0);
@@ -319,7 +320,14 @@ export function buildAnalyticsSummary(
     dayTotals.size > 0
       ? Math.round(Array.from(dayTotals.values()).reduce((acc, value) => acc + value, 0) / dayTotals.size)
       : 0;
-  const monthlyProductivityCalendar = buildMonthlyProductivityCalendar(sessions);
+  const now = new Date();
+  const targetYear = calendarMonth?.year ?? now.getFullYear();
+  const targetMonthIndex = calendarMonth?.monthIndex ?? now.getMonth();
+  const monthlyProductivityCalendar = buildMonthlyProductivityCalendar(
+    sessions,
+    targetYear,
+    targetMonthIndex,
+  );
 
   return {
     totalEffectiveMs,

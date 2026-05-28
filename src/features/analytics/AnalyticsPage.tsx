@@ -79,13 +79,21 @@ type AnalyticsPageProps = {
 
 export function AnalyticsPage(props: AnalyticsPageProps) {
   const [sessionPendingDeleteId, setSessionPendingDeleteId] = useState<string | null>(null);
+  const [visibleCalendarMonth, setVisibleCalendarMonth] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), monthIndex: now.getMonth() };
+  });
 
   const analyticsTabs: Array<{ key: AnalyticsTab; label: string }> = [
     { key: "dashboard", label: props.t("analytics.tabs.dashboard") },
     { key: "sessionHistory", label: props.t("analytics.tabs.sessionHistory") },
   ];
 
-  const summary = buildAnalyticsSummary(props.dashboardSessions, props.t("home.uncategorized"));
+  const summary = buildAnalyticsSummary(
+    props.dashboardSessions,
+    props.t("home.uncategorized"),
+    visibleCalendarMonth,
+  );
 
   const maxCategoryMs = Math.max(...summary.effectiveByCategory.map((item) => item.effectiveMs), 1);
   const maxWeekdayMs = Math.max(...summary.effectiveByWeekday.map((item) => item.effectiveMs), 1);
@@ -157,6 +165,26 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
     if (props.sessionHistorySort.key !== sortKey) return "";
     return props.sessionHistorySort.direction === "asc" ? "↑" : "↓";
   };
+
+  const goToPreviousCalendarMonth = () => {
+    setVisibleCalendarMonth((previous) => {
+      const date = new Date(previous.year, previous.monthIndex - 1, 1);
+      return { year: date.getFullYear(), monthIndex: date.getMonth() };
+    });
+  };
+
+  const goToNextCalendarMonth = () => {
+    setVisibleCalendarMonth((previous) => {
+      const date = new Date(previous.year, previous.monthIndex + 1, 1);
+      return { year: date.getFullYear(), monthIndex: date.getMonth() };
+    });
+  };
+
+  const now = new Date();
+  const isNextCalendarMonthDisabled =
+    visibleCalendarMonth.year > now.getFullYear() ||
+    (visibleCalendarMonth.year === now.getFullYear() &&
+      visibleCalendarMonth.monthIndex >= now.getMonth());
 
   const sessionPendingDelete =
     sessionPendingDeleteId === null
@@ -421,7 +449,28 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                     <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
                       {props.t("analytics.dashboard.charts.monthlyProductivityCalendar")}
                     </h3>
-                    <p className="text-xs font-medium capitalize text-[var(--text)]">{calendarMonthLabel}</p>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={goToPreviousCalendarMonth}
+                        aria-label={props.t("analytics.dashboard.calendar.previousMonth")}
+                        className="rounded-md border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-0.5 text-xs font-semibold text-[var(--text)] transition duration-200 ease-out hover:bg-[var(--panel-muted)]"
+                      >
+                        {"<"}
+                      </button>
+                      <p className="text-xs font-medium capitalize text-[var(--text)]">
+                        {calendarMonthLabel}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={goToNextCalendarMonth}
+                        aria-label={props.t("analytics.dashboard.calendar.nextMonth")}
+                        disabled={isNextCalendarMonthDisabled}
+                        className="rounded-md border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-0.5 text-xs font-semibold text-[var(--text)] transition duration-200 ease-out hover:bg-[var(--panel-muted)] disabled:cursor-not-allowed disabled:opacity-55"
+                      >
+                        {">"}
+                      </button>
+                    </div>
                   </div>
 
                   <div className="mt-3 grid grid-cols-7 gap-1.5">
