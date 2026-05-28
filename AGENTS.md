@@ -8,6 +8,9 @@
   - `pnpm run dev`
   - `pnpm run build`
   - `pnpm run typecheck`
+  - `pnpm run test`
+  - `pnpm run test:watch`
+  - `pnpm run test:coverage`
   - `pnpm run format`
   - `pnpm run format:check`
   - `pnpm run preview`
@@ -35,9 +38,11 @@
 - `src/features/sessions/sessionTypes.ts`: shared domain types.
 - `src/features/sessions/sessionRepository.ts`: SQLite access, schema checks, active/completed session persistence.
 - `src/features/sessions/sessionBackup.ts`: backup envelope creation and strict import parsing/validation.
+- `src/features/sessions/sessionTimeCorrections.ts`: pure manual time-correction helpers.
 - `src/features/analytics/analyticsSummary.ts`: reusable analytics aggregation logic.
 - `src/i18n/index.ts` + `src/i18n/locales/{en,es}.json`: language setup and translations.
 - `src/index.css`: theme tokens and base visual system.
+- `vitest.config.ts`: unit-test runner configuration.
 - `src-tauri/`: desktop runtime config/capabilities and Rust entrypoint.
 
 ## Architecture Expectations
@@ -77,8 +82,8 @@
 
 - Use `CompletedSession[]` as the analytics source of truth.
 - Keep pure analytics aggregations in `analyticsSummary.ts` (not in JSX rendering blocks).
-- Dashboard range filtering must use `endedAt` for inclusion logic.
-- Temporal evolution charts should remain dependency-light unless a new dependency is clearly justified.
+- Dashboard category filtering should drive dashboard aggregations without mutating source data.
+- Monthly productivity calendar should preserve Monday-first alignment, leap-year correctness, and local `startedAt` attribution.
 
 ## UI/UX Constraints
 
@@ -104,9 +109,18 @@
 - Required for most feature/docs PRs:
   - `pnpm run format:check`
   - `pnpm run typecheck`
+  - `pnpm run test`
   - `pnpm run build`
 - When desktop/runtime behavior changes, also verify with:
   - `pnpm run tauri:dev`
+
+## Testing Conventions
+
+- Use Vitest for unit tests of pure TypeScript business logic.
+- Keep tests colocated with source files using `*.test.ts` naming.
+- Prefer explicit Vitest imports in test files instead of global APIs.
+- Prioritize deterministic tests for time/date logic (fake timers when needed).
+- Avoid UI/E2E expansion by default unless explicitly requested.
 
 ## Repository Hygiene
 

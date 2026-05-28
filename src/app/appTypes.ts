@@ -3,7 +3,13 @@ export type AnalyticsTab = "dashboard" | "sessionHistory";
 export type Language = "en" | "es";
 export type ThemeMode = "light" | "dark";
 export type BackupFeedbackType = "success" | "error";
-export type SessionHistoryDurationFilter = "all" | "under30m" | "30mTo1h" | "1hTo2h" | "over2h";
+export type SessionHistoryDurationFilter =
+  | "all"
+  | "1hTo2h"
+  | "2hTo4h"
+  | "4hTo6h"
+  | "6hTo8h"
+  | "8hTo10h";
 export type SessionHistoryPauseFilter = "all" | "withPauses" | "withoutPauses";
 export type SessionHistorySortKey =
   | "startedAt"

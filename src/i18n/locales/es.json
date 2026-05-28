@@ -2,6 +2,14 @@
   "app": {
     "name": "Chronolytic"
   },
+  "duration": {
+    "second": "segundo",
+    "seconds": "segundos",
+    "minute": "minuto",
+    "minutes": "minutos",
+    "hour": "hora",
+    "hours": "horas"
+  },
   "nav": {
     "home": "Inicio",
     "analytics": "Analíticas",
@@ -23,7 +31,7 @@
         "exportError": "No se pudo exportar el respaldo.",
         "importSuccess": "Se importaron {{count}} sesiones correctamente.",
         "importSuccessWithSkipped": "Se importaron {{imported}} sesiones. Se omitieron {{skipped}} duplicadas.",
-        "importError": "No se pudo importar el respaldo. Verifica que el archivo sea un respaldo valido de Chronolytic.",
+        "importError": "No se pudo importar el respaldo. Verifica que el archivo sea un respaldo válido de Chronolytic.",
         "emptyBackupError": "El respaldo no tiene sesiones para importar.",
         "duplicateOnlyError": "Todas las sesiones de este respaldo ya existen."
       },
@@ -34,7 +42,7 @@
         "invalidWeekday": "El valor del día no es válido."
       },
       "searchLabel": "Búsqueda en historial de sesiones",
-      "searchPlaceholder": "Buscar por título, categoría o etiqueta",
+      "searchPlaceholder": "Buscar por título o categoría",
       "emptySearchTitle": "No hay sesiones coincidentes",
       "emptySearchDescription": "Ajusta la búsqueda o los filtros para encontrar sesiones.",
       "filters": {
@@ -54,10 +62,11 @@
       },
       "durationOptions": {
         "all": "Cualquier duración",
-        "under30m": "Menos de 30 min",
-        "30mTo1h": "30 min a 1 h",
         "1hTo2h": "1 h a 2 h",
-        "over2h": "Más de 2 h"
+        "2hTo4h": "2 h a 4 h",
+        "4hTo6h": "4 h a 6 h",
+        "6hTo8h": "6 h a 8 h",
+        "8hTo10h": "8 h a 10 h"
       },
       "sorting": {
         "sortByStartDate": "Ordenar por fecha de inicio",
@@ -113,7 +122,7 @@
     },
     "dashboard": {
       "emptyTitle": "Aún no hay analíticas",
-      "emptyDescription": "Finaliza algunas sesiones para desbloquear tus primeros insights.",
+      "emptyDescription": "Finaliza algunas sesiones para desbloquear tus primeros patrones.",
       "filters": {
         "category": "Categoría",
         "allSessions": "Todas las sesiones"
@@ -124,6 +133,11 @@
         "completedSessions": "Sesiones completadas",
         "totalPauseCount": "Pausas totales",
         "averageSessionDuration": "Duración promedio",
+        "currentMonthEffectiveTime": "Tiempo efectivo del mes actual",
+        "averageMonthlyEffectiveTime": "Promedio de tiempo efectivo / mes",
+        "currentWeekEffectiveTime": "Tiempo efectivo de la semana actual",
+        "averageWeeklyEffectiveTime": "Promedio de tiempo efectivo / semana",
+        "averageDailyEffectiveTime": "Promedio de tiempo efectivo / día",
         "focusRatio": "Ratio de enfoque",
         "interruptionRatio": "Ratio de interrupciones",
         "mostProductiveCategory": "Categoría más productiva",
@@ -137,7 +151,17 @@
         "sessionsByEnergy": "Sesiones por energía",
         "energyInterruptions": "Energía vs interrupciones",
         "effectiveByTimeSlot": "Tiempo efectivo por franja",
-        "recentDailyEffectiveHours": "Horas efectivas de días recientes"
+        "recentDailyEffectiveHours": "Horas efectivas de días recientes",
+        "monthlyProductivityCalendar": "Calendario mensual de productividad"
+      },
+      "calendar": {
+        "previousMonth": "Mes anterior",
+        "nextMonth": "Mes siguiente",
+        "today": "Hoy",
+        "legendLow": "Bajo (<4h)",
+        "legendMedium": "Medio (4h-7h)",
+        "legendHigh": "Alto (>7h)",
+        "noHours": "0h"
       },
       "series": {
         "effective": "Efectivo",
@@ -170,7 +194,7 @@
     "noActiveSession": "Sin sesión activa",
     "statusRunning": "En progreso",
     "statusPaused": "Pausado",
-    "recoveredPausedSession": "Recuperamos tu sesion anterior y la dejamos en pausa.",
+    "recoveredPausedSession": "Recuperamos tu sesión anterior y la dejamos en pausa.",
     "dismissRecoveryNotice": "Cerrar",
     "uncategorized": "Sin categoría",
     "createSession": "Crear sesión",
@@ -178,8 +202,27 @@
     "resume": "Reanudar",
     "finish": "Finalizar",
     "finishing": "Finalizando...",
+    "addTime": "Agregar tiempo",
+    "removeTime": "Quitar tiempo",
     "discard": "Descartar",
-    "sessionSavedSuccess": "Sesión guardada. Puedes encontrarla en Historial de sesiones dentro de Analíticas."
+    "sessionConfirm": {
+      "cancel": "Cancelar",
+      "discard": {
+        "title": "¿Descartar sesión?",
+        "description": "Esto descartará permanentemente la sesión actual.",
+        "confirm": "Descartar"
+      },
+      "finish": {
+        "title": "¿Finalizar sesión?",
+        "description": "Esto guardará y completará la sesión actual.",
+        "confirm": "Finalizar"
+      }
+    },
+    "sessionSavedSuccess": "Sesión guardada. Puedes encontrarla en Historial de sesiones dentro de Analíticas.",
+    "recentSessions": {
+      "title": "Sesiones recientes",
+      "empty": "Aún no hay sesiones completadas."
+    }
   },
   "sessionModal": {
     "title": "Crear sesión",
@@ -204,7 +247,31 @@
       "cancel": "Cancelar",
       "createAnyway": "Crear de todos modos",
       "autoRename": "Renombrar automáticamente"
+    },
+    "forgottenMinutes": {
+      "toggle": "+ Ajustar inicio",
+      "label": "Ajuste de inicio opcional",
+      "workedMinutes": "Minutos ya trabajados",
+      "description": "Usa esto solo si empezaste a trabajar antes de abrir Chronolytic.",
+      "invalid": "Ingresa un número válido entre 0 y 120."
     }
+  },
+  "timeCorrection": {
+    "add": {
+      "title": "Agregar tiempo",
+      "description": "Convierte tiempo pausado en tiempo efectivo."
+    },
+    "remove": {
+      "title": "Quitar tiempo de distracción",
+      "description": "Resta minutos de distracción del tiempo efectivo."
+    },
+    "minutesLabel": "Minutos",
+    "cancel": "Cancelar",
+    "apply": "Aplicar",
+    "invalidMinutes": "Ingresa una cantidad válida de minutos mayor a 0.",
+    "exceedsPausedTime": "No puedes agregar más tiempo que el total pausado.",
+    "exceedsEffectiveTime": "No puedes quitar más tiempo que la duración efectiva actual.",
+    "genericError": "No se pudo aplicar la corrección de tiempo."
   },
   "settings": {
     "language": "Idioma",
@@ -213,6 +280,7 @@
     "english": "Inglés",
     "spanish": "Español",
     "theme": "Tema",
+    "toggleTheme": "Cambiar tema",
     "themeDescription": "Elige como debe verse Chronolytic en este dispositivo.",
     "startup": "Inicio",
     "startupDescription": "Configura si Chronolytic debe abrirse al iniciar Windows.",
@@ -224,14 +292,14 @@
     "dangerZoneDescription": "Elimina permanentemente todas las sesiones completadas. La sesión activa no se modificará.",
     "deleteAllSessions": "Eliminar todas las sesiones",
     "deleteAllSessionsConfirmTitle": "¿Eliminar todas las sesiones?",
-    "deleteAllSessionsConfirmDescription": "Esta acción elimina de forma permanente todo el historial de sesiones completadas de este dispositivo.",
+    "deleteAllSessionsConfirmDescription": "Esto eliminará permanentemente todas las sesiones guardadas y los datos de analíticas.",
     "cancel": "Cancelar",
     "confirmDeleteAllSessions": "Eliminar todas las sesiones",
     "deleteAllSessionsSuccess": "Se eliminaron todas las sesiones completadas.",
     "deleteAllSessionsError": "No se pudieron eliminar las sesiones completadas.",
     "lightMode": "Modo claro",
     "darkMode": "Modo oscuro",
-    "helpAbout": "Ayuda / Acerca de",
+    "helpAbout": "Acerca de",
     "aboutDescription": "Chronolytic es una app de analítica de productividad local-first para escritorio, enfocada en sesiones efectivas de trabajo y en patrones de comportamiento.",
     "version": "Versión",
     "license": "Licencia",

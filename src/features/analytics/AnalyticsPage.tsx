@@ -79,13 +79,21 @@ type AnalyticsPageProps = {
 
 export function AnalyticsPage(props: AnalyticsPageProps) {
   const [sessionPendingDeleteId, setSessionPendingDeleteId] = useState<string | null>(null);
+  const [visibleCalendarMonth, setVisibleCalendarMonth] = useState(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), monthIndex: now.getMonth() };
+  });
 
   const analyticsTabs: Array<{ key: AnalyticsTab; label: string }> = [
     { key: "dashboard", label: props.t("analytics.tabs.dashboard") },
     { key: "sessionHistory", label: props.t("analytics.tabs.sessionHistory") },
   ];
 
-  const summary = buildAnalyticsSummary(props.dashboardSessions, props.t("home.uncategorized"));
+  const summary = buildAnalyticsSummary(
+    props.dashboardSessions,
+    props.t("home.uncategorized"),
+    visibleCalendarMonth,
+  );
 
   const maxCategoryMs = Math.max(...summary.effectiveByCategory.map((item) => item.effectiveMs), 1);
   const maxWeekdayMs = Math.max(...summary.effectiveByWeekday.map((item) => item.effectiveMs), 1);
@@ -100,6 +108,15 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
   );
 
   const formatPercentage = (value: number): string => `${Math.round(value * 100)}%`;
+  const formatLocalizedDuration = (value: number): string =>
+    formatHumanDuration(value, {
+      second: props.t("duration.second"),
+      seconds: props.t("duration.seconds"),
+      minute: props.t("duration.minute"),
+      minutes: props.t("duration.minutes"),
+      hour: props.t("duration.hour"),
+      hours: props.t("duration.hours"),
+    });
   const formatHours = (durationMs: number): string =>
     `${(durationMs / (60 * 60 * 1000)).toFixed(1)}h`;
   const todayDateKey = (() => {
@@ -109,10 +126,65 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
     const day = String(today.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   })();
+  const calendarMonthLabel = new Date(
+    summary.monthlyProductivityCalendar.year,
+    summary.monthlyProductivityCalendar.monthIndex,
+    1,
+  ).toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+  const calendarWeekdayLabels = [
+    props.t("analytics.weekdays.monday"),
+    props.t("analytics.weekdays.tuesday"),
+    props.t("analytics.weekdays.wednesday"),
+    props.t("analytics.weekdays.thursday"),
+    props.t("analytics.weekdays.friday"),
+    props.t("analytics.weekdays.saturday"),
+    props.t("analytics.weekdays.sunday"),
+  ];
+  const getCalendarDayClassName = (level: "low" | "medium" | "high"): string => {
+    if (level === "low") {
+      return "border border-rose-300 bg-rose-200 text-rose-950 dark:border-rose-800/60 dark:bg-rose-900/25 dark:text-rose-100";
+    }
+    if (level === "medium") {
+      return "border border-amber-300 bg-amber-200 text-amber-950 dark:border-amber-800/60 dark:bg-amber-900/25 dark:text-amber-100";
+    }
+    return "border border-emerald-300 bg-emerald-200 text-emerald-950 dark:border-emerald-800/60 dark:bg-emerald-900/25 dark:text-emerald-100";
+  };
+  const getCalendarDayNumberClassName = (level: "low" | "medium" | "high"): string => {
+    if (level === "low") {
+      return "text-rose-950 dark:text-rose-100";
+    }
+    if (level === "medium") {
+      return "text-amber-950 dark:text-amber-100";
+    }
+    return "text-emerald-950 dark:text-emerald-100";
+  };
   const getSortIndicator = (sortKey: SessionHistorySortKey): string => {
     if (props.sessionHistorySort.key !== sortKey) return "";
     return props.sessionHistorySort.direction === "asc" ? "↑" : "↓";
   };
+
+  const goToPreviousCalendarMonth = () => {
+    setVisibleCalendarMonth((previous) => {
+      const date = new Date(previous.year, previous.monthIndex - 1, 1);
+      return { year: date.getFullYear(), monthIndex: date.getMonth() };
+    });
+  };
+
+  const goToNextCalendarMonth = () => {
+    setVisibleCalendarMonth((previous) => {
+      const date = new Date(previous.year, previous.monthIndex + 1, 1);
+      return { year: date.getFullYear(), monthIndex: date.getMonth() };
+    });
+  };
+
+  const now = new Date();
+  const isNextCalendarMonthDisabled =
+    visibleCalendarMonth.year > now.getFullYear() ||
+    (visibleCalendarMonth.year === now.getFullYear() &&
+      visibleCalendarMonth.monthIndex >= now.getMonth());
 
   const sessionPendingDelete =
     sessionPendingDeleteId === null
@@ -185,7 +257,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="flex flex-wrap items-center justify-end gap-3">
+              <div className="mb-8 flex flex-wrap items-center justify-center gap-3">
                 <label
                   className="text-sm font-medium text-[var(--text-muted)]"
                   htmlFor="dashboard-category-filter"
@@ -206,15 +278,15 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                 </select>
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(180px,1fr))] gap-4 xl:grid-cols-8">
                 {[
                   {
                     label: props.t("analytics.dashboard.kpis.totalEffectiveTime"),
-                    value: formatHumanDuration(summary.totalEffectiveMs),
+                    value: formatLocalizedDuration(summary.totalEffectiveMs),
                   },
                   {
                     label: props.t("analytics.dashboard.kpis.totalPausedTime"),
-                    value: formatHumanDuration(summary.totalPausedMs),
+                    value: formatLocalizedDuration(summary.totalPausedMs),
                   },
                   {
                     label: props.t("analytics.dashboard.kpis.completedSessions"),
@@ -222,7 +294,23 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                   },
                   {
                     label: props.t("analytics.dashboard.kpis.averageSessionDuration"),
-                    value: formatHumanDuration(summary.averageSessionMs),
+                    value: formatLocalizedDuration(summary.averageSessionMs),
+                  },
+                  {
+                    label: props.t("analytics.dashboard.kpis.currentMonthEffectiveTime"),
+                    value: formatLocalizedDuration(summary.currentMonthEffectiveMs),
+                  },
+                  {
+                    label: props.t("analytics.dashboard.kpis.averageMonthlyEffectiveTime"),
+                    value: formatLocalizedDuration(summary.averageMonthlyEffectiveMs),
+                  },
+                  {
+                    label: props.t("analytics.dashboard.kpis.currentWeekEffectiveTime"),
+                    value: formatLocalizedDuration(summary.currentWeekEffectiveMs),
+                  },
+                  {
+                    label: props.t("analytics.dashboard.kpis.averageWeeklyEffectiveTime"),
+                    value: formatLocalizedDuration(summary.averageWeeklyEffectiveMs),
                   },
                 ].map((kpi) => (
                   <div
@@ -237,7 +325,15 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+              <div className="mx-auto grid w-full grid-cols-1 gap-4 sm:grid-cols-2 xl:max-w-6xl xl:grid-cols-5">
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                    {props.t("analytics.dashboard.kpis.averageDailyEffectiveTime")}
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-[var(--text)]">
+                    {formatLocalizedDuration(summary.averageDailyEffectiveMs)}
+                  </p>
+                </div>
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
                   <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
                     {props.t("analytics.dashboard.kpis.focusRatio")}
@@ -276,7 +372,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                   </p>
                   <p className="mt-1 text-sm text-[var(--text-muted)]">
                     {summary.mostProductiveCategory
-                      ? formatHumanDuration(summary.mostProductiveCategory.effectiveMs)
+                      ? formatLocalizedDuration(summary.mostProductiveCategory.effectiveMs)
                       : "-"}
                   </p>
                 </div>
@@ -291,7 +387,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                   </p>
                   <p className="mt-1 text-sm text-[var(--text-muted)]">
                     {summary.bestTimeSlot
-                      ? formatHumanDuration(summary.bestTimeSlot.effectiveMs)
+                      ? formatLocalizedDuration(summary.bestTimeSlot.effectiveMs)
                       : "-"}
                   </p>
                 </div>
@@ -308,7 +404,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                         <div className="mb-1.5 flex items-center justify-between gap-3 text-sm">
                           <span className="truncate text-[var(--text)]">{item.category}</span>
                           <span className="text-[var(--text-muted)]">
-                            {formatHumanDuration(item.effectiveMs)}
+                            {formatLocalizedDuration(item.effectiveMs)}
                           </span>
                         </div>
                         <div className="h-2 rounded-full bg-[var(--panel-muted)]">
@@ -346,6 +442,92 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                         </span>
                       </div>
                     ))}
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-4 shadow-[0_8px_22px_rgba(15,23,42,0.06)] xl:col-span-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      {props.t("analytics.dashboard.charts.monthlyProductivityCalendar")}
+                    </h3>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={goToPreviousCalendarMonth}
+                        aria-label={props.t("analytics.dashboard.calendar.previousMonth")}
+                        className="rounded-md border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-0.5 text-xs font-semibold text-[var(--text)] transition duration-200 ease-out hover:bg-[var(--panel-muted)]"
+                      >
+                        {"<"}
+                      </button>
+                      <p className="text-xs font-medium capitalize text-[var(--text)]">
+                        {calendarMonthLabel}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={goToNextCalendarMonth}
+                        aria-label={props.t("analytics.dashboard.calendar.nextMonth")}
+                        disabled={isNextCalendarMonthDisabled}
+                        className="rounded-md border border-[var(--border)] bg-[var(--panel-bg)] px-2 py-0.5 text-xs font-semibold text-[var(--text)] transition duration-200 ease-out hover:bg-[var(--panel-muted)] disabled:cursor-not-allowed disabled:opacity-55"
+                      >
+                        {">"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-7 gap-1.5">
+                    {calendarWeekdayLabels.map((label) => (
+                      <div
+                        key={`calendar-weekday-${label}`}
+                        className="text-center text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]"
+                      >
+                        {label.slice(0, 2)}
+                      </div>
+                    ))}
+                    {Array.from({
+                      length: summary.monthlyProductivityCalendar.leadingBlankDays,
+                    }).map((_, index) => (
+                      <div
+                        key={`calendar-blank-${index}`}
+                        className="h-11 rounded-md border border-transparent bg-transparent"
+                        aria-hidden="true"
+                      />
+                    ))}
+                    {summary.monthlyProductivityCalendar.days.map((day) => (
+                      <div
+                        key={day.dateKey}
+                        className={`relative h-11 rounded-md px-1.5 py-1 ${getCalendarDayClassName(day.productivityLevel)} ${day.isToday ? "ring-2 ring-[#2563EB] ring-offset-1 ring-offset-[var(--panel-bg)]" : ""}`}
+                      >
+                        <p
+                          className={`text-[10px] font-semibold leading-none ${getCalendarDayNumberClassName(day.productivityLevel)}`}
+                        >
+                          {day.dayOfMonth}
+                        </p>
+                        <p className="mt-1 text-[9px] leading-none opacity-90">
+                          {day.effectiveMs > 0
+                            ? formatHours(day.effectiveMs)
+                            : props.t("analytics.dashboard.calendar.noHours")}
+                        </p>
+                        {day.isToday ? (
+                          <span className="absolute bottom-1 right-1.5 text-[8px] font-semibold uppercase tracking-[0.08em] text-[#4E89FF]">
+                            {props.t("analytics.dashboard.calendar.today")}
+                          </span>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center gap-2 text-[10px] text-[var(--text-muted)]">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-rose-500" />
+                      {props.t("analytics.dashboard.calendar.legendLow")}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-amber-500" />
+                      {props.t("analytics.dashboard.calendar.legendMedium")}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      {props.t("analytics.dashboard.calendar.legendHigh")}
+                    </span>
                   </div>
                 </div>
                 <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
@@ -389,7 +571,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                         </div>
                         <div className="mb-1 text-xs text-[var(--text-muted)]">
                           {props.t("analytics.dashboard.series.averagePausedTime")}:{" "}
-                          {formatHumanDuration(item.averagePausedMs)}
+                          {formatLocalizedDuration(item.averagePausedMs)}
                         </div>
                         <div className="h-2 rounded-full bg-[var(--panel-muted)]">
                           <div
@@ -403,29 +585,31 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                     ))}
                   </div>
                 </div>
-                <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)]">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                    {props.t("analytics.dashboard.charts.effectiveByTimeSlot")}
-                  </h3>
-                  <div className="mt-4 grid grid-cols-4 gap-3">
-                    {summary.effectiveByTimeSlot.map((item) => (
-                      <div key={item.slot} className="flex flex-col items-center gap-2">
-                        <div className="flex h-28 w-full items-end rounded-md bg-[var(--panel-muted)] px-1.5 py-1">
-                          <div
-                            className={`w-full rounded-sm ${summary.bestTimeSlot?.slot === item.slot ? "bg-[#4E89FF]" : "bg-[#4E89FF]/60"}`}
-                            style={{
-                              height: `${Math.max((item.effectiveMs / maxTimeSlotMs) * 100, 6)}%`,
-                            }}
-                          />
+                <div className="xl:col-span-2 xl:flex xl:justify-center">
+                  <div className="w-full rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-5 shadow-[0_8px_22px_rgba(15,23,42,0.06)] xl:max-w-3xl">
+                    <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                      {props.t("analytics.dashboard.charts.effectiveByTimeSlot")}
+                    </h3>
+                    <div className="mt-4 grid grid-cols-4 gap-3">
+                      {summary.effectiveByTimeSlot.map((item) => (
+                        <div key={item.slot} className="flex flex-col items-center gap-2">
+                          <div className="flex h-28 w-full items-end rounded-md bg-[var(--panel-muted)] px-1.5 py-1">
+                            <div
+                              className={`w-full rounded-sm ${summary.bestTimeSlot?.slot === item.slot ? "bg-[#4E89FF]" : "bg-[#4E89FF]/60"}`}
+                              style={{
+                                height: `${Math.max((item.effectiveMs / maxTimeSlotMs) * 100, 6)}%`,
+                              }}
+                            />
+                          </div>
+                          <span className="text-[10px] font-medium uppercase text-[var(--text-muted)]">
+                            {props.t(`analytics.dashboard.timeSlots.${item.slot}`)}
+                          </span>
+                          <span className="text-[10px] text-[var(--text-muted)]">
+                            {formatLocalizedDuration(item.effectiveMs)}
+                          </span>
                         </div>
-                        <span className="text-[10px] font-medium uppercase text-[var(--text-muted)]">
-                          {props.t(`analytics.dashboard.timeSlots.${item.slot}`)}
-                        </span>
-                        <span className="text-[10px] text-[var(--text-muted)]">
-                          {formatHumanDuration(item.effectiveMs)}
-                        </span>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -449,7 +633,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                         </p>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-[var(--text-muted)]">
-                        <span>{formatHumanDuration(session.effectiveDurationMs)}</span>
+                        <span>{formatLocalizedDuration(session.effectiveDurationMs)}</span>
                         <span>{props.t(`analytics.weekdays.${session.weekday}`)}</span>
                         <span className="inline-flex items-center gap-1">
                           {props.renderMoodFace(session.energy, "h-3.5 w-3.5")}
@@ -465,28 +649,24 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
         </div>
       ) : (
         <div className="px-8 py-8">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <h2 className="text-base font-semibold text-[var(--text)]">
-              {props.t("analytics.tabs.sessionHistory")}
-            </h2>
+          <div className="mb-4 space-y-3">
+            {props.completedSessions.length > 0 ? (
+              <div className="mx-auto w-full max-w-md">
+                <label className="sr-only" htmlFor="session-history-search">
+                  {props.t("analytics.sessionHistory.searchLabel")}
+                </label>
+                <input
+                  id="session-history-search"
+                  type="text"
+                  value={props.sessionHistorySearch}
+                  onChange={(event) => props.setSessionHistorySearch(event.target.value)}
+                  placeholder={props.t("analytics.sessionHistory.searchPlaceholder")}
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
+                />
+              </div>
+            ) : null}
 
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-              {props.completedSessions.length > 0 ? (
-                <div className="w-full sm:w-80">
-                  <label className="sr-only" htmlFor="session-history-search">
-                    {props.t("analytics.sessionHistory.searchLabel")}
-                  </label>
-                  <input
-                    id="session-history-search"
-                    type="text"
-                    value={props.sessionHistorySearch}
-                    onChange={(event) => props.setSessionHistorySearch(event.target.value)}
-                    placeholder={props.t("analytics.sessionHistory.searchPlaceholder")}
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--panel-bg)] px-3 py-2 text-sm text-[var(--text)] outline-none ring-[var(--accent)] transition focus:ring"
-                  />
-                </div>
-              ) : null}
-
+            <div className="flex justify-end">
               {props.completedSessions.length > 0 ? (
                 <button
                   type="button"
@@ -585,17 +765,20 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                   <option value="all">
                     {props.t("analytics.sessionHistory.durationOptions.all")}
                   </option>
-                  <option value="under30m">
-                    {props.t("analytics.sessionHistory.durationOptions.under30m")}
-                  </option>
-                  <option value="30mTo1h">
-                    {props.t("analytics.sessionHistory.durationOptions.30mTo1h")}
-                  </option>
                   <option value="1hTo2h">
                     {props.t("analytics.sessionHistory.durationOptions.1hTo2h")}
                   </option>
-                  <option value="over2h">
-                    {props.t("analytics.sessionHistory.durationOptions.over2h")}
+                  <option value="2hTo4h">
+                    {props.t("analytics.sessionHistory.durationOptions.2hTo4h")}
+                  </option>
+                  <option value="4hTo6h">
+                    {props.t("analytics.sessionHistory.durationOptions.4hTo6h")}
+                  </option>
+                  <option value="6hTo8h">
+                    {props.t("analytics.sessionHistory.durationOptions.6hTo8h")}
+                  </option>
+                  <option value="8hTo10h">
+                    {props.t("analytics.sessionHistory.durationOptions.8hTo10h")}
                   </option>
                 </select>
 
@@ -869,7 +1052,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                             )}
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text)]">
-                            {formatHumanDuration(session.effectiveDurationMs)}
+                            {formatLocalizedDuration(session.effectiveDurationMs)}
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
                             {formatSessionDate(session.startedAt)}
@@ -888,7 +1071,7 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                             </div>
                           </td>
                           <td className="px-5 py-4 text-sm text-[var(--text-muted)]">
-                            {formatHumanDuration(session.pausedDurationMs)}
+                            {formatLocalizedDuration(session.pausedDurationMs)}
                           </td>
                           <td className="px-5 py-4 text-sm">
                             {props.sessionHistoryEditing?.sessionId === session.id &&
