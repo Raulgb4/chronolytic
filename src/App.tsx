@@ -21,15 +21,14 @@ import type {
 } from "./app/appTypes";
 import logoHeader from "./assets/logo/logoHeader.png";
 import { AnalyticsPage } from "./features/analytics/AnalyticsPage";
-import {
-  buildDebugReport,
-  clearDebugLogEntries,
-  getDebugLogEntries,
-  recordCriticalError,
-  type DebugLogEntry,
-} from "./features/diagnostics/debugLog";
+import { recordCriticalError } from "./features/diagnostics/debugLog";
 import { HomePage } from "./features/home/HomePage";
 import { createSessionBackup, parseSessionBackup } from "./features/sessions/sessionBackup";
+import {
+  applyAddPausedTime,
+  applyForgottenStartOffset,
+  applyRemoveDistractedTime,
+} from "./features/sessions/sessionTimeCorrections";
 import { SettingsPage } from "./features/settings/SettingsPage";
 import {
   deleteActiveSession,
@@ -63,7 +62,7 @@ import { getEnergySortValue } from "./shared/utils/energyUtils";
 import { normalizeDuplicateTitle, normalizeSearchValue } from "./shared/utils/searchUtils";
 
 const SESSION_HISTORY_PAGE_SIZE = 8;
-const APP_VERSION = "0.1.1";
+type TimeCorrectionMode = "addDuringPause" | "removeDistracted";
 
 function getStoredLanguage(): Language {
   const value = window.localStorage.getItem("chronolytic.language");
@@ -84,6 +83,7 @@ function App() {
   const [now, setNow] = useState<number>(Date.now());
   const [title, setTitle] = useState<string>("");
   const [category, setCategory] = useState<string>("");
+  const [forgottenStartMinutes, setForgottenStartMinutes] = useState<string>("0");
   const [energy, setEnergy] = useState<EnergyLevel>("regular");
   const [activeSession, setActiveSession] = useState<ActiveSession | null>(null);
   const [completedSessions, setCompletedSessions] = useState<CompletedSession[]>([]);
@@ -125,10 +125,6 @@ function App() {
     type: SettingsFeedbackType;
     message: string;
   } | null>(null);
-  const [debugLogEntries, setDebugLogEntries] = useState<DebugLogEntry[]>(() =>
-    getDebugLogEntries(),
-  );
-  const [isDebugActionBusy, setIsDebugActionBusy] = useState(false);
   const [isStartupSessionLoaded, setIsStartupSessionLoaded] = useState(false);
   const [isStartupMinElapsed, setIsStartupMinElapsed] = useState(false);
   const [isStartupLeaving, setIsStartupLeaving] = useState(false);
@@ -139,20 +135,46 @@ function App() {
   const [isResumingSession, setIsResumingSession] = useState(false);
   const [duplicateTitleCandidate, setDuplicateTitleCandidate] = useState<string | null>(null);
   const [sessionSavedFeedbackVisible, setSessionSavedFeedbackVisible] = useState(false);
+  const [timeCorrectionMode, setTimeCorrectionMode] = useState<TimeCorrectionMode | null>(null);
+  const [timeCorrectionMinutes, setTimeCorrectionMinutes] = useState<string>("");
+  const [timeCorrectionError, setTimeCorrectionError] = useState<string | null>(null);
+  const [isApplyingTimeCorrection, setIsApplyingTimeCorrection] = useState(false);
+  const [correctionOpenedAt, setCorrectionOpenedAt] = useState<number | null>(null);
   const backupFadeTimeoutRef = useRef<number | null>(null);
   const backupRemoveTimeoutRef = useRef<number | null>(null);
   const sessionSavedFeedbackTimeoutRef = useRef<number | null>(null);
 
   function logCriticalError(source: string, error: unknown, details?: Record<string, unknown>) {
     recordCriticalError(source, error, details);
-    setDebugLogEntries(getDebugLogEntries());
   }
 
   useEffect(() => {
-    const interval = window.setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-    return () => window.clearInterval(interval);
+    let intervalId: number | null = null;
+    let timeoutId: number | null = null;
+
+    const scheduleAlignedClock = () => {
+      const updateNow = () => setNow(Date.now());
+
+      updateNow();
+      const nowMs = Date.now();
+      const delayToNextSecond = 1000 - (nowMs % 1000);
+
+      timeoutId = window.setTimeout(() => {
+        updateNow();
+        intervalId = window.setInterval(updateNow, 1000);
+      }, delayToNextSecond);
+    };
+
+    scheduleAlignedClock();
+
+    return () => {
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+      if (intervalId !== null) {
+        window.clearInterval(intervalId);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -350,10 +372,23 @@ function App() {
   const nowDate = useMemo(() => new Date(now), [now]);
   const greetingKey = useMemo(() => getGreetingKey(nowDate), [nowDate]);
 
+  const parsedForgottenStartMinutes = useMemo(() => {
+    const trimmed = forgottenStartMinutes.trim();
+    if (trimmed.length === 0) return null;
+    const value = Number(trimmed);
+    if (!Number.isFinite(value) || value < 0 || value > 120) return null;
+    return Math.floor(value);
+  }, [forgottenStartMinutes]);
+  const isForgottenStartMinutesValid = parsedForgottenStartMinutes !== null;
+
   const effectiveDurationMs = useMemo(() => {
     if (!activeSession) return 0;
-    return getEffectiveDuration(activeSession, getTimerDisplayNow(activeSession, now));
-  }, [activeSession, now]);
+    const timerNow =
+      timeCorrectionMode === "removeDistracted" && correctionOpenedAt !== null
+        ? correctionOpenedAt
+        : now;
+    return getEffectiveDuration(activeSession, getTimerDisplayNow(activeSession, timerNow));
+  }, [activeSession, correctionOpenedAt, now, timeCorrectionMode]);
 
   const usedCategories = useMemo(
     () => [...new Set(completedSessions.map((s) => s.category).filter(Boolean))],
@@ -448,22 +483,34 @@ function App() {
       }
 
       const duration = session.effectiveDurationMs;
-      if (sessionHistoryDurationFilter === "under30m" && duration >= 30 * 60 * 1000) {
-        return false;
-      }
-      if (
-        sessionHistoryDurationFilter === "30mTo1h" &&
-        (duration < 30 * 60 * 1000 || duration >= 60 * 60 * 1000)
-      ) {
-        return false;
-      }
       if (
         sessionHistoryDurationFilter === "1hTo2h" &&
         (duration < 60 * 60 * 1000 || duration >= 2 * 60 * 60 * 1000)
       ) {
         return false;
       }
-      if (sessionHistoryDurationFilter === "over2h" && duration < 2 * 60 * 60 * 1000) {
+      if (
+        sessionHistoryDurationFilter === "2hTo4h" &&
+        (duration < 2 * 60 * 60 * 1000 || duration >= 4 * 60 * 60 * 1000)
+      ) {
+        return false;
+      }
+      if (
+        sessionHistoryDurationFilter === "4hTo6h" &&
+        (duration < 4 * 60 * 60 * 1000 || duration >= 6 * 60 * 60 * 1000)
+      ) {
+        return false;
+      }
+      if (
+        sessionHistoryDurationFilter === "6hTo8h" &&
+        (duration < 6 * 60 * 60 * 1000 || duration >= 8 * 60 * 60 * 1000)
+      ) {
+        return false;
+      }
+      if (
+        sessionHistoryDurationFilter === "8hTo10h" &&
+        (duration < 8 * 60 * 60 * 1000 || duration >= 10 * 60 * 60 * 1000)
+      ) {
         return false;
       }
 
@@ -556,6 +603,11 @@ function App() {
     return visibleSessionHistorySessions.slice(start, start + SESSION_HISTORY_PAGE_SIZE);
   }, [visibleSessionHistorySessions, sessionHistoryPage, sessionHistoryTotalPages]);
 
+  const recentHomeSessions = useMemo(
+    () => [...completedSessions].sort((a, b) => b.endedAt - a.endedAt).slice(0, 3),
+    [completedSessions],
+  );
+
   useEffect(() => {
     setSessionHistoryPage(1);
   }, [
@@ -583,7 +635,8 @@ function App() {
     }
   }, [dashboardCategoryFilter, dashboardCategoryOptions]);
 
-  const canStartSession = title.trim().length > 0 && !activeSession && !isStartingSession;
+  const canStartSession =
+    title.trim().length > 0 && !activeSession && !isStartingSession && isForgottenStartMinutesValid;
 
   function hasDuplicateCompletedTitle(candidate: string): boolean {
     const normalizedCandidate = normalizeDuplicateTitle(candidate);
@@ -613,7 +666,8 @@ function App() {
   async function commitStartSession(finalTitle: string) {
     if (isStartingSession || activeSession) return;
 
-    const startedAt = Date.now();
+    const createdAt = Date.now();
+    const startedAt = applyForgottenStartOffset(createdAt, parsedForgottenStartMinutes ?? 0);
     const session: ActiveSession = {
       id: crypto.randomUUID(),
       title: finalTitle.trim(),
@@ -630,10 +684,11 @@ function App() {
         return;
       }
 
-      await saveActiveSession(session, startedAt);
+      await saveActiveSession(session, createdAt);
       setActiveSession(session);
-      setNow(startedAt);
+      setNow(createdAt);
       setIsCreateSessionOpen(false);
+      setForgottenStartMinutes("0");
       setRecoveryNoticeVisible(false);
       setDuplicateTitleCandidate(null);
     } catch (error) {
@@ -651,7 +706,8 @@ function App() {
   }
 
   async function requestStartSession() {
-    if (!canStartSession || isStartingSession || activeSession) return;
+    if (!canStartSession || isStartingSession || activeSession || !isForgottenStartMinutesValid)
+      return;
 
     const trimmedTitle = title.trim();
     if (hasDuplicateCompletedTitle(trimmedTitle)) {
@@ -660,6 +716,91 @@ function App() {
     }
 
     await commitStartSession(trimmedTitle);
+  }
+
+  function closeTimeCorrectionModal() {
+    setTimeCorrectionMode(null);
+    setTimeCorrectionMinutes("");
+    setTimeCorrectionError(null);
+    setCorrectionOpenedAt(null);
+  }
+
+  function openAddTimeModal() {
+    setTimeCorrectionMode("addDuringPause");
+    setTimeCorrectionMinutes("");
+    setTimeCorrectionError(null);
+    setCorrectionOpenedAt(null);
+  }
+
+  function openRemoveTimeModal() {
+    setTimeCorrectionMode("removeDistracted");
+    setTimeCorrectionMinutes("");
+    setTimeCorrectionError(null);
+    setCorrectionOpenedAt(Date.now());
+  }
+
+  function handleTimeCorrectionMinutesChange(value: string) {
+    setTimeCorrectionMinutes(value);
+    if (timeCorrectionError) {
+      setTimeCorrectionError(null);
+    }
+  }
+
+  async function applyTimeCorrection() {
+    if (!activeSession || !timeCorrectionMode || isApplyingTimeCorrection) return;
+
+    const value = Number(timeCorrectionMinutes);
+    const requestedMs = Math.floor(value * 60 * 1000);
+    if (!Number.isFinite(value) || value <= 0 || requestedMs <= 0) {
+      setTimeCorrectionError(t("timeCorrection.invalidMinutes"));
+      return;
+    }
+
+    const applyAt = Date.now();
+    setIsApplyingTimeCorrection(true);
+    try {
+      if (timeCorrectionMode === "addDuringPause") {
+        if (activeSession.status !== "paused") return;
+        const totalPausedMs = getPausedDuration(activeSession.pauses, applyAt);
+        if (requestedMs > totalPausedMs) {
+          setTimeCorrectionError(t("timeCorrection.exceedsPausedTime"));
+          return;
+        }
+
+        const nextSession: ActiveSession = {
+          ...applyAddPausedTime(activeSession, requestedMs, applyAt),
+        };
+        await saveActiveSession(nextSession, applyAt);
+        setActiveSession(nextSession);
+        setNow(applyAt);
+        closeTimeCorrectionModal();
+        return;
+      }
+
+      if (activeSession.status !== "running") return;
+      const effectiveMs = getEffectiveDuration(
+        activeSession,
+        getTimerDisplayNow(activeSession, applyAt),
+      );
+      if (requestedMs > effectiveMs) {
+        setTimeCorrectionError(t("timeCorrection.exceedsEffectiveTime"));
+        return;
+      }
+
+      const nextSession: ActiveSession = {
+        ...applyRemoveDistractedTime(activeSession, requestedMs, applyAt),
+      };
+      await saveActiveSession(nextSession, applyAt);
+      setActiveSession(nextSession);
+      setNow(applyAt);
+      closeTimeCorrectionModal();
+    } catch (error) {
+      console.error("Failed to apply time correction", error);
+      logCriticalError("session.timeCorrection.apply", error);
+      setTimeCorrectionError(t("timeCorrection.genericError"));
+    } finally {
+      setIsApplyingTimeCorrection(false);
+    }
   }
 
   async function pauseSession() {
@@ -853,6 +994,7 @@ function App() {
       await deleteActiveSession(activeSession.id);
       setActiveSession(null);
       setIsCreateSessionOpen(false);
+      setForgottenStartMinutes("0");
       setRecoveryNoticeVisible(false);
     } catch (error) {
       console.error("Failed to delete active session on discard", {
@@ -1168,73 +1310,6 @@ function App() {
     setSessionHistorySort({ key: "endedAt", direction: "desc" });
   }
 
-  async function handleCopyDebugInfo() {
-    if (isDebugActionBusy) return;
-    setIsDebugActionBusy(true);
-    try {
-      const entries = getDebugLogEntries();
-      const report = buildDebugReport(entries, {
-        appVersion: APP_VERSION,
-        platform: navigator.platform,
-        userAgent: navigator.userAgent,
-      });
-      await navigator.clipboard.writeText(report);
-    } catch (error) {
-      console.error("Failed to copy debug report", error);
-      logCriticalError("settings.debug.copy", error);
-      setSettingsFeedback({
-        type: "error",
-        message: t("settings.debug.copyError"),
-      });
-    } finally {
-      setIsDebugActionBusy(false);
-    }
-  }
-
-  function handleClearDebugLogs() {
-    clearDebugLogEntries();
-    setDebugLogEntries([]);
-    setSettingsFeedback({
-      type: "success",
-      message: t("settings.debug.clearSuccess"),
-    });
-  }
-
-  async function handleExportDebugReport() {
-    if (isDebugActionBusy) return;
-    setIsDebugActionBusy(true);
-    try {
-      const selectedPath = await save({
-        title: t("settings.debug.export"),
-        defaultPath: `chronolytic-debug-${new Date().toISOString().slice(0, 10)}.txt`,
-        filters: [{ name: "Text", extensions: ["txt"] }],
-      });
-
-      if (!selectedPath) return;
-
-      const entries = getDebugLogEntries();
-      const report = buildDebugReport(entries, {
-        appVersion: APP_VERSION,
-        platform: navigator.platform,
-        userAgent: navigator.userAgent,
-      });
-      await writeTextFile(selectedPath, report);
-      setSettingsFeedback({
-        type: "success",
-        message: t("settings.debug.exportSuccess"),
-      });
-    } catch (error) {
-      console.error("Failed to export debug report", error);
-      logCriticalError("settings.debug.export", error);
-      setSettingsFeedback({
-        type: "error",
-        message: t("settings.debug.exportError"),
-      });
-    } finally {
-      setIsDebugActionBusy(false);
-    }
-  }
-
   function renderHeader() {
     return (
       <header className="flex h-20 shrink-0 items-center justify-between border-b border-[var(--border)] bg-[var(--panel-bg)] px-7">
@@ -1270,6 +1345,9 @@ function App() {
         setTitle={setTitle}
         category={category}
         setCategory={setCategory}
+        forgottenStartMinutes={forgottenStartMinutes}
+        setForgottenStartMinutes={setForgottenStartMinutes}
+        isForgottenStartMinutesValid={isForgottenStartMinutesValid}
         energy={energy}
         setEnergy={setEnergy}
         categorySuggestionsOpen={categorySuggestionsOpen}
@@ -1277,12 +1355,25 @@ function App() {
         filteredCategorySuggestions={filteredCategorySuggestions}
         canStartSession={canStartSession}
         requestStartSession={requestStartSession}
-        closeCreateSession={() => setIsCreateSessionOpen(false)}
+        closeCreateSession={() => {
+          setIsCreateSessionOpen(false);
+          setForgottenStartMinutes("0");
+        }}
         renderMoodFace={renderMoodFace}
         duplicateTitleCandidate={duplicateTitleCandidate}
         setDuplicateTitleCandidate={setDuplicateTitleCandidate}
         commitStartSession={commitStartSession}
         getAutoRenamedSessionTitle={getAutoRenamedSessionTitle}
+        recentHomeSessions={recentHomeSessions}
+        onOpenAddTimeModal={openAddTimeModal}
+        onOpenRemoveTimeModal={openRemoveTimeModal}
+        timeCorrectionMode={timeCorrectionMode}
+        timeCorrectionMinutes={timeCorrectionMinutes}
+        setTimeCorrectionMinutes={handleTimeCorrectionMinutesChange}
+        timeCorrectionError={timeCorrectionError}
+        isApplyingTimeCorrection={isApplyingTimeCorrection}
+        onCloseTimeCorrectionModal={closeTimeCorrectionModal}
+        onApplyTimeCorrection={applyTimeCorrection}
       />
     );
   }
@@ -1351,11 +1442,6 @@ function App() {
         isAutostartLoading={isAutostartLoading}
         isAutostartEnabled={isAutostartEnabled}
         openDeleteAllConfirm={() => setIsDeleteAllConfirmOpen(true)}
-        debugLogEntries={debugLogEntries}
-        isDebugActionBusy={isDebugActionBusy}
-        handleCopyDebugInfo={handleCopyDebugInfo}
-        handleClearDebugLogs={handleClearDebugLogs}
-        handleExportDebugReport={handleExportDebugReport}
         isDeleteAllConfirmOpen={isDeleteAllConfirmOpen}
         closeDeleteAllConfirm={() => setIsDeleteAllConfirmOpen(false)}
         isDeletingAllSessions={isDeletingAllSessions}

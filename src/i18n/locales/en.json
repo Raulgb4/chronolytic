@@ -2,6 +2,14 @@
   "app": {
     "name": "Chronolytic"
   },
+  "duration": {
+    "second": "second",
+    "seconds": "seconds",
+    "minute": "minute",
+    "minutes": "minutes",
+    "hour": "hour",
+    "hours": "hours"
+  },
   "nav": {
     "home": "Home",
     "analytics": "Analytics",
@@ -34,7 +42,7 @@
         "invalidWeekday": "Invalid weekday value."
       },
       "searchLabel": "Search session history",
-      "searchPlaceholder": "Search by title, category, or tag",
+      "searchPlaceholder": "Search by title or category",
       "emptySearchTitle": "No matching sessions",
       "emptySearchDescription": "Adjust your search or filters to find sessions.",
       "filters": {
@@ -54,10 +62,11 @@
       },
       "durationOptions": {
         "all": "Any duration",
-        "under30m": "Under 30 min",
-        "30mTo1h": "30 min to 1 h",
         "1hTo2h": "1 h to 2 h",
-        "over2h": "Over 2 h"
+        "2hTo4h": "2 h to 4 h",
+        "4hTo6h": "4 h to 6 h",
+        "6hTo8h": "6 h to 8 h",
+        "8hTo10h": "8 h to 10 h"
       },
       "sorting": {
         "sortByStartDate": "Sort by start date",
@@ -124,6 +133,11 @@
         "completedSessions": "Completed sessions",
         "totalPauseCount": "Total pause count",
         "averageSessionDuration": "Average session duration",
+        "currentMonthEffectiveTime": "Current month effective time",
+        "averageMonthlyEffectiveTime": "Average effective time / month",
+        "currentWeekEffectiveTime": "Current week effective time",
+        "averageWeeklyEffectiveTime": "Average effective time / week",
+        "averageDailyEffectiveTime": "Average effective time / day",
         "focusRatio": "Focus ratio",
         "interruptionRatio": "Interruption ratio",
         "mostProductiveCategory": "Most productive category",
@@ -137,7 +151,17 @@
         "sessionsByEnergy": "Sessions by energy",
         "energyInterruptions": "Energy vs interruptions",
         "effectiveByTimeSlot": "Effective time by time slot",
-        "recentDailyEffectiveHours": "Recent daily effective hours"
+        "recentDailyEffectiveHours": "Recent daily effective hours",
+        "monthlyProductivityCalendar": "Monthly productivity calendar"
+      },
+      "calendar": {
+        "previousMonth": "Previous month",
+        "nextMonth": "Next month",
+        "today": "Today",
+        "legendLow": "Low (<4h)",
+        "legendMedium": "Medium (4h-7h)",
+        "legendHigh": "High (>7h)",
+        "noHours": "0h"
       },
       "series": {
         "effective": "Effective",
@@ -178,8 +202,27 @@
     "resume": "Resume",
     "finish": "Finish",
     "finishing": "Finishing...",
+    "addTime": "Add time",
+    "removeTime": "Remove time",
     "discard": "Discard",
-    "sessionSavedSuccess": "Session saved. You can find it in Session History inside Analytics."
+    "sessionConfirm": {
+      "cancel": "Cancel",
+      "discard": {
+        "title": "Discard session?",
+        "description": "This will permanently discard the current session.",
+        "confirm": "Discard"
+      },
+      "finish": {
+        "title": "Finish session?",
+        "description": "This will save and complete the current session.",
+        "confirm": "Finish"
+      }
+    },
+    "sessionSavedSuccess": "Session saved. You can find it in Session History inside Analytics.",
+    "recentSessions": {
+      "title": "Recent sessions",
+      "empty": "No completed sessions yet."
+    }
   },
   "sessionModal": {
     "title": "Create Session",
@@ -204,7 +247,31 @@
       "cancel": "Cancel",
       "createAnyway": "Create anyway",
       "autoRename": "Auto-rename"
+    },
+    "forgottenMinutes": {
+      "toggle": "+ Adjust start",
+      "label": "Optional start adjustment",
+      "workedMinutes": "Already worked minutes",
+      "description": "Use this only if you started working before opening Chronolytic.",
+      "invalid": "Enter a valid number between 0 and 120."
     }
+  },
+  "timeCorrection": {
+    "add": {
+      "title": "Add time",
+      "description": "Convert paused time back into effective time."
+    },
+    "remove": {
+      "title": "Remove distracted time",
+      "description": "Subtract distracted minutes from effective time."
+    },
+    "minutesLabel": "Minutes",
+    "cancel": "Cancel",
+    "apply": "Apply",
+    "invalidMinutes": "Enter a valid number of minutes greater than 0.",
+    "exceedsPausedTime": "You cannot add more time than the total paused time.",
+    "exceedsEffectiveTime": "You cannot remove more time than the current effective duration.",
+    "genericError": "Could not apply time correction."
   },
   "settings": {
     "language": "Language",
@@ -213,6 +280,7 @@
     "english": "English",
     "spanish": "Spanish",
     "theme": "Theme",
+    "toggleTheme": "Toggle theme",
     "themeDescription": "Choose how Chronolytic should appear on this device.",
     "startup": "Startup",
     "startupDescription": "Configure whether Chronolytic should open when Windows starts.",
@@ -224,14 +292,14 @@
     "dangerZoneDescription": "Permanently delete all completed sessions. Your active session will remain untouched.",
     "deleteAllSessions": "Delete all sessions",
     "deleteAllSessionsConfirmTitle": "Delete all sessions?",
-    "deleteAllSessionsConfirmDescription": "This action permanently removes all completed session history from this device.",
+    "deleteAllSessionsConfirmDescription": "This will permanently delete all saved sessions and analytics data.",
     "cancel": "Cancel",
     "confirmDeleteAllSessions": "Delete all sessions",
     "deleteAllSessionsSuccess": "All completed sessions were deleted.",
     "deleteAllSessionsError": "Could not delete completed sessions.",
     "lightMode": "Light mode",
     "darkMode": "Dark mode",
-    "helpAbout": "Help / About",
+    "helpAbout": "About",
     "aboutDescription": "Chronolytic is a local-first productivity analytics desktop app focused on effective work sessions and behavioral insights.",
     "version": "Version",
     "license": "License",

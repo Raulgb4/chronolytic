@@ -31,5 +31,5 @@ export function getEnergyBadgeClasses(energy: EnergyLevel): string {
 }
 
 export function isHighInterruptionSession(session: CompletedSession): boolean {
-  return session.pauseCount >= 4 || session.pausedDurationMs >= 30 * 60 * 1000;
+  return session.pauseCount > 10;
 }

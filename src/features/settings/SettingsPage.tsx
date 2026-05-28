@@ -1,7 +1,6 @@
 import { useTranslation } from "react-i18next";
 
 import { type Language, type ThemeMode } from "../../app/appTypes";
-import { type DebugLogEntry } from "../diagnostics/debugLog";
 
 type SettingsFeedback = {
   type: "success" | "error";
@@ -18,11 +17,6 @@ type SettingsPageProps = {
   isAutostartLoading: boolean;
   isAutostartEnabled: boolean;
   openDeleteAllConfirm: () => void;
-  debugLogEntries: DebugLogEntry[];
-  isDebugActionBusy: boolean;
-  handleCopyDebugInfo: () => Promise<void>;
-  handleClearDebugLogs: () => void;
-  handleExportDebugReport: () => Promise<void>;
   isDeleteAllConfirmOpen: boolean;
   closeDeleteAllConfirm: () => void;
   isDeletingAllSessions: boolean;
@@ -33,8 +27,8 @@ export function SettingsPage(props: SettingsPageProps) {
   const { t } = useTranslation();
 
   return (
-    <section className="flex h-full items-start justify-center px-8 py-10">
-      <div className="w-full max-w-3xl space-y-4">
+    <section className="flex h-full items-start justify-center px-8 py-10 pb-14">
+      <div className="w-full max-w-3xl space-y-4 pb-4">
         {props.settingsFeedback ? (
           <div
             className={`rounded-xl border px-4 py-3 text-sm ${
@@ -84,7 +78,7 @@ export function SettingsPage(props: SettingsPageProps) {
               className={`relative h-8 w-14 shrink-0 rounded-full transition-colors duration-200 ${
                 props.themeMode === "dark" ? "bg-[var(--accent)]" : "bg-slate-300"
               }`}
-              aria-label="Toggle theme"
+              aria-label={t("settings.toggleTheme")}
             >
               <span
                 className={`absolute left-1 top-1 h-6 w-6 rounded-full bg-[var(--panel-bg)] shadow transition-transform duration-200 ${
@@ -144,7 +138,7 @@ export function SettingsPage(props: SettingsPageProps) {
           <dl className="mt-4 grid grid-cols-1 gap-2 text-sm text-[var(--text-muted)] sm:grid-cols-2">
             <div>
               <dt className="font-medium text-[var(--text)]">{t("settings.version")}</dt>
-              <dd>0.1.1</dd>
+              <dd>1.0.0</dd>
             </div>
             <div>
               <dt className="font-medium text-[var(--text)]">{t("settings.license")}</dt>
@@ -155,70 +149,6 @@ export function SettingsPage(props: SettingsPageProps) {
               <dd>Raúl García Balongo</dd>
             </div>
           </dl>
-          <button
-            type="button"
-            disabled
-            className="mt-5 rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-4 py-2 text-sm font-medium text-[var(--text-muted)] opacity-70"
-          >
-            {t("settings.checkUpdates")}
-          </button>
-        </div>
-
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--panel-bg)] p-6 shadow-[0_8px_28px_rgba(15,23,42,0.06)]">
-          <h2 className="text-lg font-semibold text-[var(--text)]">{t("settings.debug.title")}</h2>
-          <p className="mt-1 text-sm text-[var(--text-muted)]">{t("settings.debug.description")}</p>
-          <p className="mt-3 text-sm text-[var(--text-muted)]">
-            {t("settings.debug.recentErrors", { count: props.debugLogEntries.length })}
-          </p>
-
-          {props.debugLogEntries.length === 0 ? (
-            <p className="mt-2 text-sm text-[var(--text-muted)]">{t("settings.debug.empty")}</p>
-          ) : (
-            <div className="mt-3 max-h-64 space-y-2 overflow-y-auto rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] p-3">
-              {props.debugLogEntries.slice(0, 10).map((entry) => (
-                <div
-                  key={entry.id}
-                  className="rounded-lg border border-[var(--border)] bg-[var(--panel-bg)] p-3"
-                >
-                  <div className="text-xs text-[var(--text-muted)]">{entry.timestamp}</div>
-                  <div className="mt-1 text-sm font-medium text-[var(--text)]">{entry.source}</div>
-                  <div className="mt-1 text-sm text-[var(--text-muted)]">{entry.message}</div>
-                  {entry.stack ? (
-                    <pre className="mt-2 overflow-x-auto rounded bg-[var(--panel-muted)] p-2 text-[11px] text-[var(--text-muted)]">
-                      {entry.stack}
-                    </pre>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => void props.handleCopyDebugInfo()}
-              disabled={props.isDebugActionBusy}
-              className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--panel-bg)] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {t("settings.debug.copy")}
-            </button>
-            <button
-              type="button"
-              onClick={props.handleClearDebugLogs}
-              disabled={props.isDebugActionBusy || props.debugLogEntries.length === 0}
-              className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--panel-bg)] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {t("settings.debug.clear")}
-            </button>
-            <button
-              type="button"
-              onClick={() => void props.handleExportDebugReport()}
-              disabled={props.isDebugActionBusy}
-              className="rounded-xl border border-[var(--border)] bg-[var(--panel-muted)] px-3 py-2 text-sm font-medium text-[var(--text)] transition hover:bg-[var(--panel-bg)] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {t("settings.debug.export")}
-            </button>
-          </div>
         </div>
 
         {props.isDeleteAllConfirmOpen ? (
