@@ -5,7 +5,11 @@ import type { ReactNode } from "react";
 import { getDateLocale } from "../../shared/utils/dateUtils";
 import { formatDuration, formatHumanDuration } from "../../shared/utils/durationUtils";
 import { type Language } from "../../app/appTypes";
-import { type ActiveSession, type CompletedSession, type EnergyLevel } from "../sessions/sessionTypes";
+import {
+  type ActiveSession,
+  type CompletedSession,
+  type EnergyLevel,
+} from "../sessions/sessionTypes";
 import { CreateSessionModal } from "./components/CreateSessionModal";
 
 type HomePageProps = {
@@ -238,7 +242,9 @@ export function HomePage(props: HomePageProps) {
           </h3>
 
           {props.recentHomeSessions.length === 0 ? (
-            <p className="mt-2.5 text-xs text-[var(--text-muted)]/90">{t("home.recentSessions.empty")}</p>
+            <p className="mt-2.5 text-xs text-[var(--text-muted)]/90">
+              {t("home.recentSessions.empty")}
+            </p>
           ) : (
             <div className="mt-2.5 space-y-1.5">
               {props.recentHomeSessions.map((session) => (
@@ -247,7 +253,9 @@ export function HomePage(props: HomePageProps) {
                   className="flex flex-wrap items-center justify-between gap-2.5 rounded-xl border border-[var(--border)]/70 bg-[var(--panel-muted)]/24 px-3 py-1.5"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-[13px] font-semibold text-[var(--text)]">{session.title}</p>
+                    <p className="truncate text-[13px] font-semibold text-[var(--text)]">
+                      {session.title}
+                    </p>
                     <p className="text-[11px] text-[var(--text-muted)]/90">
                       {session.category || t("home.uncategorized")}
                     </p>

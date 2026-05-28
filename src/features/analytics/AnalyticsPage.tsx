@@ -482,15 +482,15 @@ export function AnalyticsPage(props: AnalyticsPageProps) {
                         {label.slice(0, 2)}
                       </div>
                     ))}
-                    {Array.from({ length: summary.monthlyProductivityCalendar.leadingBlankDays }).map(
-                      (_, index) => (
-                        <div
-                          key={`calendar-blank-${index}`}
-                          className="h-11 rounded-md border border-transparent bg-transparent"
-                          aria-hidden="true"
-                        />
-                      ),
-                    )}
+                    {Array.from({
+                      length: summary.monthlyProductivityCalendar.leadingBlankDays,
+                    }).map((_, index) => (
+                      <div
+                        key={`calendar-blank-${index}`}
+                        className="h-11 rounded-md border border-transparent bg-transparent"
+                        aria-hidden="true"
+                      />
+                    ))}
                     {summary.monthlyProductivityCalendar.days.map((day) => (
                       <div
                         key={day.dateKey}

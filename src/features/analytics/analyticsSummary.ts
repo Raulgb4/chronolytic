@@ -309,16 +309,23 @@ export function buildAnalyticsSummary(
   const currentMonthEffectiveMs = monthTotals.get(currentMonthKey) ?? 0;
   const averageMonthlyEffectiveMs =
     monthTotals.size > 0
-      ? Math.round(Array.from(monthTotals.values()).reduce((acc, value) => acc + value, 0) / monthTotals.size)
+      ? Math.round(
+          Array.from(monthTotals.values()).reduce((acc, value) => acc + value, 0) /
+            monthTotals.size,
+        )
       : 0;
   const currentWeekEffectiveMs = weekTotals.get(currentWeekKey) ?? 0;
   const averageWeeklyEffectiveMs =
     weekTotals.size > 0
-      ? Math.round(Array.from(weekTotals.values()).reduce((acc, value) => acc + value, 0) / weekTotals.size)
+      ? Math.round(
+          Array.from(weekTotals.values()).reduce((acc, value) => acc + value, 0) / weekTotals.size,
+        )
       : 0;
   const averageDailyEffectiveMs =
     dayTotals.size > 0
-      ? Math.round(Array.from(dayTotals.values()).reduce((acc, value) => acc + value, 0) / dayTotals.size)
+      ? Math.round(
+          Array.from(dayTotals.values()).reduce((acc, value) => acc + value, 0) / dayTotals.size,
+        )
       : 0;
   const now = new Date();
   const targetYear = calendarMonth?.year ?? now.getFullYear();

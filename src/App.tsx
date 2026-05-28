@@ -21,9 +21,7 @@ import type {
 } from "./app/appTypes";
 import logoHeader from "./assets/logo/logoHeader.png";
 import { AnalyticsPage } from "./features/analytics/AnalyticsPage";
-import {
-  recordCriticalError,
-} from "./features/diagnostics/debugLog";
+import { recordCriticalError } from "./features/diagnostics/debugLog";
 import { HomePage } from "./features/home/HomePage";
 import { createSessionBackup, parseSessionBackup } from "./features/sessions/sessionBackup";
 import { SettingsPage } from "./features/settings/SettingsPage";
@@ -634,10 +632,7 @@ function App() {
   }, [dashboardCategoryFilter, dashboardCategoryOptions]);
 
   const canStartSession =
-    title.trim().length > 0 &&
-    !activeSession &&
-    !isStartingSession &&
-    isForgottenStartMinutesValid;
+    title.trim().length > 0 && !activeSession && !isStartingSession && isForgottenStartMinutesValid;
 
   function hasDuplicateCompletedTitle(candidate: string): boolean {
     const normalizedCandidate = normalizeDuplicateTitle(candidate);
@@ -708,7 +703,8 @@ function App() {
   }
 
   async function requestStartSession() {
-    if (!canStartSession || isStartingSession || activeSession || !isForgottenStartMinutesValid) return;
+    if (!canStartSession || isStartingSession || activeSession || !isForgottenStartMinutesValid)
+      return;
 
     const trimmedTitle = title.trim();
     if (hasDuplicateCompletedTitle(trimmedTitle)) {
@@ -780,7 +776,10 @@ function App() {
       }
 
       if (activeSession.status !== "running") return;
-      const effectiveMs = getEffectiveDuration(activeSession, getTimerDisplayNow(activeSession, applyAt));
+      const effectiveMs = getEffectiveDuration(
+        activeSession,
+        getTimerDisplayNow(activeSession, applyAt),
+      );
       if (requestedMs > effectiveMs) {
         setTimeCorrectionError(t("timeCorrection.exceedsEffectiveTime"));
         return;
