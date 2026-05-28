@@ -38,6 +38,9 @@ jobs:
       - name: Type check
         run: pnpm run typecheck
 
+      - name: Unit tests
+        run: pnpm run test
+
       - name: Frontend build
         run: pnpm run build
 

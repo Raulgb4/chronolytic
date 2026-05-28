@@ -1,84 +1,80 @@
 # Chronolytic Design
 
-## Product Vision (Current)
+## Product Focus
 
-- Chronolytic is a local-first desktop productivity analytics app for focused work and study sessions.
-- The product emphasizes effective time, interruption behavior, and historical patterns instead of simple stopwatch tracking.
-- Data stays on-device in SQLite, with user-controlled backup import/export.
+- Chronolytic is a local-first productivity analytics desktop app.
+- The core metric is effective time, not raw elapsed timer time.
+- Interruption behavior (pauses, pause counts, pause time) is part of first-class analysis.
 
-## Desktop-First UX Principles
+## UX Principles
 
-- Prioritize fast keyboard/mouse workflows and wide-screen readability.
-- Keep primary actions obvious: create session, pause/resume, finish, and review analytics.
-- Preserve user trust with explicit, reversible flows where possible (filters, sorting, imports, deletes with confirmation).
-- Show meaningful empty states instead of blank panels.
+- Keep primary session actions clear and fast: create, pause/resume, finish, discard.
+- Require explicit confirmation for destructive or final actions.
+- Keep analytics readable at a glance with clear hierarchy and compact cards.
+- Preserve light/dark parity and contrast using shared theme tokens.
+- Keep behavior predictable across narrower desktop windows.
 
-## Navigation Structure
+## Information Architecture
 
-- Home: active session workflow, timer, recovery notice, session creation modal.
+- Home:
+  - active session status and controls
+  - create-session flow
+  - recent sessions list
+  - manual time-correction entry points
 - Analytics:
-  - Dashboard: KPI cards, ratio indicators, category/weekday/energy/time-slot breakdowns, and temporal evolution charts.
-  - Session History: table with search, filters, sorting, pagination, inline editing, and delete actions.
-- Settings: language, theme, autostart toggle, and danger-zone delete-all.
+  - Dashboard: KPI cards, category filter, charts, monthly productivity calendar
+  - Session History: search, filters, sorting, pagination, inline edits, deletion
+- Settings:
+  - language
+  - theme
+  - autostart
+  - danger zone delete-all
+  - about metadata
 
-## Visual and Theme System
+## Session and Time Integrity
 
-- UI is built with Tailwind CSS utilities and app-level CSS variables.
-- Theme tokens are defined in `src/index.css` (`--app-bg`, `--panel-bg`, `--text`, `--accent`, etc.) with light/dark variants.
-- Default visual style is clean and data-first: card surfaces, subtle borders, restrained accent color, and readable contrast.
-- Motion is lightweight (hover/focus transitions, startup overlay fade) and should support clarity, not decoration.
+- Session runtime states are `running` and `paused`.
+- Pauses are explicit periods and must preserve chronology.
+- Effective duration is derived from total elapsed minus paused duration.
+- Manual corrections must preserve data integrity:
+  - forgotten start adjusts initial start timestamp
+  - add-time reduces paused duration
+  - remove-time appends synthetic closed pause period
 
-## Session Lifecycle
+## Confirmation Modal Principles
 
-- A session starts with title, optional category, optional tags, and energy state (`bad`, `regular`, `good`).
-- Runtime states are `running` and `paused`; pauses are tracked as explicit periods.
-- Finishing a session writes a completed record with effective duration, paused duration, pause count, weekday, and energy.
-- Discarding clears the active session without adding history.
+- Confirm before potentially destructive actions.
+- Confirm before finalizing actions that materially change state.
+- Cancel must keep state unchanged.
+- Confirm must execute existing behavior without side effects.
 
-## Persistence and Recovery Model
+## Analytics Principles
 
-- Persistence uses SQLite via Tauri SQL plugin in `src/features/sessions/sessionRepository.ts`.
-- `sessions` stores completed sessions; `active_session` stores resumable in-progress state.
-- On startup, app restores completed sessions and attempts to recover active session safely as paused.
-- Schema evolution is additive (column checks + `ALTER TABLE`) to protect existing local databases.
+- Analytics derive from completed sessions only.
+- Daily attribution uses local `startedAt` day.
+- Weekly grouping uses Monday as first day.
+- Calendar generation uses real month lengths and leap-year behavior.
+- Productivity color bands:
+  - low: `<4h`
+  - medium: `4h-7h`
+  - high: `>7h`
+- Today highlight appears only for the real current day within current month view.
 
-## Analytics Dashboard (Current Capabilities)
+## Productivity Calendar UX
 
-- Dashboard computes all metrics from completed sessions using reusable TypeScript helpers.
-- Time range selector supports `7d`, `30d`, `90d`, and `all`; selected range drives dashboard KPIs and charts.
-- Current KPI/insight coverage includes:
-  - Total effective/paused time, completed sessions, pause count, average duration.
-  - Focus/interruption ratios.
-  - Most productive category, best time slot, most interrupted session.
-- Current chart coverage includes:
-  - Effective by category, weekday, and time slot.
-  - Effective vs paused comparison.
-  - Sessions by energy and energy vs interruptions.
-  - Temporal evolution: effective time, paused time, completed sessions, and focus/interruption trend over time.
+- Month navigation supports previous and next controls.
+- Next navigation is disabled for future-month browsing.
+- Calendar stays compact and readable in both themes.
 
-## Session History (Current Capabilities)
+## Visual System
 
-- Search by title/category/tags with normalized matching.
-- Filters for weekday, energy, category, duration range, and pause presence.
-- Sorting by start/end date, duration, pause count, and energy.
-- Pagination for table usability.
-- Inline editing for title, category, tags, weekday, and energy with validation.
+- Tailwind utilities + shared CSS variables from `src/index.css`.
+- Card-based, data-first layout with restrained accent emphasis.
+- Keep motion minimal and meaningful (focus/hover/transition clarity).
 
-## Backup Import/Export
+## Implementation Boundaries
 
-- Export writes a JSON backup envelope with metadata and completed sessions.
-- Import validates file origin, version, and payload shape before inserting.
-- Duplicate session IDs are skipped and reported to users.
-
-## Startup Loader
-
-- Startup uses a branded overlay with a minimum visible duration and fade-out.
-- Initial paint background is controlled in `index.html` to avoid white flash.
-- Overlay completion is tied to session-state readiness, not optional settings loading.
-
-## Roadmap (Realistic, Not Yet Implemented)
-
-- Decompose `App.tsx` into focused UI components as complexity grows.
-- Add richer trend analytics and comparison insights while preserving local-first performance.
-- Improve desktop integration features (tray/background behavior, installer polish) as dedicated milestones.
-- Strengthen long-term schema migration strategy for future data model evolution.
+- Keep business logic out of JSX rendering blocks.
+- Keep persistence and SQL access inside repository modules.
+- Keep reusable calculations pure and unit-testable.
+- Prefer additive schema evolution for local database safety.

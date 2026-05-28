@@ -24,6 +24,11 @@ import { AnalyticsPage } from "./features/analytics/AnalyticsPage";
 import { recordCriticalError } from "./features/diagnostics/debugLog";
 import { HomePage } from "./features/home/HomePage";
 import { createSessionBackup, parseSessionBackup } from "./features/sessions/sessionBackup";
+import {
+  applyAddPausedTime,
+  applyForgottenStartOffset,
+  applyRemoveDistractedTime,
+} from "./features/sessions/sessionTimeCorrections";
 import { SettingsPage } from "./features/settings/SettingsPage";
 import {
   deleteActiveSession,
@@ -51,7 +56,6 @@ import {
 import {
   getEffectiveDuration,
   getPausedDuration,
-  reducePausedDuration,
   getTimerDisplayNow,
 } from "./shared/utils/durationUtils";
 import { getEnergySortValue } from "./shared/utils/energyUtils";
@@ -663,8 +667,7 @@ function App() {
     if (isStartingSession || activeSession) return;
 
     const createdAt = Date.now();
-    const forgottenOffsetMs = (parsedForgottenStartMinutes ?? 0) * 60 * 1000;
-    const startedAt = createdAt - forgottenOffsetMs;
+    const startedAt = applyForgottenStartOffset(createdAt, parsedForgottenStartMinutes ?? 0);
     const session: ActiveSession = {
       id: crypto.randomUUID(),
       title: finalTitle.trim(),
@@ -765,8 +768,7 @@ function App() {
         }
 
         const nextSession: ActiveSession = {
-          ...activeSession,
-          pauses: reducePausedDuration(activeSession.pauses, requestedMs, applyAt),
+          ...applyAddPausedTime(activeSession, requestedMs, applyAt),
         };
         await saveActiveSession(nextSession, applyAt);
         setActiveSession(nextSession);
@@ -786,8 +788,7 @@ function App() {
       }
 
       const nextSession: ActiveSession = {
-        ...activeSession,
-        pauses: [...activeSession.pauses, { startedAt: applyAt - requestedMs, endedAt: applyAt }],
+        ...applyRemoveDistractedTime(activeSession, requestedMs, applyAt),
       };
       await saveActiveSession(nextSession, applyAt);
       setActiveSession(nextSession);
